@@ -9,7 +9,7 @@ LogVerbosity = -1
 
 ## includes
 #include "../$ABACUS_SITE$.def"
-#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
 #include "../suite/abacus_aurora.par2"
 
 #####################################################################################################################
