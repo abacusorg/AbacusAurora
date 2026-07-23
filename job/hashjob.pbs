@@ -17,6 +17,7 @@ set -euo pipefail
 source "$HASHRUN_SPEC/jobspec.sh"
 
 cd "$PBS_O_WORKDIR"
+set --              # env.sh appends $@ to module load; make sure ours is empty
 . "$ABACUS_ENV"
 ulimit -c unlimited
 

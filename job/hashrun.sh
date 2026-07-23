@@ -87,8 +87,10 @@ spec=$(mktemp -d "$store_root/submit.XXXXXX")
 echo "Parsing $par2 ..."
 bash -lc '
     set -e
-    cd "$1"; . "./$2"
-    exec python -m abacus.param "$3" -o "$4"
+    build=$1 env_script=$2 par2=$3 out=$4
+    set --                    # clear $@ so the env script does not module-load our args
+    cd "$build"; . "./$env_script"
+    exec python -m abacus.param "$par2" -o "$out"
 ' hashrun "$build" "$env_script" "$prod/$par2" "$spec/flattened.par"
 
 # --- record the job spec (sourced by hashjob.pbs; also the provenance record) ---
