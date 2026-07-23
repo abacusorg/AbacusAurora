@@ -1,0 +1,61 @@
+# Custom parameters
+SimName = "AuroraHighBase"
+BoxSize = 1000
+NP = 3456**3
+CPD = 729
+ZD_Seed = 2357  
+NumZRanks = 4
+LogVerbosity = -1
+
+## includes
+#include "../site/$ABACUS_SITE$.def"  
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "../suite/abacus_aurora.par2"
+
+#####################################################################################################################
+######### The following are included in abacus_aurora.par2 but are repeated here for optional customizaiton #########
+#####################################################################################################################
+#
+#
+LocalWorkingDirectory = "/lus/flare/projects//Abacus/$USER$/" + @SimName@ +"/work"     # Where states get written.  Big!!
+ 
+FinalRedshift = 0.00  # Only needed if finishing light cones
+
+TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
+TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
+
+# Exact steps of ln(1.5)/7 in ln(1+z) would be: 0.0000, 0.0596, 0.1228, 0.1898, 0.2607, 0.3359, 0.4156, 0.5000, 0.5895, 0.6842, 0.7847, 0.8911, 1.0039, 1.1234, 1.2500, 1.3842, 1.5264, 1.6770, 1.8367, 2.0058, 2.1851, 2.3750, 2.5763, 2.7895, 3.0155, 3.2550, 3.5087, 3.7776, 4.0625, 4.3644, 4.6843, 5.0233, 5.3825, 5.7631, 6.1664, 6.5937, 7.0466, 7.5264, 8.0349, 8.5737, 9.1446, 9.7496, 10.3906, 11.0699, 11.7897, 12.5524, 13.3605, 14.2169, 15.1244.  We round some of these off at the 1% level to get round number, and add a couple extras at low z to match to AbacusSummit. 
+MapLogRedshifts = [0.0000, 0.0596, 0.1000, 0.1228, 0.1898, 0.2607, 0.3000, 0.3359, 0.4156, 0.5000, 0.5895, 0.6842, 0.8000, 0.8911, 1.0039, 1.1000, 1.2500, 1.4000, 1.5264, 1.6770, 1.8367, 2.0000, 2.1851, 2.3500, 2.5763, 2.7895, 3.0000, 3.2550, 3.5000, 3.7776, 4.0000, 4.3644, 4.6843, 5.0233, 5.3825, 5.7631, 6.1664, 6.5937, 7.0466, 7.5264, 8.0349, 8.5737, 9.1446, 9.7496, 10.3906, 11.0699, 11.7897, 12.5524, 13.3605, 14.2169, 15.1244]
+
+# Taper the timestep below z=0.1, expanding by a factor of 2.5
+TimestepTaper = 2.5
+TimestepTaperZ = 0.1
+
+# Lightcones currently abridged to save data volume
+LCOrigins = (0.,0.,0.)
+LCIsOctant = [1]
+LCZMax1 = [1.0]
+LCZMax2 = [2.0]
+LCBoxRepeats = 4
+LCSamplerInner = ["subP8"]
+LCSamplerOuter = ["subP64"]
+LCDoHealpix = [1]
+LCHealpixZMax = [1.0]
+
+# KDE Parameters
+DM_DensityKernelRadius_cMpc = 0.25    # Mpc/h
+Map_DensityKernelRadius_cMpc = 0.25    # Mpc/h
+
+#MAP parameters:
+# Recommendation from 7/4/26
+Map_bform_ips=0.12
+Map_baccrete_ips=0.14
+Map_bmerge_proper=0.0155 #Mpc/h
+#Map_bmerge_max_ips=0.5
+Map_Aform=0.63
+Map_Aaccrete=1.9
+Map_Amerge=61.
+Map_MinMultiplicity=20
+Map_GroupDiameter = -1
+Map_GroupEligibilityThreshold=400
+Map_LagrangianFormationLimit=1
