@@ -8,9 +8,9 @@ NumZRanks = 4
 LogVerbosity = -1
 
 ## includes
-#include "../$ABACUS_SITE$.def"
-#include "../../Cosmologies/abacus_cosm000/cosm.def"
-#include "../suite/abacus_aurora.par2"
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.par2"
 
 #####################################################################################################################
 ######### The following are included in abacus_aurora.par2 but are repeated here for optional customizaiton #########

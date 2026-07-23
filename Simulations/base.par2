@@ -90,9 +90,6 @@ Order = 8
 hMpc = 1
 DerivativeExpansionRadius = 8
 
-# For additional performance tuning,
-# copy the contents of the `prod/site/$ABACUS_SITE$.def` file here and make modifications
-
 # Initial conditions parameters:
 InitialRedshift = 99.
 ExternalICs = 0          # Not reading pre-existing IC files
