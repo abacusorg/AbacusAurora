@@ -20,5 +20,5 @@ omega_b = 0.02222
 omega_cdm = 0.1199
 omega_ncdm = 0.0
 
-ZD_Pk_filename = "$ABACUS$/prod/Cosmologies/abacus_cosm011/CLASS_power"
+ZD_Pk_filename = "$PAR2_DIR$/CLASS_power"
 ZD_Pk_file_redshift = 1.0

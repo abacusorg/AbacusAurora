@@ -78,7 +78,7 @@ def make_cosm_def(cosm_dir):
     H0 = h * 100.0
 
     cosm_name = cosm_dir.name  # e.g. abacus_cosm117
-    pk = f'"$ABACUS$/prod/Cosmologies/{cosm_name}/CLASS_power"'
+    pk = '"$PAR2_DIR$/CLASS_power"'
 
     lines = [
         f"# Abacus cosmology parameters for {cosm_name}, converted from CLASS.ini",
