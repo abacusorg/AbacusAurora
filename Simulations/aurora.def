@@ -95,7 +95,17 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 OutputDirectory = "/flare/Abacus/$USER$/" + @SimName@
 WorkingDirectory = @OutputDirectory@
 LocalWorkingDirectory = "/dev/shm/$USER$/" + @SimName@
-#include "directory.def"
+
+# copied from directory.def (uses Output and Working directories)
+MultipoleDirectory = @WorkingDirectory@ + "/multipole"
+TaylorDirectory = @WorkingDirectory@ + "/taylor"
+BackupDirectory = @OutputDirectory@
+BuildDirectory = "$ABACUS_BUILD$"
+GroupDirectory = @OutputDirectory@ + "/group"
+InitialConditionsDirectory = @OutputDirectory@ + "/ic"
+LCDirectory =  @OutputDirectory@ + "/lightcone"
+LogDirectory = @OutputDirectory@ + "/log"
+TracersDirectory = @OutputDirectory@ + "/tracers"
 
 # DerivativesSourceDirectory = "/flare/Abacus/Derivatives"
 DerivativesDirectory = "/flare/Abacus/Derivatives"
