@@ -8,7 +8,7 @@ NumZRanks = 4
 LogVerbosity = -1
 
 ## includes
-#include "../site/$ABACUS_SITE$.def"  
+#include "../$ABACUS_SITE$.def"
 #include "../Cosmologies/abacus_cosm000/cosm.def"
 #include "../suite/abacus_aurora.par2"
 

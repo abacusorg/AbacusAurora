@@ -1,0 +1,112 @@
+# Aurora, 1 socket per node
+# 3x Intel Data Center Max 1550 Series GPUs, 1x Intel Xeon Sapphire Rapids HBM 52 core, 512 GB RAM
+# Cores:
+# 0: system
+# 1-41: OpenMP
+# 42: IO
+# 146: MPI progress thread; we put this with the IO thread because it is fairly intermittent and probably only takes 10-20% of a core
+# 43-45: GPU 0
+# 46-48: GPU 1
+# 49-51: GPU 2
+
+
+
+# If the branch has the option to send the Manifest MPI work to the MPI Progress thread, then setting these non-zero turns that option on.
+ManifestRecvWindowGiB = 3
+ManifestSendWindowGiB = 3
+
+StateIOMode = "overwrite"   # But this must be set to "normal" for checkpointing
+Conv_IOMode = "overwrite"   # This may be vestigial, but in any case, "normal" crashes so do not change
+
+#IODirs = ["multipole/", "taylor/", "multipole2/", "taylor2/"]
+#IODirThreads = [2, 2, 3, 3]
+# ConvolutionCacheSizeMB = 30  # This will be automatically detected
+
+AllowDirectIO = 0
+StashArenas = 1    # This chooses to avoid freeing Arenas back to the kernel, keeping them for future allocations.
+
+# OpenMP and thread parameters
+OMP_NUM_THREADS = 82
+OMP_PLACES = "threads"
+OMP_PROC_BIND = "close"
+
+DirectBPD = 6
+MemPerGPUBufferGB = 2.0
+# GPUBufferThreadCores = [42, 43, 44, 146, 147, 148, 45, 46, 47, 149, 150, 151, 48, 49, 50, 152, 153, 154]  # relative to the main thread
+# Pair the hyperthreads close together:
+GPUBufferThreadCores = [42, 146, 43, 147, 44, 148, 45, 149, 46, 150, 47, 151, 48, 152, 49, 153, 50, 154]  # relative to the main thread
+GPUThreadsPerMutex = 2   # With this choice, adjacent cores in the list are bound into a tick-tock pattern.  So we want hyperthreaded pairs.  Setting to 1 would turn this off.
+
+ResetAffinity = True
+IOCores = [41]  # relative to the main thread
+MPIProgressCore = 145   # relative to the main thread
+
+ConvMPIInFlight = 6     # number of MPI transposes to allow to be in progress
+NeighborExchangeReceiveAhead = 6     # number of neighbor exchanges to allow to be in progress
+ReleaseFreeMemoryInterval = 50   # Clear the unused mimalloc pool every N steps, -1 to turn off.
+
+GPUQueueAssignments = [0, 0, 0]
+
+UseHBM = 1
+HBMNumaNode = 2  # relative to the main thread
+
+
+# Use these to turn on checkpointing and SCR
+StateIOMode = "normal"   # This uses the write, read, and past states in a way to facilitate checkpointing
+
+CompressWriteState = 1   # =1 to compress the slabs as we write them out for a state, required for SCR
+# CheckpointStepInterval = 100    # This orders us to write out every N steps
+#
+# UseSCR = 1
+# SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0"]
+# This is the list of arguments handed to SCR
+#     "SCR_COPY_TYPE=XOR" -- turns on MPI-based parity across checkpoints 
+#     "SCR_PREFIX_SIZE=2" -- this would allow only this number on disk
+
+# SCR options:
+# SCR_COPY_TYPE=XOR — sets the cache redundancy scheme to XOR parity, which stores one parity file per redundancy set and can reconstruct the files of any single failed node in that set (this is already SCRs default).  SINGLE would be no redundacy. PARTNER is RAID-1. RS is RAID-6.
+# SCR_SET_SIZE=6 — targets 6 processes per XOR redundancy set (default 8). smaller sets add storage overhead (~1/N parity) but rebuild faster and are less likely to suffer two failures within one set.
+# SCR_CACHE_SIZE=1 — keeps at most 1 checkpoint resident in node-local cache (/dev/shm), evicting the oldest before writing the next (this is the default).
+# SCR_FLUSH=2 — persists every 2nd checkpoint from cache to the PFS prefix (default 10). the ones in between live only in cache.
+# SCR_FLUSH_ASYNC=1 — makes those flushes asynchronous so they overlap with continued compute instead of blocking (default 0 = synchronous).
+# SCR_FLUSH_TYPE=PTHREAD — uses a background pthread as the async transfer engine (default SYNC. other options are BBAPI/DATAWARP for specific burst-buffer hardware).
+# SCR_PREFIX_SIZE=2 — keeps a sliding window of the 2 most recent checkpoints in the PFS prefix and deletes older ones as new ones flush (default 0 = keep all. SCR_FLAG_OUTPUT datasets are never deleted).
+#
+# SCR_PREFIX — the PFS directory where flushed datasets are read/written. Abacus drives this via its own SCR_Prefix parameter (default WorkingDirectory/scr).
+# SCR_CACHE_BASE / SCR_CNTL_BASE — base dirs for cached dataset files and SCR control metadata respectively, both defaulting to /dev/shm.
+# SCR_CACHE_BYPASS — when 1 (SCRs default!) data goes straight to the PFS and skips the cache entirely, so your wrapper must set it to 0 for XOR caching to happen at all.  Abacus is overriding this to 0.
+# SCR_GLOBAL_RESTART=1 — flushes the newest cached checkpoint to the prefix at SCR_Init and restarts from there, which is exactly how Phase 3 restarts Abacus (your wrapper defaults it on).
+# SCR_HALT_SECONDS — halts the job gracefully once less than N seconds remain in the allocation, complementing the SCR_Should_exit/scr_halt end-of-allocation path.
+# SCR_SET_FAILURES (with SCR_COPY_TYPE=RS) — tolerates more than one node failure per set at higher encoding cost, the alternative to XOR you would reach for at flagship scale
+# SCR_CACHE_PURGE / SCR_PREFIX_PURGE — wipe cache or prefix at SCR_Init. handy for clean test/dev runs, off by default.
+
+
+# 1 MiB L2 per thread, halved for SMT
+ConvolutionCacheSizeMB = @OMP_NUM_THREADS@ * 1 / 2
+# 48 KiB L1 per thread, halved for SMT
+ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
+
+# Convolution OpenMP parameters
+# Conv_OMP_NUM_THREADS = 102
+# Conv_OMP_PLACES = "cores"
+# Conv_OMP_PROC_BIND = "close"
+# Conv_IOCores = [1]
+
+OutputDirectory = "/flare/Abacus/$USER$/" + @SimName@
+WorkingDirectory = @OutputDirectory@
+LocalWorkingDirectory = "/dev/shm/$USER$/" + @SimName@
+#include "directory.def"
+
+# DerivativesSourceDirectory = "/flare/Abacus/Derivatives"
+DerivativesDirectory = "/flare/Abacus/Derivatives"
+FFTWisdomDirectory = "/lus/flare/projects/Abacus/Wisdom/"
+
+# $NNODES set in env/aurora-1D.sh
+mpirun_cmd = "mpirun -ppn 2 --cpu-bind list:1-51,105-155:53-103,157-207 --gpu-bind list:0-2:3-5 --mem-bind list:0:1 -np " + str(2 * $NNODES$) + " -- "
+
+
+# Just leaving these here as examples
+#exec_prefix = "vtune -collect gpu-offload -r /flare/Abacus/eisenste/vtune/ "
+#exec_prefix = "iprof --tracing-mode full"
+#exec_prefix = "iprof "
+#exec_prefix = @exec_prefix@+" iprof -l /flare/Abacus/eisenste/iprof_56 -t"
