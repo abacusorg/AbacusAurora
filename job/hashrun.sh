@@ -105,6 +105,17 @@ bash -lc '
     printf 'OVERRIDES=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
 } > "$spec/jobspec.sh"
 
-# --- submit ---
+# --- submit held, point stdout/stderr into out/<jobid>/ once we know the jobid,
+#     then release; PBS stages the streams into the same git-ignored dir.
+#     qalter needs -A explicitly — Aurora's account_check hook doesn't inherit
+#     the job's -A on an alter. ---
 echo "Submitting: code=$code_hash prod=$prod_hash par2=$par2"
-qsub -v "HASHRUN_SPEC=$spec" ${qsub_args[@]+"${qsub_args[@]}"} "$prod/job/hashjob.pbs"
+jobid=$(qsub -h -v "HASHRUN_SPEC=$spec" ${qsub_args[@]+"${qsub_args[@]}"} "$prod/job/hashjob.pbs")
+out=$prod/job/out/${jobid%%.*}
+mkdir -p "$out"
+qalter -A Abacus -o "$out/stdout" -e "$out/stderr" "$jobid" \
+    || { echo "error: qalter failed; deleting held job $jobid" >&2; qdel "$jobid"; exit 1; }
+qrls "$jobid" \
+    || { echo "error: qrls failed; job $jobid left held (qrls or qdel it)" >&2; exit 1; }
+echo "$jobid"
+echo "outputs -> $out/"
