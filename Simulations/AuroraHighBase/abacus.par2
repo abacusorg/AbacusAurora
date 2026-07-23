@@ -17,7 +17,7 @@ LogVerbosity = -1
 #####################################################################################################################
 #
 #
-LocalWorkingDirectory = "/lus/flare/projects//Abacus/$USER$/" + @SimName@ +"/work"     # Where states get written.  Big!!
+LocalWorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@ +"/work"     # Where states get written.  Big!!
  
 FinalRedshift = 0.00  # Only needed if finishing light cones
 
