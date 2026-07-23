@@ -67,19 +67,19 @@ git -C "$code_repo" fetch --quiet origin || echo "warning: code fetch failed; us
 code_hash=$(git -C "$code_repo" rev-parse --verify --quiet "${code_ref}^{commit}") \
     || { echo "error: cannot resolve code ref '$code_ref' in $code_repo" >&2; exit 1; }
 
-abacus=$store_root/$code_hash
-if [[ ! -d $abacus ]]; then
-    echo "Building code $code_hash -> $abacus"
-    tmp=$abacus.tmp.$$
+build=$store_root/$code_hash   # hash-keyed built checkout of the code
+if [[ ! -d $build ]]; then
+    echo "Building code $code_hash -> $build"
+    tmp=$build.tmp.$$
     rm -rf "$tmp"
     git init -q "$tmp"
     git -C "$tmp" fetch --quiet --depth 1 "$code_repo" "$code_hash"
     git -C "$tmp" checkout --quiet --detach FETCH_HEAD
     git -C "$tmp" submodule update --quiet --init --recursive --depth 1
     bash -lc "set -e; cd '$tmp'; . ./$env_script; uv sync --no-editable; meson setup build; meson compile -C build"
-    mv -T "$tmp" "$abacus"   # atomic publish
+    mv -T "$tmp" "$build"   # atomic publish
 else
-    echo "Reusing code build $abacus"
+    echo "Reusing code build $build"
 fi
 
 # --- sanity-check the par2 (parse it here so we fail before queuing, not after) ---
@@ -87,18 +87,16 @@ spec=$(mktemp -d "$store_root/submit.XXXXXX")
 echo "Parsing $par2 ..."
 bash -lc '
     set -e
-    export ABACUS="$1" ABACUS_PROD="$2"
-    cd "$ABACUS"; . "./$3"
-    exec python -m abacus.param "$4" -o "$5"
-' hashrun "$abacus" "$prod" "$env_script" "$prod/$par2" "$spec/flattened.par"
+    cd "$1"; . "./$2"
+    exec python -m abacus.param "$3" -o "$4"
+' hashrun "$build" "$env_script" "$prod/$par2" "$spec/flattened.par"
 
 # --- record the job spec (sourced by hashjob.pbs; also the provenance record) ---
 {
     echo "# hashrun.sh $(date -Is)"
-    printf 'ABACUS=%q\n'      "$abacus"
+    printf 'ABACUS_ENV=%q\n'  "$build/$env_script"
     printf 'ABACUS_PROD=%q\n' "$prod"
     printf 'ABACUS_PAR2=%q\n' "$par2"
-    printf 'ABACUS_ENV=%q\n'  "$env_script"
     printf 'CODE_HASH=%q\n'   "$code_hash"
     printf 'CODE_REF=%q\n'    "$code_ref"
     printf 'PROD_HASH=%q\n'   "$prod_hash"

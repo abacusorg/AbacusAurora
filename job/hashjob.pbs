@@ -6,19 +6,18 @@
 #PBS -l place=scatter
 #PBS -q debug-scaling
 
-# Runs a sim from the hash-keyed code build ($ABACUS) against the production
-# specs ($ABACUS_PROD), on the par2 $ABACUS_PAR2 (relative to $ABACUS_PROD),
-# plus any -P overrides. All of these are provided by hashrun.sh via the
-# job-spec file at $HASHRUN_SPEC (passed with qsub -v).
+# Runs a sim from a hash-keyed code build against the production specs
+# ($ABACUS_PROD), on the par2 $ABACUS_PAR2 (relative to $ABACUS_PROD), plus any
+# -P overrides. The build's environment is sourced from $ABACUS_ENV. All of
+# these are provided by hashrun.sh via the job-spec file at $HASHRUN_SPEC.
 
 set -euo pipefail
 
 : "${HASHRUN_SPEC:?not set — submit via hashrun.sh}"
 source "$HASHRUN_SPEC/jobspec.sh"
-export ABACUS ABACUS_PROD   # so $ABACUS$ / $ABACUS_PROD$ resolve in the par2
 
 cd "$PBS_O_WORKDIR"
-. "$ABACUS/$ABACUS_ENV"
+. "$ABACUS_ENV"
 ulimit -c unlimited
 
 # Provenance: the submit-time spec + the runtime (compute-node) environment
@@ -33,7 +32,6 @@ echo "code=$CODE_HASH ($CODE_REF)  prod=$PROD_HASH  par2=$ABACUS_PAR2" > "$prov/
 pargs=()
 for o in ${OVERRIDES[@]+"${OVERRIDES[@]}"}; do pargs+=(-P "$o"); done
 
-echo "ABACUS=$ABACUS"
 echo "ABACUS_PROD=$ABACUS_PROD"
 echo "PAR2=$ABACUS_PROD/$ABACUS_PAR2"
 echo "overrides: ${pargs[*]:-<none>}"
