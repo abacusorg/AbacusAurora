@@ -131,21 +131,21 @@ build_code() {
     mv -T "$tmp" "$checkout"   # atomic publish
 }
 
-# Parse each par2 now (throwaway) so we fail before queuing, then write the job
+# Parse every par2 now (throwaway) so we fail before queuing, then write the job
 # spec ($spec/jobspec.sh) that multisim.pbs sources.
 stage_spec() {
     spec=$(mktemp -d "$store_root/submit.XXXXXX")
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
-    local par2 p o
-    for par2 in "${par2s[@]}"; do
-        echo "Parsing $par2 ..."
-        bash -lc '
-            set -e
-            checkout=$1 env_script=$2 par2=$3
-            cd "$checkout"; . "./$env_script"
-            exec python -m abacus.param "$par2" -o /dev/null
-        ' hashrun "$checkout" "$env_script" "$prod/$par2"
-    done
+    local p o
+    bash -lc '
+        set -e
+        checkout=$1 env_script=$2 prod=$3; shift 3
+        cd "$checkout"; . "./$env_script"
+        for par2; do
+            echo "Parsing $par2 ..."
+            python -m abacus.param "$prod/$par2" -o /dev/null
+        done
+    ' hashrun "$checkout" "$env_script" "$prod" "${par2s[@]}"
     {
         echo "# hashrun.sh $(date -Is)"
         printf 'abacus_env=%q\n'    "$checkout/$env_script"
