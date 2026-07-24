@@ -111,8 +111,9 @@ TracersDirectory = @OutputDirectory@ + "/tracers"
 DerivativesDirectory = "/flare/Abacus/Derivatives"
 FFTWisdomDirectory = "/lus/flare/projects/Abacus/Wisdom/"
 
-# $NNODES set in env/aurora-1D.sh
-mpirun_cmd = "mpirun -ppn 2 --cpu-bind list:1-51,105-155:53-103,157-207 --gpu-bind list:0-2:3-5 --mem-bind list:0:1 -np " + str(2 * $NNODES$) + " -- "
+# $NNODES# set in env/aurora-1D.sh
+# $_MPIRUN_ARGS$ is optional (empty if unset); job/onesim.sh sets it for --hostfile
+mpirun_cmd = "mpirun $_MPIRUN_ARGS$ -ppn 2 --cpu-bind list:1-51,105-155:53-103,157-207 --gpu-bind list:0-2:3-5 --mem-bind list:0:1 -np " + str(2 * $NNODES$) + " -- "
 
 
 # Just leaving these here as examples

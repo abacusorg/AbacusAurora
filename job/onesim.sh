@@ -2,32 +2,51 @@
 # onesim.sh — run ONE Abacus simulation on a given hostfile, monitoring it and
 # restarting up to a few times if it dies.
 #
-# Kept deliberately separate from the multi-sim outer loop (multisim.sh) so that:
+# Kept deliberately separate from the multi-sim outer loop (multisim.pbs) so that:
 #   - its retry/backoff state stays private to this one sim, and
 #   - the outer loop can collect a single, clean final exit code per sim.
 #
-# Usage: onesim.sh <par2_file> <hostfile>
+# Usage: onesim.sh <par2_file> <hostfile> [KEY=VAL ...]
 #
-# -np is derived from the hostfile length each attempt, so a future step can
-# blacklist bad nodes / splice in spares from hostfile_extra by rewriting this
-# sim's hostfile between restarts, with no change here.
+# Also records this sim's provenance (env, modules, jobspec) into its
+# OutputDirectory/provenance/ before running.
+#
+# This sim's node slice is handed to the par2 via $MPIRUN_ARGS (--hostfile <slice>)
+# and $NNODES; the site def's mpirun_cmd splices in $MPIRUN_ARGS and uses $NNODES
+# for -np. Recomputed each attempt, so a future step can blacklist bad nodes /
+# splice in spares from hostfile_extra by rewriting this sim's hostfile between restarts.
 
 set -uo pipefail   # NB: not -e; the retry loop handles abacus.run's failures itself
 
-PAR2="$1"
-HOSTFILE="$2"
+par2="$1"
+hostfile="$2"
+shift 2
+overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.run
 
-PPN=2                          # processes per node; tied to the --*-bind lists below
-MAX_CONSEC_FAIL=3
-MIN_HEALTHY_SECONDS=600        # failures faster than this count as "rapid"
+max_consec_fail=3
+min_healthy_seconds=600        # failures faster than this count as "rapid"
 
-if [[ ! -r "$PAR2" ]]; then
-    echo "onesim: parameter file '$PAR2' not readable" >&2
+if [[ ! -r "$par2" ]]; then
+    echo "onesim: parameter file '$par2' not readable" >&2
     exit 2
 fi
-if [[ ! -r "$HOSTFILE" ]]; then
-    echo "onesim: hostfile '$HOSTFILE' not readable" >&2
+if [[ ! -r "$hostfile" ]]; then
+    echo "onesim: hostfile '$hostfile' not readable" >&2
     exit 2
+fi
+
+# Record this sim's provenance into its OutputDirectory/provenance/ (travels with
+# the data). $MPIRUN_ARGS/$NNODES default in env.sh, so the par2 parses here; and
+# abacus.run won't wipe it (no --clean). The jobspec is copied if we're under hashjob.
+outdir=$(python -m abacus.param "$par2" -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
+if [[ -n $outdir ]]; then
+    prov="$outdir/provenance"
+    mkdir -p "$prov"
+    env | sort > "$prov/env.txt"
+    module list > "$prov/modules.txt" 2>&1 || true
+    [[ -n ${HASHRUN_SPEC:-} ]] && cp "$HASHRUN_SPEC/jobspec.sh" "$prov/jobspec.sh"
+else
+    echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
 
 attempt=0
@@ -36,24 +55,20 @@ consec_fail=0
 while true; do
     attempt=$((attempt+1))
 
-    # Recompute per attempt: the hostfile may shrink/change between restarts.
-    nnodes=$(( $(wc -l < "$HOSTFILE") ))   # arithmetic strips any wc padding
-    np=$((nnodes * PPN))
-    mpirun_cmd="mpirun --hostfile $HOSTFILE -ppn $PPN --cpu-bind list:1-51,105-155:53-103,157-207 --gpu-bind list:0-2:3-5 --mem-bind list:0:1 -np $np -- "
+    # Hand this sim's node slice to the par2 via the environment; the site def's
+    # mpirun_cmd splices in $MPIRUN_ARGS$ and uses $NNODES$ for -np. Recomputed per
+    # attempt (the hostfile may shrink/change between restarts).
+    nnodes=$(( $(wc -l < "$hostfile") ))   # arithmetic strips any wc padding
+    export MPIRUN_ARGS="--hostfile $hostfile" NNODES="$nnodes"
 
-    # First attempt starts fresh; restarts continue in place.
-    if (( attempt == 1 )); then
-        flags="--clean"
-    else
-        flags=""
-    fi
-
-    echo "=== abacus invocation $attempt ($flags) on $nnodes nodes, np=$np: $(date) ==="
+    echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
     t0=$SECONDS
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
     # not-taken if with no else returns 0, masking the real failure code.)
-    python -m abacus.run $flags "$PAR2" -P "mpirun_cmd=$mpirun_cmd"
+    pargs=()
+    for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
+    python -m abacus.run "$par2" ${pargs[@]+"${pargs[@]}"}
     rc=$?
     dt=$((SECONDS - t0))
 
@@ -64,9 +79,9 @@ while true; do
 
     echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s); relaunching ===" >&2
 
-    if (( dt < MIN_HEALTHY_SECONDS )); then
+    if (( dt < min_healthy_seconds )); then
         consec_fail=$((consec_fail+1))
-        if (( consec_fail >= MAX_CONSEC_FAIL )); then
+        if (( consec_fail >= max_consec_fail )); then
             echo "=== $consec_fail rapid consecutive failures; giving up ===" >&2
             exit 1
         fi

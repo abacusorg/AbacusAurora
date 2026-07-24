@@ -1,0 +1,81 @@
+#!/bin/bash -l
+#PBS -A Abacus
+#PBS -l filesystems=flare
+#PBS -l place=scatter
+#PBS -l select=16
+#PBS -l walltime=1:0:0
+#PBS -q debug-scaling
+
+# Runs one or more Abacus sims from a hash-keyed checkout against the production
+# specs ($abacus_prod). Each sim gets an equal nodes_per_sim-node slice of the
+# allocation and runs under onesim.sh (monitor + restart). Everything is provided
+# by hashrun.sh via the job-spec file $HASHRUN_SPEC. PBS job inputs + streams go
+# to out/<jobid>/; per-sim provenance goes to each OutputDirectory/provenance/.
+
+set -euo pipefail
+
+: "${HASHRUN_SPEC:?not set — submit via hashrun.sh}"
+source "$HASHRUN_SPEC/jobspec.sh"
+
+# PBS job inputs and streams live in the prod repo's git-ignored out/<jobid>/.
+# hashrun.sh points PBS's stdout/stderr here via qalter; the staged inputs
+# (jobspec, flattened pars, par2 list) are copied in below.
+out=$abacus_prod/job/out/${PBS_JOBID%%.*}
+mkdir -p "$out"
+cd "$out"
+cp -a "$HASHRUN_SPEC/." .          # jobspec + flattened/ + par2list (PBS job inputs)
+
+. "$abacus_env"
+
+# Sims to run: prefix each prod-relative par2 (from the job spec) with $abacus_prod.
+par2s=("${par2s[@]/#/$abacus_prod/}")
+num_sims=${#par2s[@]}
+onesim="$abacus_prod/job/onesim.sh"   # not $BASH_SOURCE — PBS executes a spooled copy
+
+# Node allocation: unique, sorted list (PBS_NODEFILE repeats a node per rank/chunk).
+# nodes_per_sim comes from the job spec (falls back to the whole allocation if unset).
+: "${PBS_NODEFILE:?not set — run under PBS}"
+sort -u "$PBS_NODEFILE" > nodes.sorted
+num_nodes=$(( $(wc -l < nodes.sorted) ))
+nodes_per_sim=${nodes_per_sim:-$num_nodes}
+
+required=$(( nodes_per_sim * num_sims ))
+if (( required > num_nodes )); then
+    echo "ERROR: nodes_per_sim($nodes_per_sim) x sims($num_sims) = $required nodes, only $num_nodes available" >&2
+    exit 1
+fi
+
+# Nodes past what the sims use become a spare pool (future blacklist-and-replace).
+export HOSTFILE_EXTRA="$out/hostfile_extra"
+tail -n +"$(( required + 1 ))" nodes.sorted > "$HOSTFILE_EXTRA"
+echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
+echo
+
+# Launch each sim on its own node slice via the per-sim monitor. A failed sim is
+# not fatal to the batch, so drop -e here and collect exit codes afterward.
+set +e
+pids=()
+for i in "${!par2s[@]}"; do
+    hf="$out/nodefile_part_$(printf '%03d' "$i")"
+    start=$(( i * nodes_per_sim + 1 ))
+    end=$(( (i + 1) * nodes_per_sim ))
+    sed -n "${start},${end}p" nodes.sorted > "$hf"
+
+    # < /dev/null keeps the backgrounded onesim from draining our stdin.
+    "$onesim" "${par2s[$i]}" "$hf" ${overrides[@]+"${overrides[@]}"} < /dev/null > "sim_${i}.out" 2>&1 &
+    pid=$!
+    pids+=("$pid")
+    echo "Sim $i: ${par2s[$i]} on $nodes_per_sim node(s) -> pid $pid, sim_${i}.out"
+    sleep 10          # stagger PALS launches — critical!
+done
+
+# Block until every sim finishes; surface any failure to the job's exit code.
+rc=0
+for i in "${!pids[@]}"; do
+    if ! wait "${pids[$i]}"; then
+        echo "Sim $i (pid ${pids[$i]}) exited nonzero" >&2
+        rc=1
+    fi
+done
+echo "All $num_sims sim(s) finished (rc=$rc)"
+exit "$rc"
