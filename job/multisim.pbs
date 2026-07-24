@@ -19,11 +19,11 @@ source "$HASHRUN_SPEC/jobspec.sh"
 
 # PBS job inputs and streams live in the prod repo's git-ignored out/<jobid>/.
 # hashrun.sh points PBS's stdout/stderr here via qalter; the staged inputs
-# (jobspec, flattened pars, par2 list) are copied in below.
+# (jobspec + par2 list) are copied in below.
 out=$abacus_prod/job/out/${PBS_JOBID%%.*}
 mkdir -p "$out"
 cd "$out"
-cp -a "$HASHRUN_SPEC/." .          # jobspec + flattened/ + par2list (PBS job inputs)
+cp -a "$HASHRUN_SPEC/." .          # jobspec + par2list (PBS job inputs)
 
 . "$abacus_env"
 
