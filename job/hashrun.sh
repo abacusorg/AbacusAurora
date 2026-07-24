@@ -9,14 +9,14 @@
 # recorded hash truly matches the job content. Put throwaway/dirty inputs under
 # untracked/. Code builds are cached in $ABACUS_STORE_ROOT (default ~/abacus-store).
 #
-# Usage: hashrun.sh -nps N -t HOURS [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
+# Usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
 #   <code-ref>   git ref in the code repo; resolved & built
 #   <par2-list>  file with one par2 path per line (relative to this prod repo's root;
 #                blank lines and #-comments ignored) — one sim per line
 #   -nps N       nodes per sim (sims are launched on equal N-node slices)
 #   -n TOTAL     total nodes to request (default nps x #par2); the surplus over
 #                nps x #par2 becomes a spare pool for node blacklist/replace
-#   -t HOURS     wall-time budget in hours; sets both -l walltime and PBS_MINUTES
+#   -t HH:MM     wall-time budget as HH:MM; sets both -l walltime and PBS_MINUTES
 #   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime — those are derived).
@@ -34,13 +34,13 @@ die() { echo "error: $*" >&2; exit 1; }
 
 usage() {
     cat <<'EOF'
-usage: hashrun.sh -nps N -t HOURS [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
+usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
   <code-ref>   git ref in the abacus code repo; resolved & built (cached by hash)
   <par2-list>  file with one par2 path per line, relative to this prod repo's root
                (blank lines and #-comments ignored); one sim per line
   -nps N       nodes per sim (--nodes-per-sim); sims run on equal N-node slices
   -n TOTAL     total nodes (--nodes; default nps x #par2); surplus becomes a spare pool
-  -t HOURS     wall-time budget in hours (--time); sets both -l walltime and PBS_MINUTES
+  -t HH:MM     wall-time budget as HH:MM (--time); sets both -l walltime and PBS_MINUTES
   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
   other flags pass through to qsub, e.g. -q prod. Do NOT pass select/walltime (derived).
 EOF
@@ -48,9 +48,9 @@ EOF
 
 # Parse the CLI. The two bare args are <code-ref> <par2-list>; our flags may appear
 # before them; the first unrecognized flag switches to qsub pass-through.
-# Sets: code_ref par2list nps nodes thours overrides[] qsub_args[]
+# Sets: code_ref par2list nps nodes twall overrides[] qsub_args[]
 parse_args() {
-    nps="" nodes="" thours=""
+    nps="" nodes="" twall=""
     overrides=() qsub_args=()
     local positionals=() qsub=0
     while (( $# )); do
@@ -60,8 +60,8 @@ parse_args() {
             -nps=*|--nodes-per-sim=*) nps=${1#*=}; shift ;;
             -n|--nodes)               nodes=$2; shift 2 ;;
             -n=*|--nodes=*)           nodes=${1#*=}; shift ;;
-            -t|--time)                thours=$2; shift 2 ;;
-            -t=*|--time=*)            thours=${1#*=}; shift ;;
+            -t|--time)                twall=$2; shift 2 ;;
+            -t=*|--time=*)            twall=${1#*=}; shift ;;
             -P|--param)               overrides+=("$2"); shift 2 ;;
             -P*)                      overrides+=("${1#-P}"); shift ;;
             -h|--help)                usage; exit 0 ;;
@@ -75,7 +75,7 @@ parse_args() {
     par2list=${positionals[1]}
     [[ ${nps} =~ ^[1-9][0-9]*$ ]]           || die "-nps/--nodes-per-sim is required and must be a positive integer (got '${nps}')"
     [[ -z ${nodes} || ${nodes} =~ ^[1-9][0-9]*$ ]] || die "-n/--nodes must be a positive integer (got '${nodes}')"
-    [[ ${thours} =~ ^[1-9][0-9]*$ ]] || die "-t/--time is required and must be a positive integer number of hours (got '${thours}')"
+    [[ ${twall} =~ ^[0-9]+:[0-5][0-9]$ ]] || die "-t/--time is required and must be HH:MM (got '${twall}')"
 }
 
 # Read $par2list into par2s[] (one path per line; blank lines and #-comments ignored).
@@ -169,9 +169,9 @@ submit() {
     (( total_nodes >= min_nodes )) \
         || die "-n $total_nodes is fewer than nodes-per-sim x #par2 ($nps x $nsims = $min_nodes)"
 
-    local walltime="${thours}:00:00"    # PBS HH:MM:SS form
-    # PBS_MINUTES is the wall-time budget (in minutes) for the run to halt itself in time.
-    local vlist="HASHRUN_SPEC=$spec,PBS_MINUTES=$(( thours * 60 ))"
+    local hh=${twall%:*} mm=${twall#*:}
+    local walltime="${twall}:00"        # PBS HH:MM:SS form
+    local vlist="HASHRUN_SPEC=$spec,PBS_MINUTES=$(( 10#$hh * 60 + 10#$mm ))"
 
     echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($(( total_nodes - min_nodes )) spare), walltime=$walltime"
     local jobid
