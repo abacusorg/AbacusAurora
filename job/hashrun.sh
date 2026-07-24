@@ -67,19 +67,19 @@ git -C "$code_repo" fetch --quiet origin || echo "warning: code fetch failed; us
 code_hash=$(git -C "$code_repo" rev-parse --verify --quiet "${code_ref}^{commit}") \
     || { echo "error: cannot resolve code ref '$code_ref' in $code_repo" >&2; exit 1; }
 
-build=$store_root/$code_hash   # hash-keyed built checkout of the code
-if [[ ! -d $build ]]; then
-    echo "Building code $code_hash -> $build"
-    tmp=$build.tmp.$$
+checkout=$store_root/$code_hash   # hash-keyed built checkout of the code
+if [[ ! -d $checkout ]]; then
+    echo "Building code $code_hash -> $checkout"
+    tmp=$checkout.tmp.$$
     rm -rf "$tmp"
     git init -q "$tmp"
     git -C "$tmp" fetch --quiet --depth 1 "$code_repo" "$code_hash"
     git -C "$tmp" checkout --quiet --detach FETCH_HEAD
     git -C "$tmp" submodule update --quiet --init --recursive --depth 1
     bash -lc "set -e; cd '$tmp'; . ./$env_script; uv sync --no-editable; meson setup build; meson compile -C build"
-    mv -T "$tmp" "$build"   # atomic publish
+    mv -T "$tmp" "$checkout"   # atomic publish
 else
-    echo "Reusing code build $build"
+    echo "Reusing code checkout $checkout"
 fi
 
 # --- sanity-check the par2 (parse it here so we fail before queuing, not after) ---
@@ -87,16 +87,16 @@ spec=$(mktemp -d "$store_root/submit.XXXXXX")
 echo "Parsing $par2 ..."
 bash -lc '
     set -e
-    build=$1 env_script=$2 par2=$3 out=$4
+    checkout=$1 env_script=$2 par2=$3 out=$4
     set --                    # clear $@ so the env script does not module-load our args
-    cd "$build"; . "./$env_script"
+    cd "$checkout"; . "./$env_script"
     exec python -m abacus.param "$par2" -o "$out"
-' hashrun "$build" "$env_script" "$prod/$par2" "$spec/flattened.par"
+' hashrun "$checkout" "$env_script" "$prod/$par2" "$spec/flattened.par"
 
 # --- record the job spec (sourced by hashjob.pbs; also the provenance record) ---
 {
     echo "# hashrun.sh $(date -Is)"
-    printf 'ABACUS_ENV=%q\n'  "$build/$env_script"
+    printf 'ABACUS_ENV=%q\n'  "$checkout/$env_script"
     printf 'ABACUS_PROD=%q\n' "$prod"
     printf 'ABACUS_PAR2=%q\n' "$par2"
     printf 'CODE_HASH=%q\n'   "$code_hash"
@@ -107,8 +107,6 @@ bash -lc '
 
 # --- submit held, point stdout/stderr into out/<jobid>/ once we know the jobid,
 #     then release; PBS stages the streams into the same git-ignored dir.
-#     qalter needs -A explicitly — Aurora's account_check hook doesn't inherit
-#     the job's -A on an alter. ---
 echo "Submitting: code=$code_hash prod=$prod_hash par2=$par2"
 jobid=$(qsub -h -v "HASHRUN_SPEC=$spec" ${qsub_args[@]+"${qsub_args[@]}"} "$prod/job/hashjob.pbs")
 out=$prod/job/out/${jobid%%.*}
