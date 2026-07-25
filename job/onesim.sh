@@ -11,8 +11,8 @@
 # Also records this sim's provenance (env, modules, jobspec) into its
 # OutputDirectory/provenance/ before running.
 #
-# This sim's node slice is handed to the par2 via $MPIRUN_ARGS (--hostfile <slice>)
-# and $NNODES; the site def's mpirun_cmd splices in $MPIRUN_ARGS and uses $NNODES
+# This sim's node slice is handed to the par2 via $ABACUS_MPIRUN_ARGS (--hostfile <slice>)
+# and $NNODES; the site def's mpirun_cmd splices in $ABACUS_MPIRUN_ARGS and uses $NNODES
 # for -np. Recomputed each attempt, so a future step can blacklist bad nodes /
 # splice in spares from hostfile_extra by rewriting this sim's hostfile between restarts.
 
@@ -36,7 +36,7 @@ if [[ ! -r "$hostfile" ]]; then
 fi
 
 # Record this sim's provenance into its OutputDirectory/provenance/ (travels with
-# the data). $MPIRUN_ARGS/$NNODES default in env.sh, so the par2 parses here; and
+# the data). $ABACUS_MPIRUN_ARGS/$NNODES default in env.sh, so the par2 parses here; and
 # abacus.run won't wipe it (no --clean). The jobspec is copied if we're under hashjob.
 outdir=$(python -m abacus.param "$par2" -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
 if [[ -n $outdir ]]; then
@@ -56,10 +56,10 @@ while true; do
     attempt=$((attempt+1))
 
     # Hand this sim's node slice to the par2 via the environment; the site def's
-    # mpirun_cmd splices in $MPIRUN_ARGS$ and uses $NNODES$ for -np. Recomputed per
+    # mpirun_cmd splices in $ABACUS_MPIRUN_ARGS$ and uses $NNODES$ for -np. Recomputed per
     # attempt (the hostfile may shrink/change between restarts).
     nnodes=$(( $(wc -l < "$hostfile") ))   # arithmetic strips any wc padding
-    export MPIRUN_ARGS="--hostfile $hostfile" NNODES="$nnodes"
+    export ABACUS_MPIRUN_ARGS="--hostfile $hostfile" NNODES="$nnodes"
 
     echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
     t0=$SECONDS
