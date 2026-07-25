@@ -47,7 +47,7 @@ ReleaseFreeMemoryInterval = 50   # Clear the unused mimalloc pool every N steps,
 
 GPUQueueAssignments = [0, 0, 0]
 
-UseHBM = 1
+UseHBM = 0
 HBMNumaNode = 2  # relative to the main thread
 
 
