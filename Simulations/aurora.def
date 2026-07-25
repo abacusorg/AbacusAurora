@@ -109,7 +109,7 @@ TracersDirectory = @OutputDirectory@ + "/tracers"
 
 # DerivativesSourceDirectory = "/flare/Abacus/Derivatives"
 DerivativesDirectory = "/flare/Abacus/Derivatives"
-FFTWisdomDirectory = "/lus/flare/projects/Abacus/Wisdom/"
+FFTWisdomDirectory = "/flare/Abacus/Wisdom/"
 
 # $NNODES# set in env/aurora-1D.sh
 # $_ABACUS_MPIRUN_ARGS$ is optional (empty if unset); job/onesim.sh sets it for --hostfile

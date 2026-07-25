@@ -15,6 +15,7 @@
 set -euo pipefail
 
 : "${HASHRUN_SPEC:?not set — submit via hashrun.sh}"
+: "${PBS_MINUTES:?not set — submit via hashrun.sh (sets it from -t)}"
 source "$HASHRUN_SPEC/jobspec.sh"
 
 # PBS job inputs and streams live in the prod repo's git-ignored out/<jobid>/.
@@ -26,6 +27,35 @@ cd "$out"
 cp -a "$HASHRUN_SPEC/." .          # jobspec + par2list (PBS job inputs)
 
 . "$abacus_env"
+
+# --- Halt controls -----------------------------------------------------------
+# Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two
+# env vars that let us stop EVERY sim in this allocation cleanly (and restartably)
+# at once. Exported here so onesim -> abacus.run inherit them.
+#
+# 1) A shared, group-writeable halt file for this allocation: any teammate can
+#    `touch` it to halt all sims. Named by the PBS job id so it's unique per job.
+#    HALT_DIR must already exist and be group-writeable; adjust to your location.
+HALT_DIR=/flare/Abacus/
+export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
+# We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
+trap 'rm -f "$ABACUS_JOB_HALT_FILE"' EXIT
+
+# 2) A wall-clock deadline so the job closes out before the allocation ends.
+#    PBS won't tell us the remaining time, so derive it from PBS_MINUTES (set by
+#    hashrun.sh from -t) minus a safety buffer, added to "now".
+export HALT_BUFFER_MINUTES=30
+halt_after_min=$(( PBS_MINUTES - HALT_BUFFER_MINUTES ))
+if (( halt_after_min > 0 )); then
+    export ABACUS_JOB_HALT_TIME=$(( $(date +%s) + halt_after_min * 60 ))
+    echo "Halt controls: ABACUS_JOB_HALT_FILE=$ABACUS_JOB_HALT_FILE"
+    echo "               ABACUS_JOB_HALT_TIME=$ABACUS_JOB_HALT_TIME (halt in ${halt_after_min} min)"
+else
+    echo "Halt controls: ABACUS_JOB_HALT_FILE=$ABACUS_JOB_HALT_FILE"
+    echo "WARNING: PBS_MINUTES ($PBS_MINUTES) <= HALT_BUFFER_MINUTES ($HALT_BUFFER_MINUTES); not setting ABACUS_JOB_HALT_TIME"
+fi
+echo
+# -----------------------------------------------------------------------------
 
 # Sims to run: prefix each prod-relative par2 (from the job spec) with $abacus_prod.
 par2s=("${par2s[@]/#/$abacus_prod/}")
