@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-env_script=env/aurora-1D.sh
+env_script=env/aurora.sh
 code_repo=${ABACUS_REPO:-$HOME/abacus}
 store_root=${ABACUS_STORE_ROOT:-$HOME/abacus-store}
 prod=$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)
