@@ -13,4 +13,4 @@ LogVerbosity = -1
 #include "../Cosmologies/abacus_cosm000/cosm.def"
 #include "./base.par2"
 
-LCOrigins = ( )   # Don't output lightcones
+LCOrigins = None   # Don't output lightcones
