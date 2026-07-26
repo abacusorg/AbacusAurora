@@ -65,7 +65,7 @@ SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1",
 
 SCRDiskCheckpointsToKeep = 2      # minimum complete checkpoints kept on prefix
 SCRDiskCheckpointSlots   = 3      # max prefix slots (having 2 extra allows write‖delete overlap.  1 means delete, then write)
-SCRCacheStashDir = "/dev/shm/abacus/stash"    # Turns on not unlinking /dev/shm, reusing instead.  Recommended.
+SCRCacheStashDir = "/dev/shm/$USER$/stash"    # Turns on not unlinking /dev/shm, reusing instead.  Recommended.
 
 
 # SCR options:
