@@ -11,9 +11,6 @@
 #
 # And then one must #include a cosm.def file and the site file.
 
-LogVerbosity = -1
-LocalWorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@ +"/work/rank"     # Where states get written.  Big!!
-
 StepTimeout = 900    # The heartbeat time limit on a step.  This doesn't limit MapLog write-out times.
 
 SofteningLength = @BoxSize@/@NP@**(1/3)/40  # ell/40, Plummer-equivalent
