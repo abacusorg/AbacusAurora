@@ -47,7 +47,7 @@ ReleaseFreeMemoryInterval = 50   # Clear the unused mimalloc pool every N steps,
 
 GPUQueueAssignments = [0, 0, 0]
 
-UseHBM = 0
+UseHBM = 1
 HBMNumaNode = 2  # relative to the main thread
 
 
@@ -58,7 +58,7 @@ CompressWriteState = 1   # =1 to compress the slabs as we write them out for a s
 # CheckpointStepInterval = 100    # This orders us to write out every N steps.  This works for SCR too, but using SCR_CHECKPOINT_SECONDS is better.
 
 UseSCR = 1
-SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_CHECKPOINT_SECONDS=120"]
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_CHECKPOINT_SECONDS=2700"]
 # This is the list of arguments handed to SCR
 #     "SCR_COPY_TYPE=XOR" -- turns on MPI-based parity across checkpoints 
 #     "SCR_PREFIX_SIZE=2" -- this would allow only this number on disk
