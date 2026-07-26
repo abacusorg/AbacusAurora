@@ -55,13 +55,18 @@ HBMNumaNode = 2  # relative to the main thread
 StateIOMode = "normal"   # This uses the write, read, and past states in a way to facilitate checkpointing
 
 CompressWriteState = 1   # =1 to compress the slabs as we write them out for a state, required for SCR
-# CheckpointStepInterval = 100    # This orders us to write out every N steps
-#
+# CheckpointStepInterval = 100    # This orders us to write out every N steps.  This works for SCR too, but using SCR_CHECKPOINT_SECONDS is better.
+
 UseSCR = 1
 SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_CHECKPOINT_SECONDS=120"]
 # This is the list of arguments handed to SCR
 #     "SCR_COPY_TYPE=XOR" -- turns on MPI-based parity across checkpoints 
 #     "SCR_PREFIX_SIZE=2" -- this would allow only this number on disk
+
+SCRDiskCheckpointsToKeep = 2      # minimum complete checkpoints kept on prefix
+SCRDiskCheckpointSlots   = 3      # max prefix slots (having 2 extra allows write‖delete overlap.  1 means delete, then write)
+SCRCacheStashDir = "/dev/shm/abacus/stash"    # Turns on not unlinking /dev/shm, reusing instead.  Recommended.
+
 
 # SCR options:
 # SCR_COPY_TYPE=XOR — sets the cache redundancy scheme to XOR parity, which stores one parity file per redundancy set and can reconstruct the files of any single failed node in that set (this is already SCRs default).  SINGLE would be no redundacy. PARTNER is RAID-1. RS is RAID-6.
