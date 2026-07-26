@@ -29,8 +29,8 @@ TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "s
 MapLogRedshifts = [0.0000, 0.0596, 0.1000, 0.1228, 0.1898, 0.2607, 0.3000, 0.3359, 0.4156, 0.5000, 0.5895, 0.6842, 0.8000, 0.8911, 1.0039, 1.1000, 1.2500, 1.4000, 1.5264, 1.6770, 1.8367, 2.0000, 2.1851, 2.3500, 2.5763, 2.7895, 3.0000, 3.2550, 3.5000, 3.7776, 4.0000, 4.3644, 4.6843, 5.0233, 5.3825, 5.7631, 6.1664, 6.5937, 7.0466, 7.5264, 8.0349, 8.5737, 9.1446, 9.7496, 10.3906, 11.0699, 11.7897, 12.5524, 13.3605, 14.2169, 15.1244]
 
 # Taper the timestep below z=0.1, expanding by a factor of 2.5
-#TimestepTaper = 2.5
-#TimestepTaperZ = 0.1
+TimestepTaper = 2.5
+TimestepTaperZ = 0.1
 
 # Lightcones currently abridged to save data volume
 LCOrigins = (0.,0.,0.)

@@ -57,8 +57,8 @@ StateIOMode = "normal"   # This uses the write, read, and past states in a way t
 CompressWriteState = 1   # =1 to compress the slabs as we write them out for a state, required for SCR
 # CheckpointStepInterval = 100    # This orders us to write out every N steps
 #
-# UseSCR = 1
-# SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0"]
+UseSCR = 1
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_CHECKPOINT_SECONDS=120"]
 # This is the list of arguments handed to SCR
 #     "SCR_COPY_TYPE=XOR" -- turns on MPI-based parity across checkpoints 
 #     "SCR_PREFIX_SIZE=2" -- this would allow only this number on disk
@@ -71,6 +71,7 @@ CompressWriteState = 1   # =1 to compress the slabs as we write them out for a s
 # SCR_FLUSH_ASYNC=1 — makes those flushes asynchronous so they overlap with continued compute instead of blocking (default 0 = synchronous).
 # SCR_FLUSH_TYPE=PTHREAD — uses a background pthread as the async transfer engine (default SYNC. other options are BBAPI/DATAWARP for specific burst-buffer hardware).
 # SCR_PREFIX_SIZE=2 — keeps a sliding window of the 2 most recent checkpoints in the PFS prefix and deletes older ones as new ones flush (default 0 = keep all. SCR_FLAG_OUTPUT datasets are never deleted).
+# SCR_CHECKPOINT_SECONDS - forces a checkpoint in the listed cadence by time
 #
 # SCR_PREFIX — the PFS directory where flushed datasets are read/written. Abacus drives this via its own SCR_Prefix parameter (default WorkingDirectory/scr).
 # SCR_CACHE_BASE / SCR_CNTL_BASE — base dirs for cached dataset files and SCR control metadata respectively, both defaulting to /dev/shm.
