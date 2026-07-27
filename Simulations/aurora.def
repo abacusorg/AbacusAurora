@@ -9,7 +9,7 @@
 # 46-48: GPU 1
 # 49-51: GPU 2
 
-
+LogVerbosity = -1
 
 # If the branch has the option to send the Manifest MPI work to the MPI Progress thread, then setting these non-zero turns that option on.
 ManifestRecvWindowGiB = 3
@@ -71,6 +71,9 @@ SCRDiskCheckpointsToKeep = 2      # minimum complete checkpoints kept on prefix
 SCRDiskCheckpointSlots   = 3      # max prefix slots (having 2 extra allows write‖delete overlap.  1 means delete, then write)
 SCRCacheStashDir = "/dev/shm/$USER$/stash"    # Turns on not unlinking /dev/shm, reusing instead.  Recommended.
 
+# CheckpointStepInterval = 100    # This orders us to write out every N steps.  This works for SCR too, but using SCR_Checkpoint_Seconds is better.
+SCR_Checkpoint_Seconds = 2700
+
 
 # SCR options:
 # SCR_COPY_TYPE=XOR — sets the cache redundancy scheme to XOR parity, which stores one parity file per redundancy set and can reconstruct the files of any single failed node in that set (this is already SCRs default).  SINGLE would be no redundacy. PARTNER is RAID-1. RS is RAID-6.
@@ -113,11 +116,18 @@ TaylorDirectory = @WorkingDirectory@ + "/taylor"
 BackupDirectory = @OutputDirectory@
 BuildDirectory = "$ABACUS_BUILD$"
 GroupDirectory = @OutputDirectory@ + "/group"
+<<<<<<< HEAD
 #InitialConditionsDirectory = @OutputDirectory@ + "/ic"    # Old
 InitialConditionsDirectory = "/dev/shm/$USER$/zeldovich-MPI/"
+=======
+InitialConditionsDirectory = "/dev/shm/$USER$/" + @SimName@ + "/ic"
+>>>>>>> a5e8f378afd1d94dbcfbf7b69489dd7988a7678b
 LCDirectory =  @OutputDirectory@ + "/lightcone"
 LogDirectory = @OutputDirectory@ + "/log"
 TracersDirectory = @OutputDirectory@ + "/tracers"
+
+LocalWorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@ +"/work/rank"     # Where states get written.  Big!!
+
 
 # DerivativesSourceDirectory = "/flare/Abacus/Derivatives"
 DerivativesDirectory = "/flare/Abacus/Derivatives"

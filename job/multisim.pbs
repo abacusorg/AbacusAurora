@@ -24,9 +24,13 @@ source "$HASHRUN_SPEC/jobspec.sh"
 out=$abacus_prod/job/out/${PBS_JOBID%%.*}
 mkdir -p "$out"
 cd "$out"
-cp -a "$HASHRUN_SPEC/." .          # jobspec + par2list (PBS job inputs)
+cp -a "$HASHRUN_SPEC/." .          # jobspec + par2list + env_overrides.sh (PBS job inputs)
 
 . "$abacus_env"
+
+# hashrun's -E overrides live in their own file, sourced here (after env.sh) so they
+# win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
+source "$HASHRUN_SPEC/env_overrides.sh"
 
 # --- Halt controls -----------------------------------------------------------
 # Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two
