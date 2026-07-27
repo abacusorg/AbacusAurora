@@ -56,9 +56,12 @@ StateIOMode = "normal"   # This uses the write, read, and past states in a way t
 
 CompressWriteState = 1   # =1 to compress the slabs as we write them out for a state, required for SCR
 # CheckpointStepInterval = 100    # This orders us to write out every N steps.  This works for SCR too, but using SCR_CHECKPOINT_SECONDS is better.
+SCR_Checkpoint_Seconds = 2700    # If non-zero, this overrides the option in the ConfigLines.  Forces a checkpoint this often
 
 UseSCR = 1
-SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_CHECKPOINT_SECONDS=2700"]
+SCR_Core = 41   # this core number is relative to the main thread.  Trying to put it with the IO and MPI threads.
+
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_COPY_METADATA=0"]
 # This is the list of arguments handed to SCR
 #     "SCR_COPY_TYPE=XOR" -- turns on MPI-based parity across checkpoints 
 #     "SCR_PREFIX_SIZE=2" -- this would allow only this number on disk
@@ -75,6 +78,7 @@ SCRCacheStashDir = "/dev/shm/$USER$/stash"    # Turns on not unlinking /dev/shm,
 # SCR_FLUSH=2 — persists every 2nd checkpoint from cache to the PFS prefix (default 10). the ones in between live only in cache.
 # SCR_FLUSH_ASYNC=1 — makes those flushes asynchronous so they overlap with continued compute instead of blocking (default 0 = synchronous).
 # SCR_FLUSH_TYPE=PTHREAD — uses a background pthread as the async transfer engine (default SYNC. other options are BBAPI/DATAWARP for specific burst-buffer hardware).
+# SCR_COPY_METADATA=0 - this skips updating the on-disk files with the owner & creation time from /dev/shm.  Appears to save 10-15 seconds per checkpoint.
 # SCR_PREFIX_SIZE=2 — keeps a sliding window of the 2 most recent checkpoints in the PFS prefix and deletes older ones as new ones flush (default 0 = keep all. SCR_FLAG_OUTPUT datasets are never deleted).
 # SCR_CHECKPOINT_SECONDS - forces a checkpoint in the listed cadence by time
 #
