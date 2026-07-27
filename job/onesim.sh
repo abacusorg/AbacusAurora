@@ -13,8 +13,10 @@
 #
 # This sim's node slice is handed to the par2 via $ABACUS_MPIRUN_ARGS (--hostfile <slice>)
 # and $NNODES; the site def's mpirun_cmd splices in $ABACUS_MPIRUN_ARGS and uses $NNODES
-# for -np. Recomputed each attempt, so a future step can blacklist bad nodes /
-# splice in spares from hostfile_extra by rewriting this sim's hostfile between restarts.
+# for -np. We APPEND --hostfile to any inherited $ABACUS_MPIRUN_ARGS (e.g. from
+# `-E ABACUS_MPIRUN_ARGS=--no-vni`) rather than overwriting it. Recomputed each attempt,
+# so a future step can blacklist bad nodes / splice in spares from hostfile_extra by
+# rewriting this sim's hostfile between restarts.
 
 set -uo pipefail   # NB: not -e; the retry loop handles abacus.run's failures itself
 
@@ -52,14 +54,18 @@ fi
 attempt=0
 consec_fail=0
 
+# Capture so that the loop doesn't keep appending
+abacus_mpirun_args_base=${ABACUS_MPIRUN_ARGS:-}
+
 while true; do
     attempt=$((attempt+1))
 
-    # Hand this sim's node slice to the par2 via the environment; the site def's
-    # mpirun_cmd splices in $ABACUS_MPIRUN_ARGS$ and uses $NNODES$ for -np. Recomputed per
-    # attempt (the hostfile may shrink/change between restarts).
+    # Hand this sim's node slice to the par2 via the environment: append --hostfile to
+    # the inherited base ($abacus_mpirun_args_base); the site def's mpirun_cmd splices in
+    # $ABACUS_MPIRUN_ARGS$ and uses $NNODES$ for -np. Recomputed per attempt (the
+    # hostfile may shrink/change between restarts).
     nnodes=$(( $(wc -l < "$hostfile") ))   # arithmetic strips any wc padding
-    export ABACUS_MPIRUN_ARGS="--hostfile $hostfile" NNODES="$nnodes"
+    export ABACUS_MPIRUN_ARGS="${abacus_mpirun_args_base:+$abacus_mpirun_args_base }--hostfile $hostfile" NNODES="$nnodes"
 
     echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
     t0=$SECONDS
