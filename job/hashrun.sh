@@ -9,7 +9,7 @@
 # recorded hash truly matches the job content. Put throwaway/dirty inputs under
 # untracked/. Code builds are cached in $ABACUS_STORE_ROOT (default ~/abacus-store).
 #
-# Usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
+# Usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... [-E KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
 #   <code-ref>   git ref in the code repo; resolved & built
 #   <par2-list>  file with one par2 path per line (relative to this prod repo's root;
 #                blank lines and #-comments ignored) — one sim per line
@@ -18,6 +18,7 @@
 #                nps x #par2 becomes a spare pool for node blacklist/replace
 #   -t HH:MM     wall-time budget as HH:MM; sets both -l walltime and PBS_MINUTES
 #   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
+#   -E KEY=VAL   set an environment variable in the job (repeatable)
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime — those are derived).
 #
@@ -34,7 +35,7 @@ die() { echo "error: $*" >&2; exit 1; }
 
 usage() {
     cat <<'EOF'
-usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
+usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... [-E KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
   <code-ref>   git ref in the abacus code repo; resolved & built (cached by hash)
   <par2-list>  file with one par2 path per line, relative to this prod repo's root
                (blank lines and #-comments ignored); one sim per line
@@ -42,16 +43,17 @@ usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... <code-ref> <par2-
   -n TOTAL     total nodes (--nodes; default nps x #par2); surplus becomes a spare pool
   -t HH:MM     wall-time budget as HH:MM (--time); sets both -l walltime and PBS_MINUTES
   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
+  -E KEY=VAL   set an environment variable in the job (repeatable)
   other flags pass through to qsub, e.g. -q prod. Do NOT pass select/walltime (derived).
 EOF
 }
 
 # Parse the CLI. The two bare args are <code-ref> <par2-list>; our flags may appear
 # before them; the first unrecognized flag switches to qsub pass-through.
-# Sets: code_ref par2list nps nodes twall overrides[] qsub_args[]
+# Sets: code_ref par2list nps nodes twall overrides[] env_overrides[] qsub_args[]
 parse_args() {
     nps="" nodes="" twall=""
-    overrides=() qsub_args=()
+    overrides=() env_overrides=() qsub_args=()
     local positionals=() qsub=0
     while (( $# )); do
         if (( qsub )); then qsub_args+=("$1"); shift; continue; fi
@@ -64,6 +66,8 @@ parse_args() {
             -t=*|--time=*)            twall=${1#*=}; shift ;;
             -P|--param)               overrides+=("$2"); shift 2 ;;
             -P*)                      overrides+=("${1#-P}"); shift ;;
+            -E|--env)                 env_overrides+=("$2"); shift 2 ;;
+            -E*)                      env_overrides+=("${1#-E}"); shift ;;
             -h|--help)                usage; exit 0 ;;
             --)                       shift; qsub=1 ;;
             -*)                       qsub=1 ;;   # first qsub flag: it and the rest pass through
@@ -76,6 +80,10 @@ parse_args() {
     [[ ${nps} =~ ^[1-9][0-9]*$ ]]           || die "-nps/--nodes-per-sim is required and must be a positive integer (got '${nps}')"
     [[ -z ${nodes} || ${nodes} =~ ^[1-9][0-9]*$ ]] || die "-n/--nodes must be a positive integer (got '${nodes}')"
     [[ ${twall} =~ ^[0-9]+:[0-5][0-9]$ ]] || die "-t/--time is required and must be HH:MM (got '${twall}')"
+    local e
+    for e in ${env_overrides[@]+"${env_overrides[@]}"}; do
+        [[ $e =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || die "-E/--env must be KEY=VALUE with a valid identifier key (got '$e')"
+    done
 }
 
 # Read $par2list into par2s[] (one path per line; blank lines and #-comments ignored).
@@ -135,17 +143,24 @@ build_code() {
 # spec ($spec/jobspec.sh) that multisim.pbs sources.
 stage_spec() {
     spec=$(mktemp -d "$store_root/submit.XXXXXX")
+    local p o e
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
-    local p o
+
+    # -E overrides go in their own file
+    {
+        echo "# hashrun.sh -E environment overrides"
+        for e in ${env_overrides[@]+"${env_overrides[@]}"}; do printf 'export %q\n' "$e"; done
+    } > "$spec/env_overrides.sh"
+
     bash -lc '
         set -e
-        checkout=$1 env_script=$2 prod=$3; shift 3
-        cd "$checkout"; . "./$env_script"
+        checkout=$1 env_script=$2 prod=$3 env_file=$4; shift 4
+        cd "$checkout"; . "./$env_script"; . "$env_file"
         for par2; do
             echo "Parsing $par2 ..."
             python -m abacus.param "$prod/$par2" -o /dev/null
         done
-    ' hashrun "$checkout" "$env_script" "$prod" "${par2s[@]}"
+    ' hashrun "$checkout" "$env_script" "$prod" "$spec/env_overrides.sh" "${par2s[@]}"
     {
         echo "# hashrun.sh $(date -Is)"
         printf 'abacus_env=%q\n'    "$checkout/$env_script"
