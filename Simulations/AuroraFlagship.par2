@@ -1,0 +1,164 @@
+# These are the parameters for flagship simulation.
+# These should run on 8118 nodes.
+# Don't forget the cosm.def file and a ZD_Seed
+
+### TODO: 
+# Do we really want z=0.5 Healpix for the 56 bonus spheres?  Will IA actually be used at these low redshifts?
+# Do we want Healpix to z=4 or only z=2 in the edge & face cases?
+
+#include "aurora.def"
+#include "core.def"
+
+BoxSize = 10000.
+NP = 36864**3
+CPD = 8019
+NumZranks = 99
+#  We plan to invoke on 8118 nodes to make 164*99 ranks.  That gives 48.9 slabs on average, so most ranks have 49.  And 8019/99 = 81 cells in each Z column.
+
+# The usual set of timeslices:
+TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
+TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
+
+# Lightcones: There are 65 light cones.
+# The zeroth is an fully sampled octant from the center to z=7.
+# All the rest are full-sky:
+# The first is from the corner to z=7, 4.3 Gpc/h from the center, 5 Gpc/h from its replicas.
+# The second is from the center to z=7, 5 Gpc/h from its replicas.
+# 3-5 are from the edge-centers: P8 to z=2, P64 to z=4, HP to z=4.  3.5 Gpc/h from the center.  2.5 Gpc/h from the corner.
+# 6-8 are from the face-centers: P8 to z=1.1, P64 to z=4, HP to z=2.  2.5 Gpc/h from the center and from the edge.
+# So use 1-2 to get 4.3 Gpc/h separations; 2-5 to get 3.5 Gpc/h separations; 1-8 to get 2.5 Gpc/h separations.
+# 9-64 are from all of the remaining quarter-spaced points, P64 to z=0.5, HP to z=0.5.  1-64 will get 1.25 Gpc/h separations.
+LCBoxRepeats = 1    
+LCOrigins = [ \
+    0.,     0.,     0., \
+ 5000.,  5000.,  5000., \
+    0.,     0.,     0., \
+    0.,  5000.,  5000., \
+ 5000.,     0.,  5000., \
+ 5000.,  5000.,     0., \
+ 5000.,     0.,     0., \
+    0.,  5000.,     0., \
+    0.,     0.,  5000., \
+\
+-2500., -2500., -2500., \
+-2500., -2500.,     0., \
+-2500., -2500.,  2500., \
+-2500., -2500.,  5000., \
+-2500.,     0., -2500., \
+-2500.,     0.,     0., \
+-2500.,     0.,  2500., \
+-2500.,     0.,  5000., \
+-2500.,  2500., -2500., \
+-2500.,  2500.,     0., \
+-2500.,  2500.,  2500., \
+-2500.,  2500.,  5000., \
+-2500.,  5000., -2500., \
+-2500.,  5000.,     0., \
+-2500.,  5000.,  2500., \
+-2500.,  5000.,  5000., \
+\
+    0., -2500., -2500., \
+    0., -2500.,     0., \
+    0., -2500.,  2500., \
+    0., -2500.,  5000., \
+    0.,     0., -2500., \
+    0.,     0.,  2500., \
+    0.,  2500., -2500., \
+    0.,  2500.,     0., \
+    0.,  2500.,  2500., \
+    0.,  2500.,  5000., \
+    0.,  5000., -2500., \
+    0.,  5000.,  2500., \
+\
+ 2500., -2500., -2500., \
+ 2500., -2500.,     0., \
+ 2500., -2500.,  2500., \
+ 2500., -2500.,  5000., \
+ 2500.,     0., -2500., \
+ 2500.,     0.,     0., \
+ 2500.,     0.,  2500., \
+ 2500.,     0.,  5000., \
+ 2500.,  2500., -2500., \
+ 2500.,  2500.,     0., \
+ 2500.,  2500.,  2500., \
+ 2500.,  2500.,  5000., \
+ 2500.,  5000., -2500., \
+ 2500.,  5000.,     0., \
+ 2500.,  5000.,  2500., \
+ 2500.,  5000.,  5000., \
+\
+ 5000., -2500., -2500., \
+ 5000., -2500.,     0., \
+ 5000., -2500.,  2500., \
+ 5000., -2500.,  5000., \
+ 5000.,     0., -2500., \
+ 5000.,     0.,  2500., \
+ 5000.,  2500., -2500., \
+ 5000.,  2500.,     0., \
+ 5000.,  2500.,  2500., \
+ 5000.,  2500.,  5000., \
+ 5000.,  5000., -2500., \
+ 5000.,  5000.,  2500.  ]
+
+LCIsOctant = [1, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, \
+0, 0, 0, 0, 0, 0, 0, 0  \
+]
+
+LCZMax1 = [ 7.0, \
+7.0, 7.0, \
+2.0, 2.0, 2.0, \
+1.1, 1.1, 1.1, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
+
+LCSamplerInner = [ "all", \
+"subP8", "subP8", \
+"subP8", "subP8", "subP8", \
+"subP8", "subP8", "subP8", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", \
+"subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64", "subP64" ]
+
+LCZMax2 = [ 7.0, \
+7.0, 7.0, \
+4.0, 4.0, 4.0, \
+4.0, 4.0, 4.0, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
+
+LCSamplerOuter = ["subP64"]
+
+LCDoHealpix = [1]
+LCHealpixZMax = [ 7.0, \
+7.0, 7.0, \
+4.0, 4.0, 4.0, \
+2.0, 2.0, 2.0, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, \
+0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
+
