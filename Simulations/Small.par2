@@ -1,5 +1,10 @@
 # This is the template for a test box that should fit well on 2 nodes.
 
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.par2"
+
 # Custom parameters
 BoxSize = 488      # Matches the flagship mass exactly
 NP = 1800**3
@@ -7,10 +12,5 @@ CPD = 405
 ZD_Seed = 12357  
 NumZRanks = 2
 LogVerbosity = -1
-
-## includes
-#include "./$ABACUS_SITE$.def"
-#include "../Cosmologies/abacus_cosm000/cosm.def"
-#include "./base.par2"
 
 LCOrigins = None   # Don't output lightcones

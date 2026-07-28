@@ -12,8 +12,6 @@
 # And then one must #include a cosm.def file and the site file.
 
 
-# IMPORTANT: Daniel would like to remove this file in favor of core.par
-
 StepTimeout = 900    # The heartbeat time limit on a step.  This doesn't limit MapLog write-out times.
 
 SofteningLength = @BoxSize@/@NP@**(1/3)/40  # ell/40, Plummer-equivalent
@@ -32,16 +30,16 @@ MapLogRedshifts = [0.0000, 0.0596, 0.1000, 0.1228, 0.1898, 0.2607, 0.3000, 0.335
 TimestepTaper = 2.5
 TimestepTaperZ = 0.1
 
-# Lightcones currently abridged to save data volume
+# Lightcones baseline for testing
 LCOrigins = (0.,0.,0.)
 LCIsOctant = [1]
-LCZMax1 = [1.0]
-LCZMax2 = [2.0]
+LCZMax1 = [2.0]
+LCZMax2 = [4.0]
 LCBoxRepeats = 4
 LCSamplerInner = ["subP8"]
 LCSamplerOuter = ["subP64"]
 LCDoHealpix = [1]
-LCHealpixZMax = [1.0]
+LCHealpixZMax = [2.0]
 
 # KDE Parameters
 DM_DensityKernelRadius_cMpc = 0.25    # Mpc/h
