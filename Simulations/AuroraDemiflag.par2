@@ -21,8 +21,8 @@ TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "s
 # Lightcones: There are 9 light cones.
 # The zeroth is an fully sampled octant from the center to z=7.
 # All the rest are full-sky:
-# The first is from the center to z=7, 2.5 Gpc/h from its replicas.
-# The second is from the corner, P8 to z=2, P64 to z=4, HP to z=4.  2.2 Gpc/h from the center.
+# The first is from the center to z=7, HP to z=4, 2.5 Gpc/h from its replicas.
+# The second is from the corner, P8 to z=2, P64 to z=4, HP to z=2.  2.2 Gpc/h from the center.
 # 3-8 are at the remaining 2.5 Gpc/h spaced points.  P64 to z=0.5, HP to z=0.5
 
 LCBoxRepeats = 2    
@@ -58,7 +58,7 @@ LCZMax2 = [ 7.0, \
 LCSamplerOuter = ["subP64"]
 
 LCDoHealpix = [1]
-LCHealpixZMax = [ 7.0, \
-7.0, 4.0, \
+LCHealpixZMax = [ 0.0, \
+4.0, 2.0, \
 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
 
