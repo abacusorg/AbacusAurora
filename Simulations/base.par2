@@ -30,7 +30,7 @@ MapLogRedshifts = [0.0000, 0.0596, 0.1000, 0.1228, 0.1898, 0.2607, 0.3000, 0.335
 TimestepTaper = 2.5
 TimestepTaperZ = 0.1
 
-# Lightcones currently abridged to save data volume
+# Lightcones baseline for testing
 LCOrigins = (0.,0.,0.)
 LCIsOctant = [1]
 LCZMax1 = [2.0]

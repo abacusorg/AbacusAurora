@@ -2,6 +2,8 @@
 # These should run on 15 nodes in a 6x5 domain
 # Don't forget the cosm.def file and a ZD_Seed
 
+# TODO: Do we need the healpix output for the full-sky low-z case?
+
 #include "aurora.def"
 #include "base.def"
 
@@ -12,13 +14,16 @@ NumZranks = 5
 
 ZD_Seed = 243    # This will be the most common phase
 
-# Lightcones currently abridged to save data volume
-LCOrigins = (0.,0.,0.)
-LCIsOctant = [1]
-LCZMax1 = [2.0]
-LCZMax2 = [4.0]
-LCBoxRepeats = 3    
+# This version has two lightcones.
+# The first is an octant to z=4, with denser coverage to z=2.
+# The second is a fullsky to z=0.5, with sparse coverage.
+
+LCOrigins = (0.,0.,0., 0., 0., 0.)
+LCIsOctant = [1, 0]
+LCZMax1 = [2.0, 0.]
+LCZMax2 = [4.0, 0.5]
+LCBoxRepeats = 4    
 LCSamplerInner = ["subP8"] 
 LCSamplerOuter = ["subP64"]
 LCDoHealpix = [1]
-LCHealpixZMax = [2.0]
+LCHealpixZMax = [2.0, 0.5]
