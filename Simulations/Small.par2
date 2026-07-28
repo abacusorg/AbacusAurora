@@ -3,7 +3,7 @@
 ## includes
 #include "./$ABACUS_SITE$.def"
 #include "../Cosmologies/abacus_cosm000/cosm.def"
-#include "./base.par2"
+#include "./base.def"
 
 # Custom parameters
 BoxSize = 488      # Matches the flagship mass exactly
