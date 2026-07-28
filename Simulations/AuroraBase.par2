@@ -3,15 +3,14 @@
 # Don't forget the cosm.def file and a ZD_Seed
 
 #include "aurora.def"
-#include "core.def"
+#include "base.def"
 
 BoxSize = 1215.
 NP = 4480**3
 CPD = 975
 NumZranks = 5
 
-TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
-TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
+ZD_Seed = 243    # This will be the most common phase
 
 # Lightcones currently abridged to save data volume
 LCOrigins = (0.,0.,0.)

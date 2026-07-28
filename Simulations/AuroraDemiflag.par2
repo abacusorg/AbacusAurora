@@ -6,7 +6,7 @@
 # Do we really want z=0.5 Healpix for the 56 bonus spheres?  Will IA actually be used at these low redshifts?
 
 #include "aurora.def"
-#include "core.def"
+#include "base.def"
 
 BoxSize = 5000.
 NP = 18432**3
