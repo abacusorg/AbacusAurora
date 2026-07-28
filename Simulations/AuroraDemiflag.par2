@@ -11,7 +11,7 @@
 BoxSize = 5000.
 NP = 18432**3
 CPD = 3969
-NumZranks = 49
+NumZRanks = 49
 #  We plan to invoke on 1029 nodes to make 42*49 ranks.  That gives 94.5 slabs on average.  And 3969/49 = 81 cells in each Z column.
 
 # The usual set of timeslices:

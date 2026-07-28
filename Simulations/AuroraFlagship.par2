@@ -12,7 +12,7 @@
 BoxSize = 10000.
 NP = 36864**3
 CPD = 8019
-NumZranks = 99
+NumZRanks = 99
 #  We plan to invoke on 8118 nodes to make 164*99 ranks.  That gives 48.9 slabs on average, so most ranks have 49.  And 8019/99 = 81 cells in each Z column.
 
 # The usual set of timeslices:

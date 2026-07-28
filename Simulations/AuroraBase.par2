@@ -10,7 +10,7 @@
 BoxSize = 1215.
 NP = 4480**3
 CPD = 975
-NumZranks = 5
+NumZRanks = 5
 
 ZD_Seed = 243    # This will be the most common phase
 
