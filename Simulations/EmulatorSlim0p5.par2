@@ -1,0 +1,37 @@
+# These are the parameters for our standard 1.2 Gpc/h boxes.
+# These should run on 15 nodes in a 6x5 domain
+# Don't forget the cosm.def file and a ZD_Seed
+
+# This is even Slimmer, because we're going to stop at z=0.5.
+# Only 1/64 outputs, to z=4
+# No BGS lightcone; no IA shapes.
+# Fewer timeslices
+
+#include "aurora.def"
+#include "base.def"
+
+BoxSize = 1215.
+NP = 4480**3
+CPD = 975
+NumZRanks = 5
+
+ZD_Seed = 243    # This will be the most common phase
+
+FinalRedshift = 0.50  # Only needed if finishing light cones
+
+TimeSliceRedshifts_Subsample = [0.5, 0.8, 1.1, 1.4, 2.35, 3.0]
+TimeSliceRedshifts_Samplers = [ "subP64" ]
+
+
+# This version has one lightcone.
+# The first is an octant to z=4, all P64.
+
+LCOrigins = [0.,0.,0.]
+LCIsOctant = [1]
+LCZMax1 = [2.0]
+LCZMax2 = [4.0]
+LCBoxRepeats = 4    
+LCSamplerInner = ["subP64"] 
+LCSamplerOuter = ["subP64"]
+LCDoHealpix = [0]
+LCHealpixZMax = [0.0]

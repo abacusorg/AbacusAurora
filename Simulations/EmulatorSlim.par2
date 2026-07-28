@@ -1,0 +1,35 @@
+# These are the parameters for our standard 1.2 Gpc/h boxes.
+# These should run on 15 nodes in a 6x5 domain
+# Don't forget the cosm.def file and a ZD_Seed
+
+# This is for the bulk of the Emulators, where we really need to economize on disk space.
+# No 1/8 subsamples.  No Healpix.  But we still do 1/64 to z=4, even if we may only save z<2 on disk.
+# Timeslices are only 1/64, but we're doing all 11 of them.
+
+# TODO: Do we need the healpix output for the full-sky low-z case?
+
+#include "aurora.def"
+#include "base.def"
+
+BoxSize = 1215.
+NP = 4480**3
+CPD = 975
+NumZRanks = 5
+
+ZD_Seed = 243    # This will be the most common phase
+
+TimeSliceRedshifts_Samplers = [ "subP64" ]
+
+# This version has two lightcones.
+# The first is an octant to z=4, with denser coverage to z=2.
+# The second is a fullsky to z=0.5, with sparse coverage.
+
+LCOrigins = (0.,0.,0., 0., 0., 0.)
+LCIsOctant = [1, 0]
+LCZMax1 = [2.0, 0.]
+LCZMax2 = [4.0, 0.5]
+LCBoxRepeats = 4    
+LCSamplerInner = ["subP64"] 
+LCSamplerOuter = ["subP64"]
+LCDoHealpix = [0]
+LCHealpixZMax = [0.0, 0.0]
