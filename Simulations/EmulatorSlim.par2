@@ -31,5 +31,5 @@ LCZMax2 = [4.0, 0.5]
 LCBoxRepeats = 4    
 LCSamplerInner = ["subP64", "subP64"] 
 LCSamplerOuter = ["subP64", "subP64"]
-LCDoHealpix = [0]
+LCDoHealpix = [0, 0]
 LCHealpixZMax = [0.0, 0.0]

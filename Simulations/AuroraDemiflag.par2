@@ -57,7 +57,10 @@ LCZMax2 = [ 7.0, \
 
 LCSamplerOuter = ["subP64"]
 
-LCDoHealpix = [1]
+LCDoHealpix = [1, \
+1, 1, \
+1, 1, 1, 1, 1, 1 ]
+
 LCHealpixZMax = [ 0.0, \
 4.0, 2.0, \
 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
