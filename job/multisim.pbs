@@ -9,9 +9,10 @@
 # Runs one or more Abacus sims from a hash-keyed checkout against the production
 # specs ($abacus_prod). Each sim gets an equal nodes_per_sim-node slice of the
 # allocation and runs under onesim.sh (monitor + restart). Everything is provided
-# by hashrun.sh, which stages the job inputs (jobspec + par2 list + env overrides)
-# into the prod repo's git-ignored out/<jobid>/ and routes PBS's stdout/stderr
-# there too; per-sim provenance goes to each OutputDirectory/provenance/.
+# by hashrun.sh, which stages the job inputs (jobspec + par2 list + env overrides
+# + its own command line) into the prod repo's git-ignored out/<jobid>/ and routes
+# PBS's stdout/stderr there too; per-sim provenance goes to each
+# OutputDirectory/provenance/.
 
 set -euo pipefail
 

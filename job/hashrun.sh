@@ -145,8 +145,18 @@ build_code() {
 stage_spec() {
     spec=$(mktemp -d -t hashrun.XXXXXX)
     trap 'rm -rf "$spec"' EXIT
-    local p o e
+    local p o e a
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
+
+    # The invocation, re-runnable as a script. Its paths are relative to the
+    # invoking directory, so that is recorded too.
+    {
+        printf '#!/bin/bash\n# hashrun.sh invocation, %s\n' "$(date -Is)"
+        printf '# cwd: %q\n' "$PWD"
+        printf '%q' "${argv[0]}"
+        for a in "${argv[@]:1}"; do printf ' %q' "$a"; done
+        printf '\n'
+    } > "$spec/cmdline"
 
     # -E overrides go in their own file
     {
@@ -208,6 +218,7 @@ submit() {
     echo "outputs -> $out/"
 }
 
+argv=("$0" "$@")     # recorded verbatim into out/<jobid>/cmdline
 parse_args "$@"
 read_par2_list
 check_prod
