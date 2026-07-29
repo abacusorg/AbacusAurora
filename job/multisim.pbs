@@ -9,28 +9,25 @@
 # Runs one or more Abacus sims from a hash-keyed checkout against the production
 # specs ($abacus_prod). Each sim gets an equal nodes_per_sim-node slice of the
 # allocation and runs under onesim.sh (monitor + restart). Everything is provided
-# by hashrun.sh via the job-spec file $HASHRUN_SPEC. PBS job inputs + streams go
-# to out/<jobid>/; per-sim provenance goes to each OutputDirectory/provenance/.
+# by hashrun.sh, which stages the job inputs (jobspec + par2 list + env overrides)
+# into the prod repo's git-ignored out/<jobid>/ and routes PBS's stdout/stderr
+# there too; per-sim provenance goes to each OutputDirectory/provenance/.
 
 set -euo pipefail
 
-: "${HASHRUN_SPEC:?not set — submit via hashrun.sh}"
+: "${HASHRUN_PROD:?not set — submit via hashrun.sh}"
 : "${PBS_MINUTES:?not set — submit via hashrun.sh (sets it from -t)}"
-source "$HASHRUN_SPEC/jobspec.sh"
 
-# PBS job inputs and streams live in the prod repo's git-ignored out/<jobid>/.
-# hashrun.sh points PBS's stdout/stderr here via qalter; the staged inputs
-# (jobspec + par2 list) are copied in below.
-out=$abacus_prod/job/out/${PBS_JOBID%%.*}
-mkdir -p "$out"
+out=$HASHRUN_PROD/job/out/${PBS_JOBID%%.*}
 cd "$out"
-cp -a "$HASHRUN_SPEC/." .          # jobspec + par2list + env_overrides.sh (PBS job inputs)
+export HASHRUN_OUT="$out"          # onesim.sh copies the jobspec from here
+source "$out/jobspec.sh"
 
 . "$abacus_env"
 
 # hashrun's -E overrides live in their own file, sourced here (after env.sh) so they
 # win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
-source "$HASHRUN_SPEC/env_overrides.sh"
+source "$out/env_overrides.sh"
 
 # --- Halt controls -----------------------------------------------------------
 # Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two

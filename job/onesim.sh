@@ -46,7 +46,7 @@ if [[ -n $outdir ]]; then
     mkdir -p "$prov"
     env | sort > "$prov/env.txt"
     module list > "$prov/modules.txt" 2>&1 || true
-    [[ -n ${HASHRUN_SPEC:-} ]] && cp "$HASHRUN_SPEC/jobspec.sh" "$prov/jobspec.sh"
+    [[ -n ${HASHRUN_OUT:-} ]] && cp "$HASHRUN_OUT/jobspec.sh" "$prov/jobspec.sh"
 else
     echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
