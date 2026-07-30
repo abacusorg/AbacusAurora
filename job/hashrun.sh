@@ -140,11 +140,23 @@ build_code() {
 }
 
 # Parse every par2 now (throwaway) so we fail before queuing, then write the job
-# spec ($spec/jobspec.sh) that multisim.pbs sources.
+# spec ($spec/jobspec.sh) that multisim.pbs sources. $spec is scratch: submit()
+# moves its contents into out/<jobid>/ once the job id exists.
 stage_spec() {
-    spec=$(mktemp -d "$store_root/submit.XXXXXX")
-    local p o e
+    spec=$(mktemp -d -t hashrun.XXXXXX)
+    trap 'rm -rf "$spec"' EXIT
+    local p o e a
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
+
+    # The invocation, re-runnable as a script. Its paths are relative to the
+    # invoking directory, so that is recorded too.
+    {
+        printf '#!/bin/bash\n# hashrun.sh invocation, %s\n' "$(date -Is)"
+        printf '# cwd: %q\n' "$PWD"
+        printf '%q' "${argv[0]}"
+        for a in "${argv[@]:1}"; do printf ' %q' "$a"; done
+        printf '\n'
+    } > "$spec/cmdline"
 
     # -E overrides go in their own file
     {
@@ -175,8 +187,8 @@ stage_spec() {
 }
 
 # Derive the node request (-nps x #sims, or -n; surplus = spare pool) and walltime
-# (from -t, also PBS_MINUTES), then submit held, route stdout/stderr into
-# out/<jobid>/ via qalter, and release.
+# (from -t, also PBS_MINUTES), then submit held so that out/<jobid>/ can be
+# populated (staged spec + qalter'd stdout/stderr) before releasing.
 submit() {
     local nsims=${#par2s[@]}
     local min_nodes=$(( nps * nsims ))
@@ -186,7 +198,9 @@ submit() {
 
     local hh=${twall%:*} mm=${twall#*:}
     local walltime="${twall}:00"        # PBS HH:MM:SS form
-    local vlist="HASHRUN_SPEC=$spec,PBS_MINUTES=$(( 10#$hh * 60 + 10#$mm ))"
+    # The job locates its own out/<jobid>/ (and thus the spec) from the prod repo
+    # path plus $PBS_JOBID; only the path has to be passed in.
+    local vlist="HASHRUN_PROD=$prod,PBS_MINUTES=$(( 10#$hh * 60 + 10#$mm ))"
 
     echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($(( total_nodes - min_nodes )) spare), walltime=$walltime"
     local jobid
@@ -194,6 +208,8 @@ submit() {
                  ${qsub_args[@]+"${qsub_args[@]}"} "$prod/job/multisim.pbs")
     local out=$prod/job/out/${jobid%%.*}
     mkdir -p "$out"
+    mv "$spec"/* "$out"/ \
+        || { echo "error: staging into $out failed; deleting held job $jobid" >&2; qdel "$jobid"; exit 1; }
     qalter -A Abacus -o "$out/stdout" -e "$out/stderr" "$jobid" \
         || { echo "error: qalter failed; deleting held job $jobid" >&2; qdel "$jobid"; exit 1; }
     qrls "$jobid" \
@@ -202,6 +218,7 @@ submit() {
     echo "outputs -> $out/"
 }
 
+argv=("$0" "$@")     # recorded verbatim into out/<jobid>/cmdline
 parse_args "$@"
 read_par2_list
 check_prod
