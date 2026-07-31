@@ -119,7 +119,7 @@ BuildDirectory = "$ABACUS_BUILD$"
 GroupDirectory = @OutputDirectory@ + "/group"
 InitialConditionsDirectory = "/dev/shm/$USER$/zeldovich-MPI/"
 LCDirectory =  @OutputDirectory@ + "/lightcone"
-LogDirectory = @WorkingDirectory@ + "/" + @SimName@ + "/log"
+LogDirectory = @WorkingDirectory@ + "/log"
 TracersDirectory = @OutputDirectory@ + "/tracers"
 
 
