@@ -48,20 +48,20 @@ checks the containers are present; `multisim.pbs` mounts them on every node and 
 Abacus's storage roots at them. Containers are created and destroyed by hand — the job
 scripts never do it. Which directories go where:
 
-| | root | container |
-|---|---|---|
-| outputs — slices, groups, lightcones, tracers | `$ABACUS_OUTPUT_ROOT` | `Outputs` |
-| the state and the SCR prefix | `$ABACUS_CHECKPOINT_ROOT` | `Checkpoints` |
-| logs, derivatives, wisdom | always flare | — |
+| | root | container | with `--daos` |
+|---|---|---|---|
+| the state and the SCR prefix | `$ABACUS_CHECKPOINT_ROOT` | `Checkpoints` | DAOS |
+| outputs — slices, groups, lightcones, tracers | `$ABACUS_OUTPUT_ROOT` | `Outputs` | flare, unless `ABACUS_DAOS_OUTPUTS=on` |
+| logs, derivatives, wisdom | always flare | — | flare |
 
 The DAOS mount point is `/tmp/<pool>/<container>/`, with outputs going to the subdirectory `$USER/<SimName>/`.
 
-To turn DAOS on, and to narrow or disable it again:
+To turn DAOS on, to widen it to the outputs, and to force it off again:
 
 ```
-./hashrun.sh --daos ...           # this job only
+./hashrun.sh --daos ...           # this job only: checkpoints on DAOS
 export ABACUS_DAOS=on             # every submission from this shell
-export ABACUS_DAOS_OUTPUTS=off    # just the outputs; state and checkpoints stay on DAOS
+export ABACUS_DAOS_OUTPUTS=on     # widen to the outputs as well
 ./hashrun.sh --no-daos ...        # force off, whatever the default is
 ```
 

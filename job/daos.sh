@@ -10,7 +10,7 @@
 #
 # Switches, all honouring on/off (and 0/no/false):
 #   ABACUS_DAOS=on           use DAOS at all (also hashrun.sh --daos / --no-daos)
-#   ABACUS_DAOS_OUTPUTS=off  send just the outputs back to flare
+#   ABACUS_DAOS_OUTPUTS=on   put the outputs on DAOS too, not just the checkpoints
 #   ABACUS_DAOS_PRELOAD=off  don't LD_PRELOAD the interception library
 
 DAOS_POOL=${ABACUS_DAOS_POOL:-AbacusAurora_v1}
@@ -42,7 +42,7 @@ daos_resolve() {
 
     daos_conts+=("$DAOS_CONT_CHECKPOINTS")
     ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
-    if _is_on "${ABACUS_DAOS_OUTPUTS:-}"; then
+    if _is_on "${ABACUS_DAOS_OUTPUTS:-off}"; then   # the outputs-on-DAOS default
         daos_conts+=("$DAOS_CONT_OUTPUTS")
         ABACUS_OUTPUT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     fi
