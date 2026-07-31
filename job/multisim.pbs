@@ -30,6 +30,8 @@ source "$out/jobspec.sh"
 # win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
 source "$out/env_overrides.sh"
 
+source "$abacus_prod/job/daos.sh"
+
 # --- Halt controls -----------------------------------------------------------
 # Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two
 # env vars that let us stop EVERY sim in this allocation cleanly (and restartably)
@@ -41,7 +43,14 @@ source "$out/env_overrides.sh"
 HALT_DIR=/flare/Abacus/
 export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
-trap 'rm -f "$ABACUS_JOB_HALT_FILE"' EXIT
+# Same trap tears the dfuse mounts back down.
+daos_mounted=0
+cleanup() {
+    rm -f "$ABACUS_JOB_HALT_FILE"
+    if (( daos_mounted )); then daos_unmount "${daos_conts[@]}"; fi
+    return 0   # never let the trap mask the job's real exit code
+}
+trap cleanup EXIT
 
 # 2) A wall-clock deadline so the job closes out before the allocation ends.
 #    PBS won't tell us the remaining time, so derive it from PBS_MINUTES (set by
@@ -82,6 +91,31 @@ export HOSTFILE_EXTRA="$out/hostfile_extra"
 tail -n +"$(( required + 1 ))" nodes.sorted > "$HOSTFILE_EXTRA"
 echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
 echo
+
+# --- Storage -------------------------------------------------------------------
+# Where the storage roots point was decided at submit time (hashrun.sh recorded it in
+# the spec and requested the matching daos_user_fs allocation); we replay it verbatim
+# rather than re-deriving it. A mount that fails to come up is fatal rather than a
+# silent fall back to flare, which would strand this sim's checkpoints where the next
+# restart won't look.
+export ABACUS_OUTPUT_ROOT=$output_root
+export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
+if (( ${#daos_conts[@]} )); then
+    DAOS_POOL=$daos_pool
+    echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
+    daos_mount "${daos_conts[@]}" || exit 1
+    daos_mounted=1
+    mkdir -p "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
+else
+    echo "DAOS: off; all storage on flare"
+fi
+daos_mpirun_args "${#daos_conts[@]}"
+
+echo "Storage roots: output=$ABACUS_OUTPUT_ROOT"
+echo "               checkpoint=$ABACUS_CHECKPOINT_ROOT"
+echo "ABACUS_MPIRUN_ARGS=$ABACUS_MPIRUN_ARGS"
+echo
+# -------------------------------------------------------------------------------
 
 # Launch each sim on its own node slice via the per-sim monitor. A failed sim is
 # not fatal to the batch, so drop -e here and collect exit codes afterward.
