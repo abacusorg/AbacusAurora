@@ -47,7 +47,7 @@ export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 daos_mounted=0
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
-    if (( daos_mounted )); then daos_unmount "$out/nodes.sorted" "${daos_conts[@]}"; fi
+    if (( daos_mounted )); then daos_unmount "${daos_conts[@]}"; fi
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -103,7 +103,7 @@ export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
 if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
-    daos_mount "$out/nodes.sorted" "${daos_conts[@]}" || exit 1
+    daos_mount "${daos_conts[@]}" || exit 1
     daos_mounted=1
     mkdir -p "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
 else

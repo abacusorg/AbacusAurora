@@ -77,25 +77,27 @@ daos_require_containers() {
     return $rc
 }
 
-# Mount the given containers on every node in $nodefile.  launch-dfuse.sh sizes its
-# mpiexec from the line count of $PBS_NODEFILE, which repeats a node per chunk, so
-# it gets the de-duplicated list instead or -np exceeds the node count.
+# Mount the given containers across the allocation.  launch-dfuse.sh reads
+# $PBS_NODEFILE itself and needs line 1 to be the node we are running on: it mounts
+# that one by invoking dfuse locally and clushes only `tail -n +2`.  PBS puts the
+# mother superior first, so never substitute a rewritten nodefile here -- reordering
+# it (a sort, say) leaves line 1 unmounted, mounts the true head node twice ("Pool
+# specified multiple ways"), and points dbcast at a host with no handles file, so
+# every remaining node fails with DER_NONEXIST.
 daos_mount() {
-    local nodefile=$1; shift
     local specs=() cont
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    PBS_NODEFILE=$nodefile launch-dfuse.sh "${specs[@]}" || return 1
-    daos_check_mounts "$nodefile" "$@"
+    launch-dfuse.sh "${specs[@]}" || return 1
+    daos_check_mounts "$@"
 }
 
 # Confirm the mounts really landed everywhere: a partial mount would have some ranks
 # writing to the underlying /tmp instead, which looks like success until the restart.
 daos_check_mounts() {
-    local nodefile=$1; shift
     local cont mnt bad
     for cont; do
         mnt=$(daos_mountpoint "$cont")
-        bad=$(clush --hostfile="$nodefile" -f 208 -N \
+        bad=$(clush --hostfile="$PBS_NODEFILE" -f 208 -N \
                     -o '-o LogLevel=QUIET -o StrictHostKeyChecking=no' \
                     "mountpoint -q $mnt || hostname" 2>&1 | sort -u)
         if [[ -n $bad ]]; then
@@ -109,10 +111,9 @@ daos_check_mounts() {
 # clean-dfuse.sh is global (it SIGKILLs every dfuse on every node), so one call
 # covers all containers.  Best-effort: this runs from an EXIT trap.
 daos_unmount() {
-    local nodefile=$1; shift
     local specs=() cont
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    PBS_NODEFILE=$nodefile clean-dfuse.sh "${specs[@]}" >/dev/null 2>&1 || true
+    clean-dfuse.sh "${specs[@]}" >/dev/null 2>&1 || true
 }
 
 # Extend $ABACUS_MPIRUN_ARGS, which onesim.sh appends --hostfile to.  Nothing is added
