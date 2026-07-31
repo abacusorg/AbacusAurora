@@ -106,9 +106,10 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 # Conv_OMP_PROC_BIND = "close"
 # Conv_IOCores = [1]
 
-OutputDirectory = "/flare/Abacus/$USER$/" + @SimName@
-WorkingDirectory = @OutputDirectory@
-LocalWorkingDirectory = "/dev/shm/$USER$/" + @SimName@
+OutputDirectory = "$ABACUS_OUTPUT_ROOT$/" + @SimName@
+WorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@
+LocalWorkingDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work/rank"   # Where states get written.  Big!!
+SCR_Prefix = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/scr"
 
 # copied from directory.def (uses Output and Working directories)
 MultipoleDirectory = @WorkingDirectory@ + "/multipole"
@@ -118,10 +119,8 @@ BuildDirectory = "$ABACUS_BUILD$"
 GroupDirectory = @OutputDirectory@ + "/group"
 InitialConditionsDirectory = "/dev/shm/$USER$/zeldovich-MPI/"
 LCDirectory =  @OutputDirectory@ + "/lightcone"
-LogDirectory = @OutputDirectory@ + "/log"
+LogDirectory = @WorkingDirectory@ + "/" + @SimName@ + "/log"
 TracersDirectory = @OutputDirectory@ + "/tracers"
-
-LocalWorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@ +"/work/rank"     # Where states get written.  Big!!
 
 
 # DerivativesSourceDirectory = "/flare/Abacus/Derivatives"

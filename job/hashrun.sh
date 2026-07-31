@@ -19,8 +19,9 @@
 #   -t HH:MM     wall-time budget as HH:MM; sets both -l walltime and PBS_MINUTES
 #   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
 #   -E KEY=VAL   set an environment variable in the job (repeatable)
+#   --daos       put outputs and checkpoints on DAOS
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
-# qsub (but not select/walltime — those are derived).
+# qsub (but not select/walltime/filesystems — those are derived).
 #
 # Run from a login node.
 
@@ -30,6 +31,8 @@ env_script=env/aurora.sh
 code_repo=${ABACUS_REPO:-$HOME/abacus}
 store_root=${ABACUS_STORE_ROOT:-$HOME/abacus-store}
 prod=$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)
+
+source "$prod/job/daos.sh"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -44,15 +47,17 @@ usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... [-E KEY=VALUE]...
   -t HH:MM     wall-time budget as HH:MM (--time); sets both -l walltime and PBS_MINUTES
   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
   -E KEY=VAL   set an environment variable in the job (repeatable)
-  other flags pass through to qsub, e.g. -q prod. Do NOT pass select/walltime (derived).
+  --daos|--no-daos  force DAOS on/off for this job
+  other flags pass through to qsub, e.g. -q prod.
+  Do NOT pass select/walltime/filesystems (derived).
 EOF
 }
 
 # Parse the CLI. The two bare args are <code-ref> <par2-list>; our flags may appear
 # before them; the first unrecognized flag switches to qsub pass-through.
-# Sets: code_ref par2list nps nodes twall overrides[] env_overrides[] qsub_args[]
+# Sets: code_ref par2list nps nodes twall daos_opt overrides[] env_overrides[] qsub_args[]
 parse_args() {
-    nps="" nodes="" twall=""
+    nps="" nodes="" twall="" daos_opt=""
     overrides=() env_overrides=() qsub_args=()
     local positionals=() qsub=0
     while (( $# )); do
@@ -68,6 +73,8 @@ parse_args() {
             -P*)                      overrides+=("${1#-P}"); shift ;;
             -E|--env)                 env_overrides+=("$2"); shift 2 ;;
             -E*)                      env_overrides+=("${1#-E}"); shift ;;
+            --daos)                   daos_opt=on; shift ;;
+            --no-daos)                daos_opt=off; shift ;;
             -h|--help)                usage; exit 0 ;;
             --)                       shift; qsub=1 ;;
             -*)                       qsub=1 ;;   # first qsub flag: it and the rest pass through
@@ -115,6 +122,31 @@ check_prod() {
     for par2 in "${par2s[@]}"; do
         [[ -f $prod/$par2 ]] || die "par2 '$par2' (from $par2list) not found in $prod"
     done
+}
+
+# Apply the DAOS switches ($daos_conts, the storage roots, $filesystems) and check
+# the pool is up and the containers are there — creating them is a manual step, never
+# ours. Done before the build so a dead pool costs a second, not a compile. The roots
+# are exported so stage_spec's par2 parse resolves the same paths the sims will write
+# to; the job itself does not re-decide, it replays what we record in the spec.
+setup_daos() {
+    # The -E overrides reach the job's environment, so they must reach ours too, or
+    # e.g. -E ABACUS_DAOS_OUTPUTS=off would be honoured at run time but not here.
+    local e
+    for e in ${env_overrides[@]+"${env_overrides[@]}"}; do export "$e"; done
+    [[ -n $daos_opt ]] && export ABACUS_DAOS=$daos_opt   # the flag outranks -E
+
+    daos_resolve
+    if (( ${#daos_conts[@]} == 0 )); then
+        filesystems=flare
+        echo "DAOS: off; all storage on flare"
+        return
+    fi
+
+    daos_preflight || exit 1
+    daos_require_containers "${daos_conts[@]}" || exit 1
+    filesystems=flare:daos_user_fs
+    echo "DAOS: pool $DAOS_POOL, containers ${daos_conts[*]}"
 }
 
 # Resolve $code_ref in the code repo ($code_hash) and build it into a hash-keyed
@@ -181,6 +213,10 @@ stage_spec() {
         printf 'code_hash=%q\n'     "$code_hash"
         printf 'code_ref=%q\n'      "$code_ref"
         printf 'prod_hash=%q\n'     "$prod_hash"
+        printf 'daos_pool=%q\n'       "$DAOS_POOL"
+        printf 'output_root=%q\n'     "$ABACUS_OUTPUT_ROOT"
+        printf 'checkpoint_root=%q\n' "$ABACUS_CHECKPOINT_ROOT"
+        printf 'daos_conts=('; for o in ${daos_conts[@]+"${daos_conts[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
     } > "$spec/jobspec.sh"
@@ -202,9 +238,10 @@ submit() {
     # path plus $PBS_JOBID; only the path has to be passed in.
     local vlist="HASHRUN_PROD=$prod,PBS_MINUTES=$(( 10#$hh * 60 + 10#$mm ))"
 
-    echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($(( total_nodes - min_nodes )) spare), walltime=$walltime"
+    echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($(( total_nodes - min_nodes )) spare), walltime=$walltime, filesystems=$filesystems"
     local jobid
-    jobid=$(qsub -h -l "select=$total_nodes" -l "walltime=$walltime" -v "$vlist" \
+    jobid=$(qsub -h -l "select=$total_nodes" -l "walltime=$walltime" \
+                 -l "filesystems=$filesystems" -v "$vlist" \
                  ${qsub_args[@]+"${qsub_args[@]}"} "$prod/job/multisim.pbs")
     local out=$prod/job/out/${jobid%%.*}
     mkdir -p "$out"
@@ -222,6 +259,7 @@ argv=("$0" "$@")     # recorded verbatim into out/<jobid>/cmdline
 parse_args "$@"
 read_par2_list
 check_prod
+setup_daos
 build_code
 stage_spec
 submit
