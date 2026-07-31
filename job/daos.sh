@@ -27,6 +27,8 @@ _is_on() {
 }
 
 daos_mountpoint() { printf '/tmp/%s/%s\n' "$DAOS_POOL" "$1"; }
+# Login nodes are shared, so their mounts are per-user; compute nodes are not.
+daos_login_mountpoint() { printf '/tmp/%s/%s/%s\n' "$USER" "$DAOS_POOL" "$1"; }
 
 # Apply the switches: fill daos_conts[] with the containers this job needs and point
 # the storage roots at them, or at flare.  The roots are assigned unconditionally,
