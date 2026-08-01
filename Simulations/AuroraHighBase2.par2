@@ -1,5 +1,12 @@
-# Custom parameters
+# Don't forget the SimName!
 # SimName = "AuroraHighBase"
+
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.def"
+
+# Custom parameters
 BoxSize = 1000
 NP = 3456**3
 CPD = 729
@@ -7,7 +14,5 @@ ZD_Seed = 2357
 NumZRanks = 4
 LogVerbosity = -1
 
-## includes
-#include "./$ABACUS_SITE$.def"
-#include "../Cosmologies/abacus_cosm000/cosm.def"
-#include "./base.def"
+TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "all", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
+
