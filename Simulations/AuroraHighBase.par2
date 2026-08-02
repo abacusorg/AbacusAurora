@@ -1,13 +1,15 @@
-# Custom parameters
-SimName = "AuroraHighBase"
-BoxSize = 1000
-NP = 3456**3
-CPD = 729
-ZD_Seed = 2357  
-NumZRanks = 4
-LogVerbosity = -1
+# This is only a template file; you should give your own SimName, then include this file.
+# SimName = "AuroraHighBase"
 
 ## includes
 #include "./$ABACUS_SITE$.def"
 #include "../Cosmologies/abacus_cosm000/cosm.def"
 #include "./base.def"
+
+# Custom parameters
+BoxSize = 1000
+NP = 3456**3
+CPD = 729
+ZD_Seed = 22321   # This is the seed from AbacusSummit
+NumZRanks = 4
+LogVerbosity = -1
