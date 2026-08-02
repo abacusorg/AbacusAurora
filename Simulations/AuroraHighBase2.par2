@@ -10,7 +10,7 @@
 BoxSize = 1000
 NP = 3456**3
 CPD = 729
-ZD_Seed = 2357  
+ZD_Seed = 22321   # This is the Abacus Summit seed
 NumZRanks = 4
 LogVerbosity = -1
 
@@ -27,7 +27,7 @@ TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "all", "sub
 Map_bform_ips=0.15
 Map_baccrete_ips=0.14
 Map_bmerge_proper=0.0155 #Mpc/h    # We want this to be at least 2x SofteningLength
-Map_bmerge_max_ips= @SofteningMax@*@Map_bmerge_proper@/@SofteningLength@   # Scale the same as softening
+Map_bmerge_max_ips= @SofteningMax@*@Map_bmerge_proper@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
 Map_Aform=0.63
 Map_Aaccrete=1.9
 Map_Amerge=61.
