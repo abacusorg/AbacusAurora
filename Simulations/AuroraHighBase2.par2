@@ -1,0 +1,39 @@
+# Don't forget the SimName!
+# SimName = "AuroraHighBase"
+
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.def"
+
+# Custom parameters
+BoxSize = 1000
+NP = 3456**3
+CPD = 729
+ZD_Seed = 2357  
+NumZRanks = 4
+LogVerbosity = -1
+
+SofteningLength = @BoxSize@/@NP@**(1/3)/40  # ell/40, Plummer-equivalent
+SofteningMax = 0.15*@BoxSize@/@NP@**(1/3.)
+
+FinalRedshift = 0.25  # Only needed if finishing light cones
+
+TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 4.0, 6.0, 8.0]
+
+
+TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "all", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64", "subP64" ]
+
+Map_bform_ips=0.15
+Map_baccrete_ips=0.14
+Map_bmerge_proper=0.0155 #Mpc/h    # We want this to be at least 2x SofteningLength
+Map_bmerge_max_ips= @SofteningMax@*@Map_bmerge_proper@/@SofteningLength@   # Scale the same as softening
+Map_Aform=0.63
+Map_Aaccrete=1.9
+Map_Amerge=61.
+Map_MinMultiplicity=20
+Map_GroupDiameter = -1
+Map_GroupEligibilityThreshold=200
+Map_LagrangianFormationLimit=1
+
+
