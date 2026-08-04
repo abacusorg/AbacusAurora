@@ -37,10 +37,14 @@ if [[ ! -r "$hostfile" ]]; then
     exit 2
 fi
 
-# Record this sim's provenance into its OutputDirectory/provenance/ (travels with
-# the data). $ABACUS_MPIRUN_ARGS/$NNODES default in env.sh, so the par2 parses here; and
-# abacus.run won't wipe it (no --clean). The jobspec is copied if we're under hashjob.
-outdir=$(python -m abacus.param "$par2" -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
+pargs=()
+for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
+
+# Record this sim's provenance into its OutputDirectory/provenance/ (travels with the
+# data; abacus.run won't wipe it, since no --clean). $ABACUS_MPIRUN_ARGS/$NNODES default
+# in env.sh, so the par2 parses here. The parse is throwaway -- abacus.run re-parses with
+# each attempt's --hostfile -- but needs $pargs: OutputDirectory derives from SimName.
+outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
 if [[ -n $outdir ]]; then
     prov="$outdir/provenance"
     mkdir -p "$prov"
@@ -72,8 +76,6 @@ while true; do
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
     # not-taken if with no else returns 0, masking the real failure code.)
-    pargs=()
-    for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
     python -m abacus.run "$par2" ${pargs[@]+"${pargs[@]}"}
     rc=$?
     dt=$((SECONDS - t0))
