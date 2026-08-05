@@ -86,7 +86,7 @@ SCR_Checkpoint_Seconds = 2700
 # SCR_PREFIX_SIZE=2 — keeps a sliding window of the 2 most recent checkpoints in the PFS prefix and deletes older ones as new ones flush (default 0 = keep all. SCR_FLAG_OUTPUT datasets are never deleted).
 # SCR_CHECKPOINT_SECONDS - forces a checkpoint in the listed cadence by time
 #
-# SCR_PREFIX — the PFS directory where flushed datasets are read/written. Abacus drives this via its own SCR_Prefix parameter (default WorkingDirectory/scr).
+# SCR_PREFIX — the PFS directory where flushed datasets are read/written. Abacus drives this from CheckpointDirectory: SCR requires a flushed dataset to live under its prefix, so the prefix and the checkpoint root are necessarily the same directory.
 # SCR_CACHE_BASE / SCR_CNTL_BASE — base dirs for cached dataset files and SCR control metadata respectively, both defaulting to /dev/shm.
 # SCR_CACHE_BYPASS — when 1 (SCRs default!) data goes straight to the PFS and skips the cache entirely, so your wrapper must set it to 0 for XOR caching to happen at all.  Abacus is overriding this to 0.
 # SCR_GLOBAL_RESTART=1 — flushes the newest cached checkpoint to the prefix at SCR_Init and restarts from there, which is exactly how Phase 3 restarts Abacus (your wrapper defaults it on).
@@ -108,8 +108,10 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 
 OutputDirectory = "$ABACUS_OUTPUT_ROOT$/" + @SimName@
 WorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@
-LocalWorkingDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work/rank"   # Where states get written.  Big!!
-SCR_Prefix = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/scr"
+
+StateDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work"
+CheckpointDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/checkpoint"
+InvocationEndStateDest = "state"
 
 # copied from directory.def (uses Output and Working directories)
 MultipoleDirectory = @WorkingDirectory@ + "/multipole"
