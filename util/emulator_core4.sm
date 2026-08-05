@@ -1,0 +1,128 @@
+set_reload emulator_core4.sm
+
+
+macro hyper24 {
+    # We're using the 4-d sphere, putting 24 well-spaced points
+    # This is reusing the v_0..v_3 idea from AbacusSummit
+    # Recall that c130..135 are +-1 in v0, v1, v2 (not v3).
+    # We also have tighter paired offsets in all 4: 2% in sigma8, 3.3% in ochh, 1% in n_s, 2% in obhh
+    # These 8 are equiv to \pm 1/6 in v0, 1/3 in v1, 1/6 in v2, 1/5 in v3
+    # We also have the 7% sigma8 pairs, which are \pm 7/12 in v0, and of course c000.
+
+    # These 41 cosmologies are also sampling rather well along the principal axes and around the 2-part edges.
+    # If we want to add more it would probably be in the 3-part corners, dropping obhh.  There are 8 of those.
+    # But for now we're not doing this.
+
+    # cosm001 -- WMAP9 is -5.8% in ochh, -0.2% in obhh, -0.1% in ns, -4% in sigma8.  So that's -1/3 in v0, -1/2 in v1, and 0 in v2 and v3.
+    # DESI DR2 LCDM is ochh = 0.1187 (-1%), sigma = 0.8162 which is probably sigma8_cb = 0.81964 (+1%), obhh = 0.022463 (+0.5%), ns = 0.9739 (+1%), 
+    # so that's v0 = +1/12, v1 = -1/10, v2 = 1/6, v3 = 1/20.  So these are interior to the linear derivative set, close to c000.
+    # High-tau will be a 44th in this space.
+
+    # We are setting these up so that adjacent pairs are symmetric around c000
+    set num = 230,253,1
+    set v_0 = num*0.0
+    set v_1 = v_0
+    set v_2 = v_0
+    set v_3 = v_0
+    set v_4 = v_0
+    set v_5 = v_0
+    set v_6 = v_0
+    set v_7 = v_0
+
+    set v_0[0] =  1.0
+    set v_1[0] =  1.0
+
+    set v_0[2] =  1.0
+    set v_1[2] = -1.0
+
+    set v_0[4] =  1.0
+    set v_2[4] =  1.0
+
+    set v_0[6] =  1.0
+    set v_2[6] = -1.0
+ 
+    set v_0[8] =  1.0
+    set v_3[8] =  1.0
+
+    set v_0[10] = 1.0
+    set v_3[10] =-1.0
+
+
+    set v_1[12] = 1.0
+    set v_2[12] =-1.0
+
+    set v_1[14] = 1.0
+    set v_2[14] =-1.0
+
+    set v_1[16] = 1.0
+    set v_3[16] =-1.0
+
+    set v_1[18] = 1.0
+    set v_3[18] =-1.0
+
+    set v_2[20] = 1.0
+    set v_3[20] =-1.0
+
+    set v_2[22] = 1.0
+    set v_3[22] =-1.0
+
+    do m=0,22,2 {
+       set v_0[$m+1] = -v_0[$m]
+       set v_1[$m+1] = -v_1[$m]
+       set v_2[$m+1] = -v_2[$m]
+       set v_3[$m+1] = -v_3[$m]
+    }
+
+    set v_0 = v_0/sqrt(2.0)
+    set v_1 = v_1/sqrt(2.0)
+    set v_2 = v_2/sqrt(2.0)
+    set v_3 = v_3/sqrt(2.0)
+
+    # Unlike AbacusSummit we are turning off the extra +-0.03 scatter in sigma8_cb.
+    set unif = num*0.0
+
+}
+
+
+
+macro map_to_param {
+
+    #set sigma8m = 0.807952*(1  + 0.12 *v_0 + 0.06*unif - 0.5/4*v_4)
+    set sigma8cb = 0.811355*(1  + 0.12 *v_0 + 0.06*unif - 0.5/4*v_4)
+    set ochh    = ln(0.1200)   + 0.165*v_6 + 0.100*v_1
+    set ns      = 0.9649       + 0.05 *v_6 + 0.06 *v_2
+    set obhh    = ln(0.02237)  + 0.10 *v_3
+    set w0      = -1           - 0.2 *v_5 + 0.3  *v_4
+    set wa      = 0            + 0.8  *v_5
+    set Nur     = 2.0328       + 1.2  *v_6
+    set nrun    = 0            + 0.05 *v_7
+
+    #set varlist = < sigma8cb ochh ns obhh w0 wa Nur nrun num >
+    set varlist = < sigma8cb ochh ns obhh >
+
+    set ochh = exp(ochh)
+    set obhh = exp(obhh)
+
+    set ocbhh = ochh+obhh
+    set winf = w0+wa
+
+    #set varlist = < winf ocbhh > concat varlist
+    set varlist = < ocbhh > concat varlist
+
+    print emulator_core4.dat '%3d  %8.6f  %6.4f  %6.4f  %7.5f  %6.3f  %6.3f  %6.4f  %6.3f\n' \
+        < num sigma8cb ochh ns obhh w0 wa Nur nrun >
+    foreach var varlist {
+        vecminmax $var min max
+        echo
+        echo $var  Min: $min   Max: $max
+        st $var
+        write +emulator_core4.dat \#  
+        write +emulator_core4.dat \# $var  Min: $min  Max: $max   
+        write +emulator_core4.dat \#       Mean: $mean +- $sig   Median: $med +- $siqr_sig
+    }
+}
+
+macro doit {
+    hyper24
+    map_to_param
+}
