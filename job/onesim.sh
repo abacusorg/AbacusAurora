@@ -85,6 +85,13 @@ while true; do
         exit 0
     fi
 
+    # abacus.run's EXIT_CANNOT_PROCEED: a refusal (e.g. a prior unfinished run with no
+    # resumable state) that a relaunch cannot clear, so retrying would only burn attempts.
+    if (( rc == 2 )); then
+        echo "=== abacus refuses to proceed (rc=2); not relaunching: $(date) ===" >&2
+        exit 2
+    fi
+
     echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s); relaunching ===" >&2
 
     if (( dt < min_healthy_seconds )); then
