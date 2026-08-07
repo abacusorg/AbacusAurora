@@ -1,0 +1,6 @@
+SimName = "AbacusAurora_emulmax_c000_ph300"
+
+#include "../EmulatorMax.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+ZD_Seed = @ZD_Seed@+300-300

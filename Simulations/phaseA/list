@@ -1,0 +1,224 @@
+# SimName (with replacables)     BBB.par2         CCC PPP
+# Base cosmology, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      000 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      000 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      000 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     000 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     000 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     000 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     000 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     000 307
+
+# WMAP9 cosmology, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      001 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      001 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      001 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     001 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     001 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     001 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     001 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     001 307
+
+# AbacusSummit w0wa secondary cosmology, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      002 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      002 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      002 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     002 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     002 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     002 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     002 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     002 307
+
+# Low sigma8, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      004 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      004 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      004 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     004 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     004 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     004 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     004 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     004 307
+
+# High sigma8, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      116 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      116 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      116 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     116 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     116 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     116 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     116 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     116 307
+
+# DESI w0wa, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      200 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      200 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      200 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     200 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     200 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     200 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     200 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     200 307
+
+# DESI high-tau, secondary suite
+AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      201 300
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      201 301
+AbacusAurora_emulmed_cCCC_phPPP  EmulatorMed      201 302
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     201 303
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     201 304
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     201 305
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     201 306
+AbacusAurora_emulslim_cCCC_phPPP EmulatorSlim     201 307
+
+
+# Now for the tertiary suite
+# Tight uni-parameter deltas, for symmetric derivatives; assure matched phases for each pair
+# omega_b
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      100 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  100 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  100 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      101 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  101 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  101 302
+
+# omega_c
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      102 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  102 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  102 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      103 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  103 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  103 302
+
+# n_s
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      104 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  104 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  104 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      105 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  105 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  105 302
+
+# Sigma8
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      112 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  112 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  112 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      113 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  113 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  113 302
+
+
+# Moving to the 4-d sphere.  First the uni-parameter deltas, matching the phases to the tighter set
+# sigma8
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      130 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  130 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  130 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      133 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  133 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  133 302
+
+# omega_c
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      131 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  131 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  131 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      134 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  134 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  134 302
+
+# n_s
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      132 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  132 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  132 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      135 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  135 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  135 302
+
+
+# Next, the bi-parameter changes, letting the phases vary, but always matching for the symmetric pair (adjacent numbers)
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     230 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  230 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  230 303
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     231 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  231 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  231 303
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     232 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  232 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  232 304
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     233 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  233 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  233 304
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     234 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  234 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  234 305
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     235 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  235 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  235 305
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     236 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  236 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  236 306
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     237 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  237 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  237 306
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     238 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  238 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  238 307
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     239 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  239 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  239 307
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     240 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  240 303
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  240 302
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     241 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  241 303
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  241 302
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     242 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  242 304
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  242 302
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     243 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  243 304
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  243 302
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     244 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  244 305
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  244 302
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     245 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  245 305
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  245 302
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     246 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  246 306
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  246 302
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     247 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  247 306
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  247 302
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     248 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  248 307
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  248 302
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     249 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  249 307
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  249 302
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     250 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  250 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  250 303
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     251 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  251 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  251 303
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     252 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  252 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  252 304
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     253 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  253 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  253 304
+
+
+# Ad hoc core-4 
+# DESI best-fit LCDM
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     210 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  210 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  210 302
