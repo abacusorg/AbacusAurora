@@ -214,6 +214,7 @@ stage_spec() {
         printf 'code_ref=%q\n'      "$code_ref"
         printf 'prod_hash=%q\n'     "$prod_hash"
         printf 'daos_pool=%q\n'        "$DAOS_POOL"
+        printf 'working_root=%q\n'     "$ABACUS_WORKING_ROOT"
         printf 'output_root=%q\n'      "$ABACUS_OUTPUT_ROOT"
         printf 'checkpoint_root=%q\n'  "$ABACUS_CHECKPOINT_ROOT"
         printf 'derivatives_root=%q\n' "$ABACUS_DERIVATIVES_ROOT"

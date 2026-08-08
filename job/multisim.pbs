@@ -98,6 +98,7 @@ echo
 # rather than re-deriving it. A mount that fails to come up is fatal rather than a
 # silent fall back to flare, which would strand this sim's checkpoints where the next
 # restart won't look.
+export ABACUS_WORKING_ROOT=$working_root
 export ABACUS_OUTPUT_ROOT=$output_root
 export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
 export ABACUS_DERIVATIVES_ROOT=$derivatives_root
@@ -106,13 +107,14 @@ if (( ${#daos_conts[@]} )); then
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
     daos_mount "${daos_conts[@]}" || exit 1
     daos_mounted=1
-    mkdir -p "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
+    mkdir -p "$ABACUS_WORKING_ROOT" "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
 else
     echo "DAOS: off; all storage on flare"
 fi
 daos_mpirun_args "${#daos_conts[@]}"
 
-echo "Storage roots: output=$ABACUS_OUTPUT_ROOT"
+echo "Storage roots: working=$ABACUS_WORKING_ROOT"
+echo "               output=$ABACUS_OUTPUT_ROOT"
 echo "               checkpoint=$ABACUS_CHECKPOINT_ROOT"
 echo "               derivatives=$ABACUS_DERIVATIVES_ROOT"
 echo "ABACUS_MPIRUN_ARGS=$ABACUS_MPIRUN_ARGS"

@@ -107,7 +107,7 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 # Conv_IOCores = [1]
 
 OutputDirectory = "$ABACUS_OUTPUT_ROOT$/" + @SimName@
-WorkingDirectory = "/flare/Abacus/$USER$/" + @SimName@
+WorkingDirectory = "$ABACUS_WORKING_ROOT$/" + @SimName@
 
 StateDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work"
 CheckpointDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/checkpoint"

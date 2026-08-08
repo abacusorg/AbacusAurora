@@ -3,7 +3,8 @@
 # lifecycle.  Sourced by hashrun.sh (login node) and multisim.pbs (job); also
 # runnable directly as `./job/daos.sh` for a health check.
 #
-# Sets three storage roots, either to DAOS or Flare based on user request:
+# Sets four storage roots, either to DAOS or Flare based on user request:
+#   ABACUS_WORKING_ROOT      status.log, HALT file, logs, etc
 #   ABACUS_OUTPUT_ROOT       slices, groups, lightcones, tracers
 #   ABACUS_CHECKPOINT_ROOT   the state and the SCR prefix
 #   ABACUS_DERIVATIVES_ROOT  the far-field derivatives (read-only during a sim)
@@ -43,15 +44,18 @@ daos_login_mountpoint() { printf '/tmp/%s/%s/%s\n' "$USER" "$DAOS_POOL" "$1"; }
 # caller's shell must not decide where a sim's state lands.
 daos_resolve() {
     daos_conts=()
+    export ABACUS_WORKING_ROOT=$FLARE_ROOT
     export ABACUS_OUTPUT_ROOT=$FLARE_ROOT
     export ABACUS_CHECKPOINT_ROOT=$FLARE_ROOT
     export ABACUS_DERIVATIVES_ROOT=$FLARE_DERIVATIVES
     _is_on "${ABACUS_DAOS:-off}" || return 0   # the DAOS on/off default
 
-    daos_conts+=("$DAOS_CONT_CHECKPOINTS")
+    # Outputs comes along even when the outputs stay on flare: it hosts the working
+    # directory.
+    daos_conts+=("$DAOS_CONT_CHECKPOINTS" "$DAOS_CONT_OUTPUTS")
     ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
+    ABACUS_WORKING_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     if _is_on "${ABACUS_DAOS_OUTPUTS:-off}"; then   # the outputs-on-DAOS default
-        daos_conts+=("$DAOS_CONT_OUTPUTS")
         ABACUS_OUTPUT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     fi
     if _is_on "${ABACUS_DAOS_DERIVATIVES:-off}"; then   # the derivatives-on-DAOS default
@@ -178,6 +182,7 @@ daos_status() {
 
     echo
     echo "roots:"
+    printf '  %-14s %s\n' working     "$ABACUS_WORKING_ROOT"
     printf '  %-14s %s\n' output      "$ABACUS_OUTPUT_ROOT"
     printf '  %-14s %s\n' checkpoint  "$ABACUS_CHECKPOINT_ROOT"
     printf '  %-14s %s\n' derivatives "$ABACUS_DERIVATIVES_ROOT"

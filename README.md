@@ -52,13 +52,21 @@ scripts never do it. Which directories go where:
 | | root | container | with `--daos` |
 |---|---|---|---|
 | the state and the SCR prefix | `$ABACUS_CHECKPOINT_ROOT` | `Checkpoints` | DAOS |
+| `status.log`, HALT file, logs | `$ABACUS_WORKING_ROOT` | `Outputs` | DAOS |
 | outputs — slices, groups, lightcones, tracers | `$ABACUS_OUTPUT_ROOT` | `Outputs` | flare, unless `ABACUS_DAOS_OUTPUTS=on` |
 | derivatives | `$ABACUS_DERIVATIVES_ROOT` | `Derivatives` | flare, unless `ABACUS_DAOS_DERIVATIVES=on` |
-| logs, wisdom | always flare | — | flare |
+| wisdom | always flare | — | flare |
 
-The DAOS mount point is `/tmp/<pool>/<container>/`. Outputs and checkpoints go to the
-subdirectory `$USER/<SimName>/`; the derivatives sit at the container root, shared
-between users as they are on flare.
+The DAOS mount point is `/tmp/<pool>/<container>/`. The working, output, and checkpoint
+roots go to the subdirectory `$USER/<SimName>/`; the derivatives sit at the container
+root, shared between users as they are on flare.
+
+The `Outputs` container is mounted whenever DAOS is on, even with the outputs themselves
+on flare, because it holds the working directory.
+
+One consequence of the working root moving: with `--daos` the per-sim logs are inside the
+container, so reading them from a login node needs `./scripts/daos-mount-login.sh`. The
+job-wide halt file stays on flare either way.
 
 To turn DAOS on, to widen it to the outputs and derivatives, and to force it off again:
 
