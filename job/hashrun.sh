@@ -213,9 +213,10 @@ stage_spec() {
         printf 'code_hash=%q\n'     "$code_hash"
         printf 'code_ref=%q\n'      "$code_ref"
         printf 'prod_hash=%q\n'     "$prod_hash"
-        printf 'daos_pool=%q\n'       "$DAOS_POOL"
-        printf 'output_root=%q\n'     "$ABACUS_OUTPUT_ROOT"
-        printf 'checkpoint_root=%q\n' "$ABACUS_CHECKPOINT_ROOT"
+        printf 'daos_pool=%q\n'        "$DAOS_POOL"
+        printf 'output_root=%q\n'      "$ABACUS_OUTPUT_ROOT"
+        printf 'checkpoint_root=%q\n'  "$ABACUS_CHECKPOINT_ROOT"
+        printf 'derivatives_root=%q\n' "$ABACUS_DERIVATIVES_ROOT"
         printf 'daos_conts=('; for o in ${daos_conts[@]+"${daos_conts[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'

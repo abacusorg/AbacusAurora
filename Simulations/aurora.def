@@ -124,9 +124,7 @@ LCDirectory =  @OutputDirectory@ + "/lightcone"
 LogDirectory = @WorkingDirectory@ + "/log"
 TracersDirectory = @OutputDirectory@ + "/tracers"
 
-
-# DerivativesSourceDirectory = "/flare/Abacus/Derivatives"
-DerivativesDirectory = "/flare/Abacus/Derivatives"
+DerivativesDirectory = "$ABACUS_DERIVATIVES_ROOT$"
 FFTWisdomDirectory = "/flare/Abacus/Wisdom/"
 
 # $NNODES# set in env/aurora.sh

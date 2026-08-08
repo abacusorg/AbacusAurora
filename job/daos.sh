@@ -3,21 +3,28 @@
 # lifecycle.  Sourced by hashrun.sh (login node) and multisim.pbs (job); also
 # runnable directly as `./job/daos.sh` for a health check.
 #
-# Sets two storage roots, either to DAOS or Flare based on user request:
-#   ABACUS_OUTPUT_ROOT      slices, groups, lightcones, tracers
-#   ABACUS_CHECKPOINT_ROOT  the state and the SCR prefix
+# Sets three storage roots, either to DAOS or Flare based on user request:
+#   ABACUS_OUTPUT_ROOT       slices, groups, lightcones, tracers
+#   ABACUS_CHECKPOINT_ROOT   the state and the SCR prefix
+#   ABACUS_DERIVATIVES_ROOT  the far-field derivatives (read-only during a sim)
 # These are referenced in aurora.def.
 #
 # Switches, all honouring on/off (and 0/no/false):
-#   ABACUS_DAOS=on           use DAOS at all (also hashrun.sh --daos / --no-daos)
-#   ABACUS_DAOS_OUTPUTS=on   put the outputs on DAOS too, not just the checkpoints
-#   ABACUS_DAOS_PRELOAD=off  don't LD_PRELOAD the interception library
+#   ABACUS_DAOS=on              use DAOS at all (also hashrun.sh --daos / --no-daos)
+#   ABACUS_DAOS_OUTPUTS=on      put the outputs on DAOS too, not just the checkpoints
+#   ABACUS_DAOS_DERIVATIVES=on  read the derivatives from DAOS.  Stage them in first with
+#                               scripts/daos-stage-derivatives.sh: a set that is missing
+#                               at run time is regenerated from scratch on one node, not
+#                               fetched from flare.
+#   ABACUS_DAOS_PRELOAD=off     don't LD_PRELOAD the interception library
 
 DAOS_POOL=${ABACUS_DAOS_POOL:-AbacusAurora_v1}
 DAOS_CONT_OUTPUTS=${ABACUS_DAOS_CONT_OUTPUTS:-Outputs}
 DAOS_CONT_CHECKPOINTS=${ABACUS_DAOS_CONT_CHECKPOINTS:-Checkpoints}
+DAOS_CONT_DERIVATIVES=${ABACUS_DAOS_CONT_DERIVATIVES:-Derivatives}
 
 FLARE_ROOT=/flare/Abacus/$USER
+FLARE_DERIVATIVES=/flare/Abacus/Derivatives
 
 _is_on() {
     case ${1:-} in
@@ -38,6 +45,7 @@ daos_resolve() {
     daos_conts=()
     export ABACUS_OUTPUT_ROOT=$FLARE_ROOT
     export ABACUS_CHECKPOINT_ROOT=$FLARE_ROOT
+    export ABACUS_DERIVATIVES_ROOT=$FLARE_DERIVATIVES
     _is_on "${ABACUS_DAOS:-off}" || return 0   # the DAOS on/off default
 
     daos_conts+=("$DAOS_CONT_CHECKPOINTS")
@@ -45,6 +53,10 @@ daos_resolve() {
     if _is_on "${ABACUS_DAOS_OUTPUTS:-off}"; then   # the outputs-on-DAOS default
         daos_conts+=("$DAOS_CONT_OUTPUTS")
         ABACUS_OUTPUT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
+    fi
+    if _is_on "${ABACUS_DAOS_DERIVATIVES:-off}"; then   # the derivatives-on-DAOS default
+        daos_conts+=("$DAOS_CONT_DERIVATIVES")
+        ABACUS_DERIVATIVES_ROOT=$(daos_mountpoint "$DAOS_CONT_DERIVATIVES")
     fi
 }
 
@@ -163,6 +175,12 @@ daos_status() {
         printf '\n'
     done
     (( ${#daos_conts[@]} )) || echo "  (none needed)"
+
+    echo
+    echo "roots:"
+    printf '  %-14s %s\n' output      "$ABACUS_OUTPUT_ROOT"
+    printf '  %-14s %s\n' checkpoint  "$ABACUS_CHECKPOINT_ROOT"
+    printf '  %-14s %s\n' derivatives "$ABACUS_DERIVATIVES_ROOT"
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then

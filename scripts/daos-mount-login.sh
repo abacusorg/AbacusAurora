@@ -3,7 +3,7 @@
 # copying data out. Nothing to do with the compute-node mounts multisim.pbs makes --
 # those are per-job and live at /tmp/<pool>/<cont>.
 #
-# Usage: daos-mount-login.sh [container ...]     (default: Outputs Checkpoints)
+# Usage: daos-mount-login.sh [container ...]     (default: Outputs Checkpoints Derivatives)
 #        daos-umount-login.sh                    to tear them down
 
 set -euo pipefail
@@ -11,7 +11,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../job" && pwd)/daos.sh"
 
 conts=("$@")
-(( ${#conts[@]} )) || conts=("$DAOS_CONT_OUTPUTS" "$DAOS_CONT_CHECKPOINTS")
+(( ${#conts[@]} )) || conts=("$DAOS_CONT_OUTPUTS" "$DAOS_CONT_CHECKPOINTS" "$DAOS_CONT_DERIVATIVES")
 
 daos_preflight || exit 1
 

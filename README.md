@@ -24,6 +24,7 @@ AbacusAurora/
 │   ├── daos.sh            #   DAOS pool/containers, mount lifecycle, on/off switches
 │   ├── in/                #   (git-ignored) scratch for par2-list files fed to hashrun
 │   └── out/<jobid>/       #   (git-ignored) per-job staged inputs, stdout/stderr, hostfiles
+├── scripts/               # DAOS login-node mounts and derivative staging
 ├── README.md
 └── LICENSE
 ```
@@ -52,17 +53,36 @@ scripts never do it. Which directories go where:
 |---|---|---|---|
 | the state and the SCR prefix | `$ABACUS_CHECKPOINT_ROOT` | `Checkpoints` | DAOS |
 | outputs — slices, groups, lightcones, tracers | `$ABACUS_OUTPUT_ROOT` | `Outputs` | flare, unless `ABACUS_DAOS_OUTPUTS=on` |
-| logs, derivatives, wisdom | always flare | — | flare |
+| derivatives | `$ABACUS_DERIVATIVES_ROOT` | `Derivatives` | flare, unless `ABACUS_DAOS_DERIVATIVES=on` |
+| logs, wisdom | always flare | — | flare |
 
-The DAOS mount point is `/tmp/<pool>/<container>/`, with outputs going to the subdirectory `$USER/<SimName>/`.
+The DAOS mount point is `/tmp/<pool>/<container>/`. Outputs and checkpoints go to the
+subdirectory `$USER/<SimName>/`; the derivatives sit at the container root, shared
+between users as they are on flare.
 
-To turn DAOS on, to widen it to the outputs, and to force it off again:
+To turn DAOS on, to widen it to the outputs and derivatives, and to force it off again:
 
 ```
-./hashrun.sh --daos ...           # this job only: checkpoints on DAOS
-export ABACUS_DAOS=on             # every submission from this shell
-export ABACUS_DAOS_OUTPUTS=on     # widen to the outputs as well
-./hashrun.sh --no-daos ...        # force off, whatever the default is
+./hashrun.sh --daos ...              # this job only: checkpoints on DAOS
+export ABACUS_DAOS=on                # every submission from this shell
+export ABACUS_DAOS_OUTPUTS=on        # widen to the outputs as well
+export ABACUS_DAOS_DERIVATIVES=on    # and read the derivatives from DAOS
+./hashrun.sh --no-daos ...           # force off, whatever the default is
 ```
+
+Any of these can also be set for one job with `hashrun.sh -E ABACUS_DAOS_DERIVATIVES=on`.
 
 `./job/daos.sh` prints the current pool, containers, and resolved roots (doesn't mount anything).
+
+
+### Derivatives
+
+To stage derivatives from Flare to DAOS outside of a job:
+
+```
+./scripts/daos-stage-derivatives.sh 1029 1125    # by CPD; no args lists what flare has
+```
+
+That stages `deriv32_<CPD>_8_2_8`, the set the sims read for a single-precision build with
+the usual `Order`, `NearFieldRadius`, and `DerivativeExpansionRadius`; copy anything else
+by hand.
