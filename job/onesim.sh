@@ -41,7 +41,7 @@ pargs=()
 for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
 
 # Record this sim's provenance into its OutputDirectory/provenance/ (travels with the
-# data; abacus.run won't wipe it, since no --clean). $ABACUS_MPIRUN_ARGS/$NNODES default
+# data; abacus.run cleans only on --clean, which we never pass). $ABACUS_MPIRUN_ARGS/$NNODES default
 # in env.sh, so the par2 parses here. The parse is throwaway -- abacus.run re-parses with
 # each attempt's --hostfile -- but needs $pargs: OutputDirectory derives from SimName.
 outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
@@ -83,13 +83,6 @@ while true; do
     if (( rc == 0 )); then
         echo "=== clean exit after $attempt invocation(s): $(date) ==="
         exit 0
-    fi
-
-    # abacus.run's EXIT_CANNOT_PROCEED: a refusal (e.g. a prior unfinished run with no
-    # resumable state) that a relaunch cannot clear, so retrying would only burn attempts.
-    if (( rc == 2 )); then
-        echo "=== abacus refuses to proceed (rc=2); not relaunching: $(date) ===" >&2
-        exit 2
     fi
 
     echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s); relaunching ===" >&2
