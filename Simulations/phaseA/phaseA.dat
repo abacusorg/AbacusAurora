@@ -104,6 +104,14 @@ AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      113 300
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  113 301
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  113 302
 
+# theta_s
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      220 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  220 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  220 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      221 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  221 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  221 302
+
 
 # Moving to the 4-d sphere.  First the uni-parameter deltas, matching the phases to the tighter set
 # sigma8
@@ -129,6 +137,22 @@ AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  132 302
 AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      135 300
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  135 301
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  135 302
+
+# theta_s
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      222 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  222 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  222 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      223 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  223 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  223 302
+
+# omega_b
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      224 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  224 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  224 302
+AbacusAurora_emulmed_cCCC_phPPP     EmulatorMed      225 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  225 301
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  225 302
 
 
 # Next, the bi-parameter changes, letting the phases vary, but always matching for the symmetric pair (adjacent numbers)
@@ -215,6 +239,36 @@ AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  252 304
 AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     253 300
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  253 301
 AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  253 304
+
+# And now the bilateral changes involving omega_b
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     254 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  254 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  254 304
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     255 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  255 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  255 304
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     256 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  256 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  256 305
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     257 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  257 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  257 305
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     258 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  258 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  258 306
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     259 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  259 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  259 306
+
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     260 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  260 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  260 307
+AbacusAurora_emulslim_cCCC_phPPP    EmulatorSlim     261 300
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  261 302
+AbacusAurora_emulslim0p5_cCCC_phPPP EmulatorSlim0p5  261 307
 
 
 # Ad hoc core-4 
