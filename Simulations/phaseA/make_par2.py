@@ -14,12 +14,15 @@ Substitution is plain, case-sensitive text replacement -- no regex, no word
 boundaries -- done in ONE pass, so a value that happens to contain a token
 (e.g. a SimName containing 'CCC') is never rescanned and re-substituted.
 
-An existing output file is never overwritten; it is reported and skipped, so
-re-running after adding rows to the list only creates what is missing.
+An existing output file is not overwritten unless -f is given; it is reported
+and skipped, so re-running after adding rows to the list only creates what is
+missing.
 
 Usage:
     ./make_par2.py                    # list, template.par2, write
     ./make_par2.py -n                 # dry run: say what would be written
+    ./make_par2.py -f                 # overwrite existing .par2 files
+    ./make_par2.py -fn                # dry run, showing what -f would replace
     ./make_par2.py mylist -t alt.par2
 """
 
@@ -68,6 +71,8 @@ def main():
                     help='template to substitute into (default: %(default)s)')
     ap.add_argument('-n', '--dry-run', action='store_true',
                     help='report what would be written, without writing')
+    ap.add_argument('-f', '--force', action='store_true',
+                    help='overwrite existing .par2 files instead of skipping them')
     args = ap.parse_args()
 
     listfn = Path(args.list)
@@ -78,7 +83,7 @@ def main():
     template = templatefn.read_text()
     outdir = listfn.parent
 
-    written = skipped = 0
+    written = skipped = replaced = 0
     errors = []
     seen = {}   # SimName -> lineno that first produced it
 
@@ -100,20 +105,23 @@ def main():
         seen[simname] = lineno
 
         outfn = outdir / f'{simname}.par2'
-        if outfn.exists():
+        overwriting = outfn.exists()
+        if overwriting and not args.force:
             print(f'exists, skipping:  {outfn}')
             skipped += 1
             continue
 
         if args.dry_run:
-            print(f'would write:       {outfn}')
+            print(f'would {"replace" if overwriting else "write":8s}   {outfn}')
         else:
             outfn.write_text(substitute(template, values))
-            print(f'wrote:             {outfn}')
+            print(f'{"replaced" if overwriting else "wrote":9s}          {outfn}')
         written += 1
+        replaced += overwriting
 
     verb = 'would write' if args.dry_run else 'wrote'
-    print(f'\n{verb} {written}, skipped {skipped} existing, {len(errors)} problem(s)')
+    detail = f' ({replaced} overwritten)' if replaced else ''
+    print(f'\n{verb} {written}{detail}, skipped {skipped} existing, {len(errors)} problem(s)')
     for e in errors:
         print(f'  {e}', file=sys.stderr)
     return 1 if errors else 0
