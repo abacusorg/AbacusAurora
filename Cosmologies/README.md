@@ -144,6 +144,9 @@ neutrinos as a smooth component.
 | abacus_cosm179     | Emulator grid around baseline cosmology                              | 0.02240 |  0.1067   | 0.5881 | 2.2365e-09| 0.9308 | -0.003  | 1.1884 | 1      | 0.00064420 | -0.755 | -0.435  | 0.775969 | 0.779541  | 
 | abacus_cosm180     | Emulator grid around baseline cosmology                              | 0.02258 |  0.1209   | 0.7451 | 2.2790e-09| 0.9796 | -0.034  | 2.1722 | 1      | 0.00064420 | -1.108 | -0.274  | 0.894071 | 0.897833  | 
 | abacus_cosm181     | Emulator grid around baseline cosmology                              | 0.02169 |  0.1112   | 0.5745 | 2.0651e-09| 0.9336 | -0.013  | 1.4059 | 1      | 0.00064420 | -0.910 | 0.350  | 0.730036 | 0.733292  | 
+| abacus_cosm200     | DESI DR2+CMB w0wa best-fit                                           | 0.02242 |  0.1198   | 0.6723|  2.1143e-09| 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 0.816477 | 0.819921  | 
+| abacus_cosm201     | DESI DR2+CMB LCDM high-tau                                           | 0.02251 |  0.1178   | 0.6827| 2.2258e-09| 0.9761 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 0.830463 | 0.834018  | 
+| abacus_cosm210     | DESI DR2+CMB LCDM                                                    | 0.02247 |  0.1186   | 0.6795| 2.1394e-09| 0.9740 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 0.816482 | 0.819957  | 
 ----
 
 Further details about the cosmology choices:

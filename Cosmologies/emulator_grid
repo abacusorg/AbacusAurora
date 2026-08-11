@@ -121,6 +121,9 @@ neutrinos as a smooth component.
 | abacus_cosm179     | Emulator grid around baseline cosmology                              | 0.02240 |  0.1067   | TBD    | 2.TBD e-9 | 0.9308 | -0.003  | 1.1884 | 1      | 0.00064420 | -0.755 | -0.435  | 
 | abacus_cosm180     | Emulator grid around baseline cosmology                              | 0.02258 |  0.1209   | TBD    | 2.TBD e-9 | 0.9796 | -0.034  | 2.1722 | 1      | 0.00064420 | -1.108 | -0.274  | 
 | abacus_cosm181     | Emulator grid around baseline cosmology                              | 0.02169 |  0.1112   | TBD    | 2.TBD e-9 | 0.9336 | -0.013  | 1.4059 | 1      | 0.00064420 | -0.910 | 0.350  | 
+| abacus_cosm200     | DESI DR2+CMB w0wa best-fit                        | 0.02242 |  0.1198   | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm201     | DESI DR2+CMB LCDM high-tau                        | 0.02251 |  0.1178   | TBD   | 2.TBD e-9 | 0.9761 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 
+| abacus_cosm210     | DESI DR2+CMB LCDM                                 | 0.02247 |  0.1186   | TBD   | 2.TBD e-9 | 0.9740 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 
 
 ----
 
