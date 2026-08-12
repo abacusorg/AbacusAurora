@@ -28,4 +28,4 @@ LCSamplerOuter = ["subP64", "subP64"]
 LCDoHealpix = [1, 1]
 LCHealpixZMax = [2.0, 0.5]
 
-MapForestSize = 0.7
+MapForestSize = 0.8
