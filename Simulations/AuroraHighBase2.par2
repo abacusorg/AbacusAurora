@@ -25,15 +25,15 @@ TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 4.
 TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "all", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64", "subP64" ]
 
 Map_bform_ips=0.15
-Map_baccrete_ips=0.14
-Map_bmerge_proper=0.0155 #Mpc/h    # We want this to be at least 2x SofteningLength
+Map_baccrete_ips=0.15
+Map_bmerge_proper=0.01518 #Mpc/h    # We want this to be at least 2x SofteningLength
 Map_bmerge_max_ips= @SofteningMax@*@Map_bmerge_proper@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
-Map_Aform=0.63
-Map_Aaccrete=1.9
-Map_Amerge=61.
+#Map_Aform=0.63
+Map_Aaccrete=6
+Map_Amerge=37.75
 Map_MinMultiplicity=20
 Map_GroupDiameter = -1
-Map_GroupEligibilityThreshold=200
+Map_GroupEligibilityThreshold=100
 Map_LagrangianFormationLimit=1
 
 
