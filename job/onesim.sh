@@ -25,8 +25,8 @@ hostfile="$2"
 shift 2
 overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.run
 
-max_consec_fail=3
-min_healthy_seconds=600        # failures faster than this count as "rapid"
+max_consec_fail=0
+min_healthy_seconds=7200        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
 
 if [[ ! -r "$par2" ]]; then
     echo "onesim: parameter file '$par2' not readable" >&2
