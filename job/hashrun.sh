@@ -196,15 +196,6 @@ stage_spec() {
         for e in ${env_overrides[@]+"${env_overrides[@]}"}; do printf 'export %q\n' "$e"; done
     } > "$spec/env_overrides.sh"
 
-    bash -lc '
-        set -e
-        checkout=$1 env_script=$2 prod=$3 env_file=$4; shift 4
-        cd "$checkout"; . "./$env_script"; . "$env_file"
-        for par2; do
-            echo "Parsing $par2 ..."
-            python -m abacus.param "$prod/$par2" -o /dev/null
-        done
-    ' hashrun "$checkout" "$env_script" "$prod" "$spec/env_overrides.sh" "${par2s[@]}"
     {
         echo "# hashrun.sh $(date -Is)"
         printf 'abacus_env=%q\n'    "$checkout/$env_script"
@@ -222,6 +213,19 @@ stage_spec() {
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
     } > "$spec/jobspec.sh"
+
+    # Parse each par2 in the environment the job will read it
+    bash -lc '
+        set -e
+        checkout=$1 env_script=$2 env_file=$3 spec_file=$4
+        cd "$checkout"; . "./$env_script"; . "$env_file"; . "$spec_file"
+        param_args=()
+        for o in ${overrides[@]+"${overrides[@]}"}; do param_args+=(-P "$o"); done
+        for par2 in "${par2s[@]}"; do
+            echo "Parsing $par2 ..."
+            python -m abacus.param "$abacus_prod/$par2" -o /dev/null ${param_args[@]+"${param_args[@]}"}
+        done
+    ' hashrun "$checkout" "$env_script" "$spec/env_overrides.sh" "$spec/jobspec.sh"
 }
 
 # Derive the node request (-nps x #sims, or -n; surplus = spare pool) and walltime
