@@ -19,7 +19,7 @@
 #                               fetched from flare.
 #   ABACUS_DAOS_PRELOAD=off     don't LD_PRELOAD the interception library
 
-DAOS_POOL=${ABACUS_DAOS_POOL:-AbacusAurora_v1}
+DAOS_POOL=${ABACUS_DAOS_POOL:-AbacusAurora}
 DAOS_CONT_OUTPUTS=${ABACUS_DAOS_CONT_OUTPUTS:-Outputs}
 DAOS_CONT_CHECKPOINTS=${ABACUS_DAOS_CONT_CHECKPOINTS:-Checkpoints}
 DAOS_CONT_DERIVATIVES=${ABACUS_DAOS_CONT_DERIVATIVES:-Derivatives}
