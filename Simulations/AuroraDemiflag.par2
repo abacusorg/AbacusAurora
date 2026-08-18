@@ -3,7 +3,8 @@
 # Don't forget the cosm.def file and a ZD_Seed
 
 ### TODO: 
-# Do we really want z=0.5 Healpix for the 56 bonus spheres?  Will IA actually be used at these low redshifts?
+# Do we really want the fully-sampled octant to z=7?  Maybe just z=4?
+# We are probably going to increase CPD.
 
 #include "aurora.def"
 #include "base.def"
