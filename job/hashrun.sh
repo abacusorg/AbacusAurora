@@ -20,6 +20,8 @@
 #   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
 #   -E KEY=VAL   set an environment variable in the job (repeatable)
 #   --daos       put outputs and checkpoints on DAOS
+#   --force-daos as --daos, but submit without checking the pool: queues a job to run
+#                whenever DAOS comes back up
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime/filesystems — those are derived).
 #
@@ -48,6 +50,8 @@ usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... [-E KEY=VALUE]...
   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
   -E KEY=VAL   set an environment variable in the job (repeatable)
   --daos|--no-daos  force DAOS on/off for this job
+  --force-daos      as --daos, but skip the pool/container checks, to queue a job while
+                    DAOS is down; it mounts (and may fail) when the job starts
   other flags pass through to qsub, e.g. -q prod.
   Do NOT pass select/walltime/filesystems (derived).
 EOF
@@ -55,9 +59,9 @@ EOF
 
 # Parse the CLI. The two bare args are <code-ref> <par2-list>; our flags may appear
 # before them; the first unrecognized flag switches to qsub pass-through.
-# Sets: code_ref par2list nps nodes twall daos_opt overrides[] env_overrides[] qsub_args[]
+# Sets: code_ref par2list nps nodes twall daos_opt daos_force overrides[] env_overrides[] qsub_args[]
 parse_args() {
-    nps="" nodes="" twall="" daos_opt=""
+    nps="" nodes="" twall="" daos_opt="" daos_force=0
     overrides=() env_overrides=() qsub_args=()
     local positionals=() qsub=0
     while (( $# )); do
@@ -75,6 +79,7 @@ parse_args() {
             -E*)                      env_overrides+=("${1#-E}"); shift ;;
             --daos)                   daos_opt=on; shift ;;
             --no-daos)                daos_opt=off; shift ;;
+            --force-daos)             daos_opt=on; daos_force=1; shift ;;
             -h|--help)                usage; exit 0 ;;
             --)                       shift; qsub=1 ;;
             -*)                       qsub=1 ;;   # first qsub flag: it and the rest pass through
@@ -126,9 +131,10 @@ check_prod() {
 
 # Apply the DAOS switches ($daos_conts, the storage roots, $filesystems) and check
 # the pool is up and the containers are there — creating them is a manual step, never
-# ours. Done before the build so a dead pool costs a second, not a compile. The roots
-# are exported so stage_spec's par2 parse resolves the same paths the sims will write
-# to; the job itself does not re-decide, it replays what we record in the spec.
+# ours; --force-daos submits without the check. Done before the build so a dead pool
+# costs a second, not a compile. The roots are exported so stage_spec's par2 parse
+# resolves the same paths the sims will write to; the job itself does not re-decide,
+# it replays what we record in the spec.
 setup_daos() {
     # The -E overrides reach the job's environment, so they must reach ours too, or
     # e.g. -E ABACUS_DAOS_OUTPUTS=off would be honoured at run time but not here.
@@ -143,8 +149,15 @@ setup_daos() {
         return
     fi
 
-    daos_preflight || exit 1
-    daos_require_containers "${daos_conts[@]}" || exit 1
+    if (( daos_force )); then
+        echo "warning: --force-daos: submitting without checking pool $DAOS_POOL or its" >&2
+        echo "         containers.  Job should be released when DAOS is back up." >&2
+    else
+        # daos_preflight is shared with the staging/mount scripts, where --force-daos means
+        # nothing, so the flag is only offered here.
+        daos_preflight || { echo "       Or --force-daos to submit anyway, and mount when it returns." >&2; exit 1; }
+        daos_require_containers "${daos_conts[@]}" || exit 1
+    fi
     filesystems=flare:daos_user_fs
     echo "DAOS: pool $DAOS_POOL, containers ${daos_conts[*]}"
 }
@@ -196,15 +209,6 @@ stage_spec() {
         for e in ${env_overrides[@]+"${env_overrides[@]}"}; do printf 'export %q\n' "$e"; done
     } > "$spec/env_overrides.sh"
 
-    bash -lc '
-        set -e
-        checkout=$1 env_script=$2 prod=$3 env_file=$4; shift 4
-        cd "$checkout"; . "./$env_script"; . "$env_file"
-        for par2; do
-            echo "Parsing $par2 ..."
-            python -m abacus.param "$prod/$par2" -o /dev/null
-        done
-    ' hashrun "$checkout" "$env_script" "$prod" "$spec/env_overrides.sh" "${par2s[@]}"
     {
         echo "# hashrun.sh $(date -Is)"
         printf 'abacus_env=%q\n'    "$checkout/$env_script"
@@ -222,6 +226,19 @@ stage_spec() {
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
     } > "$spec/jobspec.sh"
+
+    # Parse each par2 in the environment the job will read it
+    bash -lc '
+        set -e
+        checkout=$1 env_script=$2 env_file=$3 spec_file=$4
+        cd "$checkout"; . "./$env_script"; . "$env_file"; . "$spec_file"
+        param_args=()
+        for o in ${overrides[@]+"${overrides[@]}"}; do param_args+=(-P "$o"); done
+        for par2 in "${par2s[@]}"; do
+            echo "Parsing $par2 ..."
+            python -m abacus.param "$abacus_prod/$par2" -o /dev/null ${param_args[@]+"${param_args[@]}"}
+        done
+    ' hashrun "$checkout" "$env_script" "$spec/env_overrides.sh" "$spec/jobspec.sh"
 }
 
 # Derive the node request (-nps x #sims, or -n; surplus = spare pool) and walltime
