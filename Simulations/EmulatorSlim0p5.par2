@@ -1,5 +1,5 @@
 # These are the parameters for our standard 1.2 Gpc/h boxes.
-# These should run on 15 nodes in a 6x5 domain
+# These should run on 15 nodes in a 10x3 domain
 # Don't forget the cosm.def file and a ZD_Seed
 
 # This is even Slimmer, because we're going to stop at z=0.5.
@@ -12,8 +12,8 @@
 
 BoxSize = 1215.
 NP = 4480**3
-CPD = 975
-NumZRanks = 5
+CPD = 1125
+NumZRanks = 3
 
 ZD_Seed = 243    # This will be the most common phase
 
