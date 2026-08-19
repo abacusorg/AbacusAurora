@@ -1,5 +1,5 @@
 # These are the parameters for our half-sized flagship
-# This should run on 1029 nodes.
+# This should run on 1050 nodes.
 # Don't forget the cosm.def file and a ZD_Seed
 
 ### TODO: 
@@ -9,18 +9,20 @@
 #include "aurora.def"
 #include "base.def"
 
+MapForestSize = 0.8
+
 BoxSize = 5000.
 NP = 18432**3
-CPD = 3969
-NumZRanks = 49
-#  We plan to invoke on 1029 nodes to make 42*49 ranks.  That gives 94.5 slabs on average.  And 3969/49 = 81 cells in each Z column.
+CPD = 4375
+NumZRanks = 35
+#  We plan to invoke on 1050 nodes to make 60x35 ranks.  That gives 72.91 slabs on average.  And 125 cells in each Z column.
 
 # The usual set of timeslices:
 TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
 TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
 
 # Lightcones: There are 9 light cones.
-# The zeroth is an fully sampled octant from the center to z=7.
+# The zeroth is an fully sampled octant from the center to z=4.
 # All the rest are full-sky:
 # The first is from the center to z=7, HP to z=4, 2.5 Gpc/h from its replicas.
 # The second is from the corner, P8 to z=2, P64 to z=4, HP to z=2.  2.2 Gpc/h from the center.
@@ -44,7 +46,7 @@ LCIsOctant = [1, \
 0, 0, 0, 0, 0, 0  \
 ]
 
-LCZMax1 = [ 7.0, \
+LCZMax1 = [ 4.0, \
 7.0, 2.0, \
 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
 
@@ -52,7 +54,7 @@ LCSamplerInner = [ "all", \
 "subP8", "subP8", \
 "subP64", "subP64", "subP64", "subP64", "subP64", "subP64" ]
 
-LCZMax2 = [ 7.0, \
+LCZMax2 = [ 4.0, \
 7.0, 4.0, \
 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
 

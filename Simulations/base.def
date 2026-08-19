@@ -45,8 +45,10 @@ LCHealpixZMax = [2.0]
 DM_DensityKernelRadius_cMpc = 0.18    # Mpc/h
 Map_DensityKernelRadius_cMpc = 0.18    # Mpc/h
 
+
+MapForestSize = 1.0   # Hoping we can reduce this to 0.8
+
 #MAP parameters:
-# Recommendation from 7/4/26
 Map_bform_ips=0.15
 Map_baccrete_ips=0.15
 Map_bmerge_proper=0.01518 #Mpc/h
