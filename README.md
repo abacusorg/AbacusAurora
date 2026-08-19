@@ -56,8 +56,7 @@ scripts never do it. Which directories go where:
 | the state and the SCR prefix | `$ABACUS_CHECKPOINT_ROOT` | `Checkpoints` | DAOS |
 | `status.log`, HALT file, logs | `$ABACUS_WORKING_ROOT` | `Outputs` | DAOS |
 | outputs — slices, groups, lightcones, tracers | `$ABACUS_OUTPUT_ROOT` | `Outputs` | flare, unless `ABACUS_DAOS_OUTPUTS=on` |
-| derivatives | `$ABACUS_DERIVATIVES_ROOT` | `Derivatives` | flare, unless `ABACUS_DAOS_DERIVATIVES=on` |
-| wisdom | always flare | — | flare |
+| resources — `Derivatives/` and `Wisdom/` | `$ABACUS_RESOURCE_ROOT` | `Resources` | DAOS, unless `ABACUS_DAOS_RESOURCES=off` |
 
 The DAOS mount point is `/tmp/<pool>/<container>/`. The working, output, and checkpoint
 roots go to the subdirectory `$USER/<SimName>/`; the derivatives sit at the container
@@ -76,23 +75,41 @@ To turn DAOS on, to widen it to the outputs and derivatives, and to force it off
 ./hashrun.sh --daos ...              # this job only: checkpoints on DAOS
 export ABACUS_DAOS=on                # every submission from this shell
 export ABACUS_DAOS_OUTPUTS=on        # widen to the outputs as well
-export ABACUS_DAOS_DERIVATIVES=on    # and read the derivatives from DAOS
+export ABACUS_DAOS_RESOURCES=off     # read derivatives and wisdom from flare instead
 ./hashrun.sh --no-daos ...           # force off, whatever the default is
 ```
 
-Any of these can also be set for one job with `hashrun.sh -E ABACUS_DAOS_DERIVATIVES=on`.
+Any of these can also be set for one job with `hashrun.sh -E ABACUS_DAOS_RESOURCES=off`.
 
 `./job/daos.sh` prints the current pool, containers, and resolved roots (doesn't mount anything).
 
 
-### Derivatives
+### Resources
 
-To stage derivatives from Flare to DAOS outside of a job:
+The `Resources` container mirrors the flare layout, so only the prefix differs between
+the two backends:
+
+```text
+$ABACUS_RESOURCE_ROOT/Derivatives/deriv32_<CPD>_8_2_8/
+$ABACUS_RESOURCE_ROOT/Wisdom/fftw_cpd<CPD>_zranks<N>.wisdom
+```
+
+To stage them from flare to DAOS outside of a job:
 
 ```
-./scripts/daos-stage-derivatives.sh 1029 1125    # by CPD; no args lists what flare has
+./scripts/daos-stage-resources.sh 1029 1125    # by CPD; no args lists what flare has
 ```
 
-That stages `deriv32_<CPD>_8_2_8`, the set the sims read for a single-precision build with
-the usual `Order`, `NearFieldRadius`, and `DerivativeExpansionRadius`; copy anything else
-by hand.
+Wisdom is a few hundred KB and is keyed by (CPD, NumZRanks), so the whole directory is
+synced on every run of the script. The derivatives are ~85 TB across all CPDs, hence the
+explicit CPD arguments: the script stages `deriv32_<CPD>_8_2_8`, the set the sims read
+for a single-precision build with the usual `Order`, `NearFieldRadius`, and
+`DerivativeExpansionRadius`. Copy anything else by hand.
+
+Like the containers themselves, the two top-level directories are made by hand, once:
+
+```
+./scripts/daos-mount-login.sh Resources
+mkdir -p /tmp/$USER/$DAOS_POOL/Resources/{Derivatives,Wisdom}
+./scripts/daos-umount-login.sh Resources
+```

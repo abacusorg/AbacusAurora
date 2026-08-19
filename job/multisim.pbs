@@ -101,7 +101,7 @@ echo
 export ABACUS_WORKING_ROOT=$working_root
 export ABACUS_OUTPUT_ROOT=$output_root
 export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
-export ABACUS_DERIVATIVES_ROOT=$derivatives_root
+export ABACUS_RESOURCE_ROOT=$resource_root
 if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
@@ -116,7 +116,7 @@ daos_mpirun_args "${#daos_conts[@]}"
 echo "Storage roots: working=$ABACUS_WORKING_ROOT"
 echo "               output=$ABACUS_OUTPUT_ROOT"
 echo "               checkpoint=$ABACUS_CHECKPOINT_ROOT"
-echo "               derivatives=$ABACUS_DERIVATIVES_ROOT"
+echo "               resources=$ABACUS_RESOURCE_ROOT"
 echo "ABACUS_MPIRUN_ARGS=$ABACUS_MPIRUN_ARGS"
 echo
 # -------------------------------------------------------------------------------
