@@ -67,9 +67,14 @@ for line in open(output):
         s8_cb = float(line[0])
         s8_cb = format(s8_cb, "9.6f")
 
+if "s8_cb" not in dir() or s8_cb is None:
+    raise SystemExit(f"calibrate_A_s: no sigma8 baryons+cdm in {output}")
+
 if not from_emulator:
     param_dict_base = construct_dict(root_base, table, output_s8=True)
 param_dict = construct_dict(root, table)
+if As not in param_dict:
+    raise SystemExit(f"calibrate_A_s: no README.txt row for {root}")
 
 for line in fileinput.FileInput(table, inplace=1):
     if root in line:

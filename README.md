@@ -12,7 +12,7 @@ AbacusAurora/
 │   ├── ...
 │   ├── abacus_base.pre    #   shared CLASS precision presets
 │   ├── cosmologies.csv    #   master table of cosmological parameters
-│   └── make_cosm_def.py   #   regenerates the cosm.def files from the table
+│   └── make_cosm_def.py   #   CLASS.ini → cosm.def
 ├── Simulations/           # simulation specs
 │   ├── aurora.def         #   Aurora site file (mpirun_cmd, core binding, I/O, dir layout)
 │   ├── base.par2          #   Base Aurora parameter file, included by other par2 files
@@ -28,6 +28,8 @@ AbacusAurora/
 ├── README.md
 └── LICENSE
 ```
+
+To add cosmologies (CLASS products + `cosm.def`), see [`util/UserGuide_NewCosmologies.md`](util/UserGuide_NewCosmologies.md).
 
 ## Running jobs
 `hashrun.sh` is the entry point to launching a job. Example:

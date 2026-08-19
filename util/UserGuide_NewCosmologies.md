@@ -1,159 +1,168 @@
-# Adding new cosmologies for AbacusAurora
+# Adding new cosmologies
 
-Guide to append new cosmologies to `Cosmologies/abacus_cosmNNN/{CLASS.ini,CLASS_power,CLASS_transfer,cosm.def}` and update the parameter table.
+This guide produces, for each new cosmology `abacus_cosmNNN`:
 
-## CLASS version
+| File | Role |
+|------|------|
+| `Cosmologies/abacus_cosmNNN/CLASS.ini` | CLASS parameters (thin file: densities, \(h\), \(A_s\), \(n_s\), DE, neutrinos) |
+| `CLASS_power` | \(z=1\) \(P_{\mathrm{cb}}(k)\) for Zel’dovich ICs |
+| `CLASS_transfer` | matching transfer function |
+| `cosm.def` | Abacus snippet; `.par2` files `#include` this |
+| a row in `Cosmologies/README.md` and `cosmologies.csv` | published parameter table |
 
-Use Willem Elbers' CLASS fork at commit **`6cf8e3`**:
+Work from `util/`. Scripts expect that directory as CWD (they `chdir` into `../Cosmologies/` and back). Redirect long runs if you want a log, e.g. `python run_class.py ... > run_class.log 2>&1`.
 
-- Repo: https://github.com/abacusorg/class_public   
-- Python wrapper **classy** must be built from the **same** tree (`cd class_public/python && CC=gcc python setup.py install --user`)
+## 1. CLASS (required)
 
-`H0_search.py` uses classy; `run_class.py` shells out to the `class` binary. Mismatched versions make \(\theta_s\) targeting inconsistent with the final \(P(k)\).
+Use [Willem Elbers’ CLASS fork](https://github.com/abacusorg/class_public) at commit **`6cf8e3`** (`6cf8e384`). Build **classy** from the same tree:
 
-Shared physics/precision: `Cosmologies/abacus_base.pre` (full) and `abacus_base_fast.pre` (A_s calibration). Target \(\theta_\star\): `util/abacus_base_full.ini`.
-
-## Procedure
-
-Use `run_class.py` to run the entire pipeline. Everything runs with CWD = `util/`, and the scripts `os.chdir` into
-`../Cosmologies/` and back — they are position-dependent, so keep the two-directory layout.
-
-**Step 0 (optional).** Design the grid: `emulator_glass.sm` → `emulator_glass.dat`, then
-`glass_to_grid.py` splices rows with `TBD`s into `Cosmologies/emulator_grid`.
-Or just hand-write the `|` rows in `emulator_grid`.
-
-**Step 1.** Run `run_class.py` in `util/`. This script sequences H0_search → table_to_ini → (optional A_s calibrate) → full CLASS → write_s8. Prefer it over running each individual script by hand.
-
-Notes: 
-1. everything runs with CWD = `util/`, and the scripts `os.chdir` into
-`../Cosmologies/` and back — they are position-dependent, so keep the two-directory layout.
-2. Existing `abacus_cosm*/` directories are **skipped** (not overwritten) unless you pass `--force`.
-
-**Individual steps (skip if you run `run_class.py`):**
-**Run `H0_search.main()`** — solves for `h`.
-* Runs CLASS on `util/abacus_base_full.ini` to get the target `100*theta_s`.
-* Copies `Cosmologies/emulator_grid` → **`Cosmologies/README.txt`** (the working table).
-* For each row whose `h` is the `TBD` sentinel: bisection over `h ∈ [0.55, 0.85]` on a
-  grid of spacing `1e-5`, tolerance `1e-5` in `100*theta_s`, base precision
-  `abacus_bisection_fast.pre`. ~15 CLASS calls per cosmology.
-* Writes the solved `h` (and the still-`TBD` `A_s`) back into `README.txt` in place, then
-  deletes its scratch directory.
-
-**`table_to_ini.main()`** — table → `Cosmologies/<root>.ini`, one per row.
-Rows whose `A_s` is still the sentinel get the marker comment `# With A_s calibration, <notes>`
-in the ini; that comment is the flag Step 3 looks for.
-
-**For each cosmology**:
-1. `mkdir <root>`, copy the ini in.
-2. If the ini says `With A_s calibration`:
-   * run CLASS with `abacus_base_fast.pre` → `<root>.out`;
-   * `calibrate_A_s.py <root> <from_emulator>` scrapes `sigma8=` for `baryons+cdm` out of
-     `<root>.out`, rescales `A_s`, and writes it into `README.txt`;
-   * re-run `table_to_ini.main()` so the ini picks up the new `A_s`.
-   * The **target** `sigma8_cb` comes from one of two places, selected by the `from_emulator`
-     flag hard-coded near the top of `run_class.py`:
-     - `from_emulator = 1`: column 1 of `emulator_glass.dat`, matched on cosmology number
-       (asserts number > 115);
-     - `from_emulator = 0`: the `sigma8_cb` of `abacus_cosm000` from the table — i.e. "hold
-       sigma8_cb at the baseline value", which is what the c100–c115 derivative grid wants.
-3. Run CLASS at full precision with `abacus_base.pre` → `<root>.out`.
-4. `write_s8.py <root>` appends the measured `sigma8_m` and `sigma8_cb` to the `README.txt` row
-   and renames the three keeper files to `CLASS.ini` / `CLASS_power` / `CLASS_transfer`.
-
-**Step 2 (manual).** 
-Merge the finished `Cosmologies/README.txt` rows back into `README.md`
-(and append to `cosmologies.csv` by hand).
-
-**Step 3 (Aurora specific).** 
-cd ../Cosmologies
-for d in abacus_cosm200 abacus_cosm201 abacus_cosm210; do
-  python make_cosm_def.py "$d"
-done
-
-This will write the `cosm.def` files to `../Cosmologies/abacus_cosmNNN/`, which follow Aurora parameter convention:
+```bash
+cd class_public/python && CC=gcc python setup.py install --user
 ```
+
+`H0_search.py` calls classy. `run_class.py` calls the binary at **`~/class_public/class`** (hardcoded). If those two trees differ, the \(h\) that matches \(100\theta_s\) will not match the final \(P(k)\).
+
+Precision files: `Cosmologies/abacus_base.pre` (production) and `abacus_base_fast.pre` (\(A_s\) calibration). The angular-scale target is CLASS **`theta_s_100()`** (sound-horizon angle at the visibility peak), measured from `util/abacus_base_full.ini`. That is **not** CAMB \(\theta_\ast\). For c000, \(100\theta_s \approx 1.041533\).
+
+
+## 2. Run the pipeline
+
+**Do not pass the full `emulator_grid` as `--table`.** `H0_search` **overwrites** `Cosmologies/README.txt` with that file. Use a small staging table that contains only the new rows.
+
+`--force` **deletes** existing `abacus_cosmNNN/` product directories. Leave it off unless you intend to redo those cosmologies.
+
+### Staging table
+
+Either convert a glass `.dat` or write `|` rows by hand.
+
+```bash
+# DESI secondaries (cosm 200/201/210) — also inserts missing rows into emulator_grid
+python desi_secondaries_to_grid.py
+
+# Emulator grid with a per-cosmology theta_s *factor* (cosm 220–225, 230–261)
+python emulator_core4_to_grid.py
+```
+
+Hand-written rows must use the exact TBD padding (`TBD   ` and ` 2.TBD e-9 `) or `H0_search` will not substitute \(h\)/\(A_s\). Leave `sigma8_*` empty. Neutrino convention for the current set: \(N_{\mathrm{ncdm}}=1\), \(\omega_{\mathrm{ncdm}}=0.00064420\).
+
+```text
+| root               | notes                    | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur   | N_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | ------------------------ | ------- | --------- | ------ | --------- | ------ | ------- | ------ | ------ | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm210     | DESI DR2+CMB LCDM        | 0.02247 |  0.1186   | TBD   | 2.TBD e-9 | 0.9740 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 |           |           |
+```
+
+Glass `.dat` columns (whitespace-separated). DESI files have 9 columns; the emulator file adds a 10th **factor**, not CLASS \(100\theta_s\):
+
+```text
+#num  sigma8cb  ochh  ns  obhh  w0  wa  Nur  nrun  [theta_s_factor]
+210   0.819722  0.1186  0.9740  0.02247  -1  0  2.0328  0
+222   0.811355  0.1200  0.9649  0.02237  -1  0  2.0328  0  1.0200
+```
+
+### CLASS + \(h\) + \(A_s\)
+
+```bash
+cd util
+python run_class.py --table ../Cosmologies/<staging_grid> --glass <glass.dat>
+```
+
+Defaults if you omit flags: `--table ../Cosmologies/desi_secondaries_grid`, `--glass desi_secondaries.dat`, global \(\theta_0\) (every cosm matches c000’s \(100\theta_s\)). Existing `abacus_cosm*/` dirs are skipped.
+
+For the emulator grid (per-cosm \(\theta_s\) factor):
+
+```bash
+python emulator_core4_to_grid.py
+python run_class.py \
+  --table ../Cosmologies/emulator_core4_grid \
+  --glass emulator_core4.dat \
+  --per-cosm-theta
+```
+
+Never treat a glass value such as `1.0200` as CLASS \(\theta\). The last column is \(\theta_{\mathrm{def}} = \theta_0 \times \mathrm{factor}\) with \(\theta_0\) from `abacus_base_full.ini`. Without `--per-cosm-theta`, every cosm uses global \(\theta_0\). The `|` table has no \(\theta\) column.
+
+`run_class.py` then: solves TBD \(h\) → writes `README.txt` → CLASS (fast, if \(A_s\) is still dummy) → rescale \(A_s\) to glass \(\sigma_{8,\mathrm{cb}}\) → full CLASS → write measured \(\sigma_8\) and rename outputs to `CLASS_*`. It **stops** on a nonzero CLASS or `write_s8` exit. It does **not** write `cosm.def`.
+
+Top-level `Cosmologies/abacus_cosmNNN.ini` files are working copies. Keepers live **inside** `abacus_cosmNNN/`. If a run dies mid-block, those parent-level `.ini` files may remain; they are duplicates of `CLASS.ini` and are not used by Abacus.
+
+### Publish the table
+
+```bash
+python merge_readme_txt_to_md.py --csv ../Cosmologies/cosmologies.csv
+```
+
+This updates matching `| abacus_cosmNNN |` rows in `README.md` and `cosmologies.csv`. New roots are **appended** (not sorted by cosm number).
+
+### `cosm.def` (Abacus)
+
+```bash
+cd ../Cosmologies
+python make_cosm_def.py abacus_cosmNNN   # several dirs allowed
+```
+
+`make_cosm_def.py` reads `CLASS.ini` and writes Abacus names:
+
+```text
 H0 = 100*h
 Omega_M      = (omega_b + omega_cdm + sum(omega_ncdm)) / h^2
 Omega_Smooth = sum(omega_ncdm) / h^2
-Omega_K = 0, Omega_DE = 1 - Omega_M
+Omega_K = 0.0
+Omega_DE = 1.0-@Omega_M@
 w0, wa   <- w0_fld, wa_fld
-ZD_Pk_filename = "$PAR2_DIR$/CLASS_power",  ZD_Pk_file_redshift = 1.0
+ZD_Pk_filename = "$PAR2_DIR$/CLASS_power"
+ZD_Pk_file_redshift = 1.0
 ```
 
-Aurora's `.par2` files then `#include "../Cosmologies/abacus_cosmNNN/cosm.def"`.
----
+(`CLASS_power` is CLASS output `z2`, i.e. \(z=1\), from `z_pk = 0,1,3,7,49`.) Aurora `.par2` files `#include` this file, e.g. `"../Cosmologies/abacus_cosmNNN/cosm.def"`.
 
-## What each step does (manual map)
+## 3. Checklist
 
-| Step | Script / action | Purpose |
-|------|-----------------|--------|
-| A | Add `|` rows with **`h = TBD   `**, **`A_s =  2.TBD e-9 `** (exact spaces) | Input params; leave `sigma8_*` empty |
-| B | `H0_search` (via `run_class`) | Bisect \(h\) so \(100\theta_s\) matches `abacus_base_full.ini` (~1.041533). Writes working `Cosmologies/README.txt` |
-| C | `table_to_ini` | `README.txt` → `Cosmologies/<root>.ini` |
-| D | CLASS + `abacus_base_fast.pre` | Only if ini comment has `With A_s calibration` (TBD \(A_s\)) |
-| E | `calibrate_A_s.py` | Rescale \(A_s\) to a **target** \(\sigma_{8,\mathrm{cb}}\) |
-| F | `table_to_ini` again | Pick up new \(A_s\) into the ini |
-| G | CLASS + `abacus_base.pre` | Production spectra (pk_ref precision) |
-| H | `write_s8.py` | Append **measured** \(\sigma_{8,\mathrm{m}}\), \(\sigma_{8,\mathrm{cb}}\) to `README.txt`; rename → `CLASS.ini` / `CLASS_power` / `CLASS_transfer` |
-| I | Merge into `README.md` | Prefer `merge_readme_txt_to_md.py` (manual paste is fine if careful) |
-| J | `make_cosm_def.py <dir>` | `CLASS.ini` → `cosm.def` for `#include` from `.par2` |
+- [ ] `CLASS_power` exists (\(z=1\) \(P_{\mathrm{cb}}\))
+- [ ] `cosm.def` exists; the `.par2` `#include`s it
+- [ ] `README.md` / `cosmologies.csv` row has filled \(h\), \(A_s\), \(\sigma_8\)
+- [ ] \(A_s\) is not the dummy `2.00001e-09`
+- [ ] Measured \(\sigma_{8,\mathrm{cb}}\) within ~few\(\times10^{-4}\) of the glass target
+- [ ] If `--per-cosm-theta`: \(|100\theta_s - \theta_0\times\mathrm{factor}| \lesssim 2\times10^{-5}\)
+- [ ] classy and `~/class_public/class` are the same commit
+
 
 ---
 
-## Answers to common choices
+## FAQ
 
-### Should I run `H0_search`?
+### Should I run `H0_search` (leave \(h\) as TBD)?
 
-- **Yes (Abacus default):** keep \(h\) as TBD. Matches Summit/Aurora angular-scale convention (\(\theta_\star\)). Paper or “emulator space” \(h\) values will shift by a few ×0.1%.
-- **No:** put a numeric \(h\) in the `|` row. `H0_search` skips that row. Use only if you intentionally freeze an external \(h\).
+**Yes** for Abacus: match CLASS \(100\theta_s\) to the c000 (or per-cosm) target. A paper or “emulator space” \(h\) typically differs by a few \(\times0.1\%\). Put a numeric \(h\) in the `|` row to skip the bisection.
 
-### Is `calibrate_A_s` only for emulator cosmologies?
+### Is \(A_s\) calibration only for emulator cosmologies?
 
-**No.** It runs for **any** row that still has TBD \(A_s\) (ini tagged `With A_s calibration`).
+**No.** Any row whose \(A_s\) is still the dummy (`2.TBD e-9` → `2.00001e-09`) is tagged `With A_s calibration` and gets a fast CLASS run plus rescaling so \(\sigma_{8,\mathrm{cb}}\) matches glass `sigma8cb` (2nd column, matched by cosm number). `run_class.py` always uses that glass path (`from_emulator=1`). If \(A_s\) is already a physical number, calibration is skipped.
 
-Target \(\sigma_{8,\mathrm{cb}}\) comes from:
+CLASS is run twice when calibrating: **fast** to fix \(A_s\), then **full** (`abacus_base.pre`) for IC \(P(k)\) / transfer.
 
-- `from_emulator=1` (Aurora DESI default): column 1 of a glass `.dat` (e.g. `desi_secondaries.dat`), matched by cosm number  
-- `from_emulator=0`: match `abacus_cosm000`’s table \(\sigma_{8,\mathrm{cb}}\)
+### Why doesn’t `emulator_grid` list \(\sigma_8\)?
 
-If \(A_s\) is already numeric in the table, calibration is skipped.
+It is an input design table (often TBD \(h\)/\(A_s\)). Amplitude **targets** are in the glass `.dat`. **Measured** \(\sigma_8\) appear after CLASS in `README.txt` / `README.md` / `cosmologies.csv`.
 
-### Why run CLASS twice?
+### Recovery
 
-1. **Fast** — measure \(\sigma_8\) cheaply → fix \(A_s\).  
-2. **Full (`abacus_base.pre`)** — final \(P(k)\) / transfer for ICs.
-
-If \(A_s\) is already fixed, only the full run runs.
-
-### Why doesn’t `emulator_grid` show \(\sigma_8\)?
-
-`emulator_grid` is an **input** design table (often TBD \(h\)/\(A_s\)). Targets for amplitude live in the glass `.dat`. **Measured** \(\sigma_8\) appear only after CLASS, in `README.txt` / `README.md`.
-
-### What does `write_s8` do?
-
-Records measured \(\sigma_8\) on the working table and renames CLASS outputs to the Abacus keeper names (`CLASS_*`). Without it you only have raw `*.z2_pk_cb.dat` / `*.z2_tk.dat`.
+- Mid-block CLASS failure after \(h\) is already filled: `repair_core4_as.py` redos \(A_s\) + full CLASS + `cosm.def` without re-bisecting \(h\).
+- Emulator \(\theta_s\) check: `python validate_core4_theta.py`.
+- Do not use `glass_to_grid.py` here (Summit leftover: `emulator_glass.dat`, cosm>115 cut).
+- Do not run `H0_search.py` standalone for a small block; its default table is the full `emulator_grid`.
 
 ---
 
-## Input formats
+## Appendix: what `run_class.py` does
 
-**Glass `.dat`** (like `desi_secondaries.dat`):
+| Step | Action |
+|------|--------|
+| A | Staging `|` rows with TBD \(h\)/\(A_s\) |
+| B | `H0_search`: classy on `abacus_base_full.ini` → \(\theta_0\); copy `--table` → `README.txt`; bisect \(h\in[0.55,0.85]\) (spacing \(10^{-5}\), \(|\Delta 100\theta_s|<10^{-5}\)) |
+| C | `table_to_ini`: every `README.txt` row → `Cosmologies/<root>.ini` |
+| D–F | Fast CLASS + `calibrate_A_s.py` + `table_to_ini` again, if the ini comment has `With A_s calibration` |
+| G | Full CLASS + `abacus_base.pre` |
+| H | `write_s8.py`: replace last two table columns with measured \(\sigma_8\); rename → `CLASS_*` |
+| I | `merge_readme_txt_to_md.py --csv …` (you run this) |
+| J | `make_cosm_def.py` (you run this) |
 
-```text
-#num  sigma8cb  ochh  ns  obhh  w0  wa  Nur  nrun
-200   0.819697  ...
-```
-
-Convert with a splice script (see `desi_secondaries_to_grid.py`) into `|` rows with TBD \(h\)/\(A_s\). Insert new rows immediately after the last `| abacus_cosm…` table line in `emulator_grid`
-
-**Or** hand-edit a small staging `|` table and pass `--table` to `run_class.py` so you do not reprocess every historical TBD row in `emulator_grid`.
-
----
-
-## Checklist before sims
-
-- [ ] `Cosmologies/abacus_cosmNNN/CLASS_power` exists (z=1 \(P_{\mathrm{cb}}\))  
-- [ ] `cosm.def` present; `.par2` `#include`s it  
-- [ ] Row in `README.md` with filled \(h\), \(A_s\), \(\sigma_8\)  
-- [ ] Measured \(\sigma_{8,\mathrm{cb}}\) within ~few×10⁻⁴ of target (typical after fast→full)  
-- [ ] Same CLASS commit for classy and `class` binary  
+`H0_search` writes \(h\) as four decimals (`6.4f`). Dummy \(A_s\) after the bisection is `2.00001e-09`. Temporary `util/abacus_cosmNNN/` dirs from the bisection are deleted. `write_s8` aborts if `<root>.out` has no `sigma8=` (usually a killed CLASS).

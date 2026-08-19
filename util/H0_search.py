@@ -108,6 +108,27 @@ hFormat = '6.4f'
 AsFormat = '1.5e'
 args = {'target':TARGET,'base':BASE,'new':NEW}
 
+def load_theta_factors(glass_path):
+    """Map cosm number -> theta_s factor from glass last column (not absolute 100*theta_s)."""
+    arr = np.loadtxt(glass_path)
+    if arr.ndim == 1:
+        arr = arr.reshape(1, -1)
+    assert arr.shape[1] >= 10, (
+        "glass for --per-cosm-theta needs 10 cols ending in theta_s factor; got "
+        + str(arr.shape)
+    )
+    factors = {}
+    for row in arr:
+        factors[int(row[0])] = float(row[-1])
+    return factors
+
+
+def cosm_num_from_root(root):
+    """abacus_cosm222. or abacus_cosm222 -> 222"""
+    name = root.rstrip(".")
+    return int(name.split("abacus_cosm")[-1])
+
+
 def read_file(fn):
     # Parse parameters from file
     names = []
@@ -214,7 +235,13 @@ def write_dict_to_ini(param_dict,h):
             f.write(line)
             
     
-def main(target=args['target'],base=args['base'],new=args['new']):
+def main(
+    target=args["target"],
+    base=args["base"],
+    new=args["new"],
+    per_cosm_theta=False,
+    glass=None,
+):
     # create instance of the class "Class"
     TargetCosmo = Class()
 
@@ -227,8 +254,22 @@ def main(target=args['target'],base=args['base'],new=args['new']):
     TargetCosmo.compute()
     os.remove(target_param_dict[rootName]+"parameters.ini")
     os.remove(target_param_dict[rootName]+"unused_parameters")
-    theta_target = TargetCosmo.theta_s_100()
-    print("Target 100*theta_s = ",theta_target)
+    theta0 = TargetCosmo.theta_s_100()
+    print("Baseline 100*theta_s (theta0) = ", theta0)
+
+    factors = None
+    if per_cosm_theta:
+        glass_path = glass or os.environ.get("ABACUS_GLASS_DAT", "emulator_core4.dat")
+        factors = load_theta_factors(glass_path)
+        print(
+            "Per-cosm theta: theta_def = theta0 * factor from "
+            + glass_path
+            + " ("
+            + str(len(factors))
+            + " entries)"
+        )
+    else:
+        print("Target 100*theta_s = ", theta0)
 
     # The second (new) cosmology
     print("The new cosmology is read from "+base+" and "+new[1])
@@ -253,12 +294,24 @@ def main(target=args['target'],base=args['base'],new=args['new']):
         # create new directory with the root name unless it exists already
         dir_par = new_param_dict[rootName][:-1]
         if os.path.isdir(dir_par) != True: os.mkdir(dir_par)
+
+        if per_cosm_theta:
+            cnum = cosm_num_from_root(new_param_dict[rootName])
+            assert cnum in factors, "No theta_s factor in glass for cosm " + str(cnum)
+            factor = factors[cnum]
+            theta_def = theta0 * factor
+            print(
+                "cosm %d: factor=%.6f  theta_def=%.12f" % (cnum, factor, theta_def)
+            )
+        else:
+            theta_def = theta0
+
         os.chdir(dir_par)
         NewCosmo.set(new_param_dict)
         
         # run class
         NewCosmo.compute()
-        h = search(NewCosmo,theta_target)
+        h = search(NewCosmo, theta_def)
         write_dict_to_ini(new_param_dict,h)        
         os.chdir('..')
 
@@ -318,9 +371,25 @@ if __name__ == '__main__':
     parser.add_argument('--target', help='file defining the target-theta cosmology', default=TARGET)
     parser.add_argument('--base', help='file defining the base cosmology params', default=BASE)
     parser.add_argument('--new', help='format of the new cosmology params (comm-line,table,ini-file) and file name', nargs=2,default=NEW)
+    parser.add_argument(
+        '--per-cosm-theta',
+        action='store_true',
+        help='theta_def = theta0 * factor from glass last column (emulator_core4.dat)',
+    )
+    parser.add_argument(
+        '--glass',
+        default=None,
+        help='glass .dat with theta_s factor column (default: ABACUS_GLASS_DAT or emulator_core4.dat)',
+    )
     
-    args = parser.parse_args()
-    args = vars(args)
-
-    assert args['new'][0] in ['ini-file','comm-line','table'], "The first argument for 'new' should be one of comm-line, table, or ini-file"
-    exit(main(**args))
+    ns = parser.parse_args()
+    assert ns.new[0] in ['ini-file','comm-line','table'], "The first argument for 'new' should be one of comm-line, table, or ini-file"
+    exit(
+        main(
+            target=ns.target,
+            base=ns.base,
+            new=ns.new,
+            per_cosm_theta=ns.per_cosm_theta,
+            glass=ns.glass,
+        )
+    )
