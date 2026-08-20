@@ -24,3 +24,5 @@ LCDoHealpix = None
 LCHealpixZMax = None
 
 FinalRedshift = 0.1  # With no lightcones, no need to go to z=0
+
+SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
