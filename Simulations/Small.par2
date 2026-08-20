@@ -8,9 +8,19 @@
 # Custom parameters
 BoxSize = 488      # Matches the flagship mass exactly
 NP = 1800**3
-CPD = 405 
+CPD = 405     # PPC = 88 is somewhat larger than what was optimal for emulators; 441 is the next plausible step up, at PPC=68 
 ZD_Seed = 12357  
 NumZRanks = 2
 LogVerbosity = -1
 
 LCOrigins = None   # Don't output lightcones
+LCIsOctant = None
+LCZMax1 = None
+LCZMax2 = None
+LCBoxRepeats = 0
+LCSamplerInner = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+
+FinalRedshift = 0.1  # With no lightcones, no need to go to z=0

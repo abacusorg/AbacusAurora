@@ -1,0 +1,12 @@
+# This is the template for a test box that should fit well on 2 nodes.
+# This is the same as Small, but it also turns off the TimeSlice outputs, 
+# because varying MAP parameters doesn't change the DM available in other sims.
+
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.def"
+#include "./Small.par2"
+ 
+TimeSliceRedshifts_Subsample = None
+TimeSliceRedshifts_Samplers  = None
