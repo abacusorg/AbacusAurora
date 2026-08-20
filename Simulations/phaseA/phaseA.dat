@@ -1,3 +1,4 @@
+# columns: SSS BBB CCC PPP
 # SimName (with replacables)     BBB.par2         CCC PPP
 # Base cosmology, secondary suite
 AbacusAurora_emulmax_cCCC_phPPP  EmulatorMax      000 300
