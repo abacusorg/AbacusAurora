@@ -124,8 +124,8 @@ LCDirectory =  @OutputDirectory@ + "/lightcone"
 LogDirectory = @WorkingDirectory@ + "/log"
 TracersDirectory = @OutputDirectory@ + "/tracers"
 
-DerivativesDirectory = "$ABACUS_DERIVATIVES_ROOT$"
-FFTWisdomDirectory = "/flare/Abacus/Wisdom/"
+DerivativesDirectory = "$ABACUS_RESOURCE_ROOT$/Derivatives"
+FFTWisdomDirectory = "$ABACUS_RESOURCE_ROOT$/Wisdom"
 
 # $NNODES# set in env/aurora.sh
 # $_ABACUS_MPIRUN_ARGS$ is optional (empty if unset); job/onesim.sh sets it for --hostfile

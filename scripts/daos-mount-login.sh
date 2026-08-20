@@ -11,7 +11,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../job" && pwd)/daos.sh"
 
 conts=("$@")
-(( ${#conts[@]} )) || conts=("$DAOS_CONT_OUTPUTS" "$DAOS_CONT_CHECKPOINTS" "$DAOS_CONT_DERIVATIVES")
+(( ${#conts[@]} )) || conts=("$DAOS_CONT_OUTPUTS" "$DAOS_CONT_CHECKPOINTS" "$DAOS_CONT_RESOURCES")
 
 daos_preflight || exit 1
 
