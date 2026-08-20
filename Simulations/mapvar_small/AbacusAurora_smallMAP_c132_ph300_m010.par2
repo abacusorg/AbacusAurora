@@ -1,0 +1,7 @@
+SimName = "AbacusAurora_smallMAP_c132_ph300_m010"
+
+#include "../SmallMAP.par2"
+#include "../../Cosmologies/abacus_cosm132/cosm.def"
+#include "../../MapVariations/mapvar010.def"
+
+ZD_Seed = @ZD_Seed@+300-300
