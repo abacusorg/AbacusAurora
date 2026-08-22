@@ -1,194 +1,194 @@
 # columns: SSS BBB CCC PPP MMM
 # SimName (with replacables)          BBB.par2       CCC PPP MMM
 # Base cosmology, with variations
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         000 300 000
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         000 350 000
 # univariates
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 001
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 004
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 005
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 008
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 009
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 011
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 012
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 001
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 004
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 005
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 008
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 009
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 011
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 012
 # Now onto bivariates
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 020
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 021
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 022
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 023
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 024
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 025
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 026
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 027
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 028
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 029
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 030
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 300 031
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 020
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 021
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 022
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 023
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 024
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 025
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 026
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 027
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 028
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 029
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 030
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      000 350 031
 
 # Now we'll do other cosmologies
 
 # WMAP
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         001 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         001 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      001 350 011
 
 # AbS w0wa
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         002 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         002 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      002 350 011
 
 # DESI w0wa
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         200 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         200 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      200 350 011
 
 # high tau
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         201 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         201 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      201 350 011
 
 # Low sigma8
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         004 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         004 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      004 350 011
 
 # High sigma8
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         116 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         116 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      116 350 011
 
 # Very Low sigma8
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         130 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         130 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      130 350 011
 
 # Very High sigma8
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         133 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         133 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      133 350 011
 
 # Low omega_m
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         131 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         131 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      131 350 011
 
 # High omega_m
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         134 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         134 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      134 350 011
 
 # Low ns
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         132 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         132 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      132 350 011
 
 # High ns
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         135 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         135 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      135 350 011
 
 # High theta_star
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         222 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         222 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      222 350 011
 
 # Low theta_star
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         223 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         223 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      223 350 011
 
 # omega_m small variation 
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         102 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         102 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      102 350 011
 
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         103 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         103 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      103 350 011
 
 # ns small variation 
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         104 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         104 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      104 350 011
 
-AbacusAurora_small_cCCC_phPPP_mMMM     Small         105 300 000
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 002
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 003
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 006
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 007
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 010
-AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 300 011
+AbacusAurora_small_cCCC_phPPP_mMMM     Small         105 350 000
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 002
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 003
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 006
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 007
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 010
+AbacusAurora_smallMAP_cCCC_phPPP_mMMM  SmallMAP      105 350 011
 
 

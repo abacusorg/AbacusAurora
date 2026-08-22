@@ -9,7 +9,7 @@
 BoxSize = 488      # Matches the flagship mass exactly
 NP = 1800**3
 CPD = 405     # PPC = 88 is somewhat larger than what was optimal for emulators; 441 is the next plausible step up, at PPC=68 
-ZD_Seed = 12357  
+ZD_Seed = 12307  
 NumZRanks = 2
 LogVerbosity = -1
 
