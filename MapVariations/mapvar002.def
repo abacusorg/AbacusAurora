@@ -7,7 +7,7 @@
 # Map_Aaccrete=2.44949 #sqrt(6)
 # Map_Amerge=37.75
 
-Map_Amerge = 0.9*@Map_Amerge@
+Map_Amerge = 0.875*@Map_Amerge@
 
 
 
