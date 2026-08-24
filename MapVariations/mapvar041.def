@@ -1,0 +1,13 @@
+# These provide variations in the Map Hyperparameters
+
+
+# MAP parameters baselines:
+# Map_bmerge_proper=0.01518 #Mpc/h
+# Map_bmerge_max_ips= @Map_bmerge_proper@*@SofteningMax@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
+# Map_Aaccrete=2.44949 #sqrt(6)
+# Map_Amerge=37.75
+
+Map_Amerge = 0.7*0.7*@Map_Amerge@
+
+
+
