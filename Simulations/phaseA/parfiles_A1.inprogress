@@ -1,10 +1,10 @@
 Simulations/phaseA/AbacusAurora_emulmed_c000_ph301.par2
 Simulations/phaseA/AbacusAurora_emulmed_c000_ph302.par2
-Simulations/phaseA/AbacusAurora_emulmed_c001_ph301.par2
+# Simulations/phaseA/AbacusAurora_emulmed_c001_ph301.par2  # moved to A3
 Simulations/phaseA/AbacusAurora_emulmed_c001_ph302.par2
 Simulations/phaseA/AbacusAurora_emulmed_c002_ph301.par2
 Simulations/phaseA/AbacusAurora_emulmed_c002_ph302.par2
-Simulations/phaseA/AbacusAurora_emulmed_c100_ph300.par2
+# Simulations/phaseA/AbacusAurora_emulmed_c100_ph300.par2  # moved to A3
 Simulations/phaseA/AbacusAurora_emulmed_c101_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c102_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c103_ph300.par2
@@ -12,7 +12,7 @@ Simulations/phaseA/AbacusAurora_emulmed_c104_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c105_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c112_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c113_ph300.par2
-Simulations/phaseA/AbacusAurora_emulmed_c131_ph300.par2
+# Simulations/phaseA/AbacusAurora_emulmed_c131_ph300.par2  # moved to A3
 Simulations/phaseA/AbacusAurora_emulmed_c132_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c134_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c135_ph300.par2
