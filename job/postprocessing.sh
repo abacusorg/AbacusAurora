@@ -13,6 +13,9 @@
 #   5. every other checksummed directory is the size the checksums say.  The list
 #      of directories comes from the checksum records themselves, so timeslices,
 #      group files and anything added later are covered without editing this.
+#   6. the per-rank checksum files are combined into one checksums/colNNN.crc32
+#      per column, and the per-column directories removed.  Last, so that every
+#      check above runs against the files the run actually wrote.
 #
 # A failing step stops that sim; the remaining sims are still processed.
 #
@@ -79,14 +82,28 @@ ondisk_sizes() {
     findsizes "$1" | gawk '{print $1, $2}' | LC_ALL=C sort -k2,2 -k1,1
 }
 
+# The checksum records the size checks look at: the ones naming something inside
+# the SimDirectory.  A run whose CheckpointDirectory is elsewhere records the
+# invocation-end state write by a path that climbs out ("../../../../tmp/..."), and
+# step 5 takes the first component of every path as a directory to check -- so that
+# record becomes a root of "..", sending check_root over the entire parent directory,
+# every other sim included.  Runs from 2026-08 and earlier recorded the state; newer
+# ones do not.
+output_records() {
+    gawk 'NF >= 3 && $3 !~ /^(\.\.|\/)/' "${cksums[@]}"
+}
+
 # The same, from the checksum records, whose lines are "<crc32> <size> <path
-# relative to the SimDirectory>".  A restart appends to the same checksum files,
-# so an output regenerated after the restart is recorded twice; -u drops the
-# identical copies.  Two records for one path with *different* sizes are two
-# distinct lines and still show up in the diff, which is the case worth seeing.
+# relative to the SimDirectory>".  A restart appends to the same checksum files and
+# rewrites the outputs of the steps it redoes, so one path can carry several records
+# with different sizes.  The file on disk is whatever the last writer left, so the
+# last record is the one to compare against; earlier ones describe a version that no
+# longer exists.  gawk reads the files in argument order, so a later assignment wins.
 recorded_sizes() {
-    gawk -v root="$1" 'NF >= 3 && ($3 == root || index($3, root "/") == 1) { print $2, $3 }' \
-        "${cksums[@]}" | LC_ALL=C sort -u -k2,2 -k1,1
+    output_records |
+        gawk -v root="$1" '($3 == root || index($3, root "/") == 1) { sz[$3] = $2 }
+                           END { for (path in sz) print sz[path], path }' |
+        LC_ALL=C sort -k2,2 -k1,1
 }
 
 # Compare one top-level output name against its checksum records.
@@ -128,11 +145,13 @@ check_root() {
 # step that fails, having said why.
 process_sim() {
     local f n root fflag='' bad=0 failed=0 checked=0
-    local -a rank_cksums=() unrecorded=() roots=()
+    local -a rank_cksums=() unrecorded=() merged=() roots=() coldirs=()
 
     # Deliberately not local: recorded_sizes reads it.
     shopt -s nullglob
-    cksums=(checksums/col*/checksums.*.crc32)
+    # Both layouts: the per-rank files a run writes, and the per-column files
+    # step 6 leaves behind, so that -f can re-check an already-combined sim.
+    cksums=(checksums/col*/checksums.*.crc32 checksums/col*.crc32)
     shopt -u nullglob
 
     # --- Step 1 -----------------------------------------------------------
@@ -147,8 +166,9 @@ process_sim() {
         # not a rank's own file, so it has no maplog of its own to account for --
         # but its records do count for the size checks below.
         case $f in
-            *.unrecorded.crc32) unrecorded+=("$f") ;;
-            *)                  rank_cksums+=("$f") ;;
+            *.unrecorded.crc32)   unrecorded+=("$f") ;;
+            checksums/col*.crc32) merged+=("$f") ;;
+            *)                    rank_cksums+=("$f") ;;
         esac
     done
     if (( ${#unrecorded[@]} )); then
@@ -156,26 +176,44 @@ process_sim() {
             say "  warning: $f exists, so some checksums were not recorded incrementally"
         done
     fi
-    if (( ${#rank_cksums[@]} == 0 )); then
+    if (( ${#rank_cksums[@]} )); then
+        for f in "${rank_cksums[@]}"; do
+            # Distinct paths, so a restart's duplicate record still counts as one maplog.
+            n=$(gawk 'NF >= 3 && $3 ~ /^maplogs\// { seen[$3] } END { print length(seen) }' "$f")
+            if (( n != 1 )); then
+                say "  $f records $n maplog files, expected 1"
+                bad=$((bad + 1))
+            fi
+        done
+        if (( bad )); then
+            if (( bad == ${#rank_cksums[@]} )); then
+                say "  no rank recorded a maplog; was this built without USE_TRACERS?"
+            fi
+            say "  $bad of ${#rank_cksums[@]} rank checksum files do not have exactly one maplog"
+            return 1
+        fi
+        say "  ok: ${#rank_cksums[@]} rank checksum files, one maplog each"
+    elif (( ${#merged[@]} )); then
+        # Step 6 already combined this sim, so the per-rank files are gone and one
+        # maplog *per rank* is no longer answerable -- a column file holds every rank's
+        # records at once.  Check what survives: every column recorded some.
+        for f in "${merged[@]}"; do
+            n=$(gawk 'NF >= 3 && $3 ~ /^maplogs\// { seen[$3] } END { print length(seen) }' "$f")
+            if (( n == 0 )); then
+                say "  $f records no maplog files"
+                bad=$((bad + 1))
+            else
+                say "  $f records $n maplogs (already combined; the per-rank count is not checkable)"
+            fi
+        done
+        if (( bad )); then
+            say "  $bad of ${#merged[@]} combined checksum files record no maplog"
+            return 1
+        fi
+    else
         say "  every checksum file is an unrecorded one; no rank wrote its own"
         return 1
     fi
-    for f in "${rank_cksums[@]}"; do
-        # Distinct paths, so a restart's duplicate record still counts as one maplog.
-        n=$(gawk 'NF >= 3 && $3 ~ /^maplogs\// { seen[$3] } END { print length(seen) }' "$f")
-        if (( n != 1 )); then
-            say "  $f records $n maplog files, expected 1"
-            bad=$((bad + 1))
-        fi
-    done
-    if (( bad )); then
-        if (( bad == ${#rank_cksums[@]} )); then
-            say "  no rank recorded a maplog; was this built without USE_TRACERS?"
-        fi
-        say "  $bad of ${#rank_cksums[@]} rank checksum files do not have exactly one maplog"
-        return 1
-    fi
-    say "  ok: ${#rank_cksums[@]} rank checksum files, one maplog each"
 
     # --- Step 2 -----------------------------------------------------------
     say "step 2: maplog file sizes"
@@ -203,7 +241,7 @@ process_sim() {
     say "step 5: the remaining checksummed output sizes"
     while IFS= read -r root; do
         roots+=("$root")
-    done < <(gawk 'NF >= 3 { split($3, a, "/"); print a[1] }' "${cksums[@]}" |
+    done < <(output_records | gawk '{ split($3, a, "/"); print a[1] }' |
                  LC_ALL=C sort -u)
     if (( ${#roots[@]} )); then
         for root in "${roots[@]}"; do
@@ -220,6 +258,44 @@ process_sim() {
         return 1
     fi
     say "  ok: $checked directories besides maplogs"
+
+    # --- Step 6 -----------------------------------------------------------
+    # One file per column instead of one per rank.  Last, so the checks above ran
+    # against what the run wrote.  Record order within a rank is preserved and no
+    # path is written by two ranks, so concatenating cannot change which record is
+    # the last for a path -- which is what recorded_sizes() relies on.
+    say "step 6: combine the per-rank checksum files"
+    shopt -s nullglob
+    coldirs=(checksums/col*/)
+    shopt -u nullglob
+    if (( ${#coldirs[@]} == 0 )); then
+        say "  ok: already combined"
+        return 0
+    fi
+    local col out nin nout ncol=0
+    for f in "${coldirs[@]}"; do
+        col=$(basename "$f")
+        out=checksums/$col.crc32
+        if [[ -e $out ]]; then
+            say "  $out exists while $f is still here; refusing to merge twice"
+            return 1
+        fi
+        # Count first, and only unlink once the combined file is provably complete:
+        # these records are the only description of what the run wrote.
+        nin=$(cat -- "$f"checksums.*.crc32 | wc -l)
+        cat -- "$f"checksums.*.crc32 > "$out.part"
+        nout=$(wc -l < "$out.part")
+        if (( nin != nout )); then
+            say "  $col: combined $nout lines from $nin; leaving $f alone"
+            rm -f -- "$out.part"
+            return 1
+        fi
+        mv -f -- "$out.part" "$out"
+        rm -rf -- "$f"
+        ncol=$((ncol + 1))
+        say "  $col: $nout records"
+    done
+    say "  ok: combined $ncol column(s)"
 }
 
 ndone=0 nskip=0 nfail=0
