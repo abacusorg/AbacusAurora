@@ -82,6 +82,17 @@ ondisk_sizes() {
     findsizes "$1" | gawk '{print $1, $2}' | LC_ALL=C sort -k2,2 -k1,1
 }
 
+# The checksum records the size checks look at: the ones naming something inside
+# the SimDirectory.  A run whose CheckpointDirectory is elsewhere records the
+# invocation-end state write by a path that climbs out ("../../../../tmp/..."), and
+# step 5 takes the first component of every path as a directory to check -- so that
+# record becomes a root of "..", sending check_root over the entire parent directory,
+# every other sim included.  Runs from 2026-08 and earlier recorded the state; newer
+# ones do not.
+output_records() {
+    gawk 'NF >= 3 && $3 !~ /^(\.\.|\/)/' "${cksums[@]}"
+}
+
 # The same, from the checksum records, whose lines are "<crc32> <size> <path
 # relative to the SimDirectory>".  A restart appends to the same checksum files and
 # rewrites the outputs of the steps it redoes, so one path can carry several records
@@ -89,9 +100,10 @@ ondisk_sizes() {
 # last record is the one to compare against; earlier ones describe a version that no
 # longer exists.  gawk reads the files in argument order, so a later assignment wins.
 recorded_sizes() {
-    gawk -v root="$1" 'NF >= 3 && ($3 == root || index($3, root "/") == 1) { sz[$3] = $2 }
-                       END { for (path in sz) print sz[path], path }' \
-        "${cksums[@]}" | LC_ALL=C sort -k2,2 -k1,1
+    output_records |
+        gawk -v root="$1" '($3 == root || index($3, root "/") == 1) { sz[$3] = $2 }
+                           END { for (path in sz) print sz[path], path }' |
+        LC_ALL=C sort -k2,2 -k1,1
 }
 
 # Compare one top-level output name against its checksum records.
@@ -229,7 +241,7 @@ process_sim() {
     say "step 5: the remaining checksummed output sizes"
     while IFS= read -r root; do
         roots+=("$root")
-    done < <(gawk 'NF >= 3 { split($3, a, "/"); print a[1] }' "${cksums[@]}" |
+    done < <(output_records | gawk '{ split($3, a, "/"); print a[1] }' |
                  LC_ALL=C sort -u)
     if (( ${#roots[@]} )); then
         for root in "${roots[@]}"; do
