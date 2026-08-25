@@ -1,6 +1,8 @@
 #!/bin/bash
 # onesim.sh — run ONE Abacus simulation on a given hostfile, monitoring it and
-# restarting up to a few times if it dies.
+# restarting up to a few times if it dies.  Two caps bound the retrying:
+# max_consec_fail rapid failures in a row, and max_restarts relaunches in total
+# however healthy each attempt looked.  See the loop at the bottom.
 #
 # Kept deliberately separate from the multi-sim outer loop (multisim.pbs) so that:
 #   - its retry/backoff state stays private to this one sim, and
@@ -25,8 +27,9 @@ hostfile="$2"
 shift 2
 overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.run
 
-max_consec_fail=0
-min_healthy_seconds=7200        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
+max_consec_fail=2
+min_healthy_seconds=14400        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
+max_restarts=3                   # hard cap on relaunches of any kind, however healthy they looked
 
 if [[ ! -r "$par2" ]]; then
     echo "onesim: parameter file '$par2' not readable" >&2
@@ -57,6 +60,7 @@ fi
 
 attempt=0
 consec_fail=0
+total_fail=0
 
 # Capture so that the loop doesn't keep appending
 abacus_mpirun_args_base=${ABACUS_MPIRUN_ARGS:-}
@@ -85,7 +89,22 @@ while true; do
         exit 0
     fi
 
-    echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s); relaunching ===" >&2
+    # Just the failure here.  Whether we relaunch is not known until the caps below have
+    # been evaluated, so claiming it on this line would be a lie every time we give up.
+    echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s) ===" >&2
+
+    # Two independent caps, both needed:
+    #
+    #   consec_fail catches a sim that dies QUICKLY over and over -- the cheap, obvious
+    #   loop, cut off after max_consec_fail rapid failures in a row.
+    #
+    #   total_fail is the backstop for a sim that fails SLOWLY but repeatedly.  If each
+    #   attempt survives longer than min_healthy_seconds, every one of them looks healthy
+    #   on its own and consec_fail resets each time, so nothing above would ever stop it:
+    #   the sim would keep relaunching for as long as the job's walltime allowed, which is
+    #   how a single sick sim can burn an allocation.  Counting every failure regardless of
+    #   how long it lasted bounds the damage at max_restarts relaunches.
+    total_fail=$((total_fail+1))
 
     if (( dt < min_healthy_seconds )); then
         consec_fail=$((consec_fail+1))
@@ -96,4 +115,16 @@ while true; do
     else
         consec_fail=0
     fi
+
+    # Checked after the rapid-failure logic so it applies on both paths: each failure so far
+    # has consumed one relaunch, so the (max_restarts + 1)'th is the one to refuse.
+    if (( total_fail > max_restarts )); then
+        echo "=== $total_fail failures in this sim, only $max_restarts restart(s) allowed; giving up ===" >&2
+        exit 1
+    fi
+
+    # Past both caps, so a relaunch is now certain: say so, and say what is left of the
+    # budget.  Reached only when neither exit above fired, so this can never contradict a
+    # give-up message.
+    echo "=== relaunching after $total_fail failure(s); $((max_restarts - total_fail)) restart(s) still allowed ===" >&2
 done
