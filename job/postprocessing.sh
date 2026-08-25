@@ -28,8 +28,20 @@
 # Deliberately not done here: deleting log/, checkpoint/, or the wisdom file.
 # That is a separate cleanup script.
 #
-# Usage: postprocessing.sh [-f] <simdir> [simdir ...]
-#   -f   re-run sims whose last attempt failed or was interrupted
+# The SimDirectory is the OutputDirectory: checksums/ and maplogs/ are written there
+# (P.OutputDirectory in io_thread.cpp and timestep.cpp), as are the group files and
+# slices.  log/ is not: it hangs off WorkingDirectory, which under --daos is a DAOS
+# container while the outputs stay on flare.  Steps 3+4 therefore read LogDirectory
+# out of the sim's parameter file rather than assuming <simdir>/log, and --daos
+# mounts the container that holds it.
+#
+# Usage: postprocessing.sh [-f] [--daos] <simdir> [simdir ...]
+#   -f       re-run sims whose last attempt failed or was interrupted
+#   --daos   mount the DAOS containers first, and resolve the paths a parameter file
+#            recorded on a compute node.  Inside a PBS allocation this mounts across
+#            the allocation; on a login node it mounts per-user, for this node only,
+#            and leaves the mount behind (concurrent runs share it -- daos.sh's
+#            daos_login_unmount tears it down).
 #
 # Environment:
 #   ARCHIVE_LOGS   path to archive-logs.sh (default: beside this script)
@@ -37,27 +49,56 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: postprocessing.sh [-f] <simdir> [simdir ...]" >&2
+    echo "usage: postprocessing.sh [-f] [--daos] <simdir> [simdir ...]" >&2
     exit 2
 }
 
 force=0
-while getopts ':f' opt; do
-    case $opt in
-        f) force=1 ;;
-        *) usage ;;
+daos=0
+simdirs=()
+while (( $# )); do
+    case $1 in
+        -f|--force) force=1; shift ;;
+        --daos)     daos=1; shift ;;
+        -h|--help)  usage ;;
+        --)         shift; simdirs+=("$@"); break ;;
+        -*)         echo "error: unknown option '$1'" >&2; usage ;;
+        *)          simdirs+=("$1"); shift ;;
     esac
 done
-shift $((OPTIND - 1))
-(( $# )) || usage
+(( ${#simdirs[@]} )) || usage
+set -- "${simdirs[@]}"
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# For daos_resolve/daos_mount/daos_login_mount and daos_localize_path.  Sourcing only
+# defines them; nothing is mounted and no root is set until --daos asks.
+source "$here/daos.sh"
 ARCHIVE_LOGS=${ARCHIVE_LOGS:-$here/archive-logs.sh}
 if [[ ! -x $ARCHIVE_LOGS ]]; then
     echo "error: no executable archive-logs.sh at $ARCHIVE_LOGS" >&2
     echo "       (set ARCHIVE_LOGS if it lives elsewhere)" >&2
     exit 1
 fi
+
+# Mount whatever holds the working directories.  Inside an allocation daos_mount
+# covers every node and a parameter file's paths resolve verbatim; on a login node the
+# mounts are per-user and at a different path, which daos_localize_path fixes up.
+setup_daos() {
+    (( daos )) || return 0
+    ABACUS_DAOS=on daos_resolve
+    # Only the Outputs container: it holds the working directory, hence log/, and also
+    # the outputs themselves when ABACUS_DAOS_OUTPUTS=on.  Checkpoints is not needed --
+    # output_records() deliberately ignores anything outside the SimDirectory, which is
+    # exactly what the checkpoint records are.
+    if [[ -n ${PBS_NODEFILE:-} ]]; then
+        echo "mounting $DAOS_CONT_OUTPUTS across the allocation"
+        daos_mount "$DAOS_CONT_OUTPUTS" || exit 1
+    else
+        echo "mounting $DAOS_CONT_OUTPUTS on this login node (per-user)"
+        daos_login_mount "$DAOS_CONT_OUTPUTS" || exit 1
+    fi
+}
+setup_daos
 
 # `lfs find` answers from the MDS instead of stat()ing every file, which is what
 # makes this affordable on a slice directory of tens of thousands of files.  GNU
@@ -139,6 +180,60 @@ check_root() {
         echo "    ... $((nlines - 20)) more line(s), all of them in $PWD/$record"
     fi
     return 1
+}
+
+# The sim's LogDirectory, via Abacus's own parameter parser so that quoting and
+# includes are handled the way the code handles them.  Mirrors sim_outputdir() in
+# archive-logs.sh; empty output (or a nonzero exit) means "could not tell".
+sim_logdir() {
+    python3 - "$1" <<'ENDPY'
+import sys
+from pathlib import Path
+from abacus.param import InputFile
+
+simdir = Path(sys.argv[1])
+pars = sorted(simdir.glob('*.par'))
+if len(pars) != 1:
+    sys.exit(1)
+print(dict(InputFile(str(pars[0]))).get('LogDirectory', ''))
+ENDPY
+}
+
+# Sets $logroot to the directory to hand archive-logs.sh (which looks for <arg>/log):
+# the SimDirectory when the log is right there (everything on one filesystem), else
+# wherever the parameter file says the log went.  Returns nonzero with the reason in
+# $logroot_reason, because "no log here" and "the abacus env is not loaded" want
+# different responses from a human.
+#
+# Results by assignment, not stdout: a $(...) call would run this in a subshell and
+# the reason would be lost with it.  Deliberately not local in the caller.
+logroot=
+logroot_reason=
+resolve_logroot() {
+    local logdir root
+    logroot= logroot_reason=
+    [[ -d $PWD/log ]] && { logroot=$PWD; return 0; }
+
+    if ! logdir=$(sim_logdir "$PWD" 2>/dev/null) || [[ -z $logdir ]]; then
+        logroot_reason="no log/ here, and no LogDirectory readable from a *.par"
+        logroot_reason+=" (exactly one *.par, and the abacus env sourced?)"
+        return 1
+    fi
+    logdir=$(daos_localize_path "$logdir")
+
+    # Strip the trailing /log rather than taking dirname: archive-logs.sh appends
+    # /log to whatever it is given, so a LogDirectory that does not end in /log
+    # would silently send it somewhere else.
+    root=${logdir%/log}
+    if [[ $root == "$logdir" ]]; then
+        logroot_reason="LogDirectory does not end in /log: $logdir"
+        return 1
+    fi
+    if [[ ! -d $root/log ]]; then
+        logroot_reason="LogDirectory names $logdir, which is not present here"
+        return 1
+    fi
+    logroot=$root
 }
 
 # The five steps, run with $PWD = the SimDirectory.  Returns nonzero at the first
@@ -224,10 +319,21 @@ process_sim() {
     # and a rename.  -d names the destination root so that the archives land in
     # this SimDirectory, rather than in whatever OutputDirectory the parameter
     # file names -- which may not even be mounted here.
+    #
+    # The positional argument is the log's parent, not this SimDirectory: with the
+    # outputs on flare and the working directory on DAOS they are different roots.
+    # Both use <SimName> as their last component, so archive-logs.sh's basename still
+    # resolves -d to this SimDirectory.
     say "steps 3+4: history.asdf and log.zip"
+    if ! resolve_logroot; then
+        say "  $logroot_reason"
+        (( daos )) || say "    the working directory may be on DAOS; retry with --daos"
+        return 1
+    fi
+    [[ $logroot == "$PWD" ]] || say "  log from $logroot"
     if (( force )); then fflag=-f; fi
     # $fflag is deliberately unquoted: empty must expand to no argument at all.
-    if "$ARCHIVE_LOGS" $fflag -d "$(dirname "$PWD")" "$PWD" 2>&1 |
+    if "$ARCHIVE_LOGS" $fflag -d "$(dirname "$PWD")" "$logroot" 2>&1 |
             tee -a "$record" | sed 's/^/    /'; then
         say "  ok: history.asdf and log.zip"
     else

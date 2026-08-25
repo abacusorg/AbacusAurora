@@ -125,6 +125,69 @@ daos_check_mounts() {
     done
 }
 
+# Mount the given containers on THIS NODE only, at the per-user login mountpoint.
+# daos_mount() drives launch-dfuse.sh over $PBS_NODEFILE and so needs an allocation;
+# this is the single-node equivalent, for anything that runs on a login node.  Already
+# mounted is success: the mounts are per-user and concurrent readers share them.
+daos_login_mount() {
+    local cont mnt i
+    daos_preflight || return 1
+    for cont; do
+        mnt=$(daos_login_mountpoint "$cont")
+        if mountpoint -q "$mnt"; then
+            echo "already mounted: $mnt"
+            continue
+        fi
+        if ! daos_have_container "$cont"; then
+            echo "error: no container $DAOS_POOL:$cont" >&2
+            return 1
+        fi
+
+        mkdir -p "$mnt"
+        # Through daos_cli, not a bare dfuse: start-dfuse.sh needs the daos module's
+        # environment (libfabric, the agent socket), which a login shell may not have.
+        daos_cli start-dfuse.sh -m "$mnt" --pool "$DAOS_POOL" --cont "$cont" || return 1
+
+        # dfuse daemonizes, so the mount appears a moment after the launcher returns.
+        for i in $(seq 20); do
+            mountpoint -q "$mnt" && break
+            sleep 0.5
+        done
+        if ! mountpoint -q "$mnt"; then
+            echo "error: dfuse did not mount $mnt" >&2
+            return 1
+        fi
+        echo "mounted $DAOS_POOL:$cont at $mnt"
+    done
+}
+
+# Tear down what daos_login_mount() made.  Unlike clean-dfuse.sh (which SIGKILLs every
+# dfuse on every node) this touches only this user's mounts on this node, so it is safe
+# to run while a job holds its own.
+daos_login_unmount() {
+    local cont mnt
+    for cont; do
+        mnt=$(daos_login_mountpoint "$cont")
+        if mountpoint -q "$mnt"; then
+            fusermount3 -u "$mnt"
+            echo "unmounted $mnt"
+        else
+            echo "not mounted: $mnt"
+        fi
+        rmdir "$mnt" 2>/dev/null || true
+    done
+}
+
+# Rewrite a DAOS path recorded elsewhere so it resolves here.  A parameter file is
+# written on a compute node and so names daos_mountpoint(); on a shared login node
+# the same container is at daos_login_mountpoint() instead.  Any other path -- flare,
+# or a DAOS path already in login form -- passes through untouched.
+daos_localize_path() {
+    local p=$1
+    if [[ -n ${PBS_NODEFILE:-} ]]; then printf '%s\n' "$p"; return; fi
+    printf '%s\n' "${p/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"
+}
+
 # clean-dfuse.sh is global (it SIGKILLs every dfuse on every node), so one call
 # covers all containers.  Best-effort: this runs from an EXIT trap.
 daos_unmount() {
