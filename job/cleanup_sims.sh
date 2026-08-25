@@ -69,10 +69,12 @@ remove() {
 
 ncleaned=0 nskipped=0 nwarned=0
 rc=0
+nsim=0 ntotal=$#     # $# is the sim count: getopts was shifted off, and the loop never shifts
 
 for src; do
     src=${src%/}
-    echo "=== $(basename "$src") ==="
+    nsim=$((nsim + 1))
+    echo "=== $(basename "$src") ($nsim of $ntotal) ==="
 
     if [[ ! -d $src ]]; then
         echo "  warning: not a directory: $src" >&2
