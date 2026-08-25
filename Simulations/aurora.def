@@ -24,6 +24,7 @@ Conv_IOMode = "overwrite"   # This may be vestigial, but in any case, "normal" c
 
 AllowDirectIO = 0
 StashArenas = 1    # This chooses to avoid freeing Arenas back to the kernel, keeping them for future allocations.
+StashMaxIdleSteps = 5   # Sweep DDR arenas idle more than this many steps out of the stash, on the ReleaseFreeMemoryInterval cadence.  -1 to turn off.  HBM is never swept.
 
 # OpenMP and thread parameters
 OMP_NUM_THREADS = 82
