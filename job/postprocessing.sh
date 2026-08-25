@@ -260,10 +260,14 @@ process_sim() {
         # record as it went (the run logs a WARNING when it writes one).  It is
         # not a rank's own file, so it has no maplog of its own to account for --
         # but its records do count for the size checks below.
-        case $f in
-            *.unrecorded.crc32)   unrecorded+=("$f") ;;
-            checksums/col*.crc32) merged+=("$f") ;;
-            *)                    rank_cksums+=("$f") ;;
+        # On the basename: a case pattern is not a pathname glob, so its * matches /
+        # too, and "checksums/col*.crc32" would swallow every per-rank file as though
+        # step 6 had already run -- silently skipping the one-maplog-per-rank check.
+        case ${f##*/} in
+            *.unrecorded.crc32) unrecorded+=("$f") ;;
+            col*.crc32)         merged+=("$f") ;;
+            checksums.*.crc32)  rank_cksums+=("$f") ;;
+            *)                  say "  ignoring unrecognized checksum file $f" ;;
         esac
     done
     if (( ${#unrecorded[@]} )); then
