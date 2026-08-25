@@ -13,6 +13,8 @@
 #   5. every other checksummed directory is the size the checksums say.  The list
 #      of directories comes from the checksum records themselves, so timeslices,
 #      group files and anything added later are covered without editing this.
+#      `work` is the one exclusion -- it is the state, not an output.  See the
+#      skip list at step 5.
 #
 # A failing step stops that sim; the remaining sims are still processed.
 #
@@ -207,7 +209,20 @@ process_sim() {
                  LC_ALL=C sort -u)
     if (( ${#roots[@]} )); then
         for root in "${roots[@]}"; do
-            if [[ $root == maplogs ]]; then continue; fi
+            # maplogs was step 2.
+            #
+            # work is the StateDirectory ($ABACUS_CHECKPOINT_ROOT/<SimName>/work per
+            # aurora.def).  When the checkpoint and output roots coincide -- which they
+            # do whenever the outputs are not on DAOS -- it sits inside the
+            # OutputDirectory, so the checksum paths, which are recorded relative to
+            # that, come out as "work/...".  Those records are not outputs and are not
+            # expected to match: the state is rewritten every step, and slab sizes shift
+            # as particles move between slabs, so a record from an earlier step
+            # legitimately disagrees with what is on disk now.  Skip it rather than
+            # reporting known-uninteresting disagreements.
+            case $root in
+                maplogs|work) continue ;;
+            esac
             checked=$((checked + 1))
             check_root "$root" || failed=$((failed + 1))
         done
@@ -219,7 +234,7 @@ process_sim() {
         say "  $failed of $checked checksummed directories disagree"
         return 1
     fi
-    say "  ok: $checked directories besides maplogs"
+    say "  ok: $checked directories besides maplogs and work"
 }
 
 ndone=0 nskip=0 nfail=0
