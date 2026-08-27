@@ -1,0 +1,7 @@
+SimName = "AbacusAurora_rock_c000_ph390_n800"
+
+#include "../Rockstar.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+NP = 1200**3
+CPD = 315

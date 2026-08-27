@@ -1,0 +1,39 @@
+# This is the template for a test box that should we use for Rockstar tests. 
+# This is sized so that we can improve the mass resolution by about 4x to 1600^3, the largest box on which we can run Rockstar in 256 GB.
+
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm000/cosm.def"
+#include "./base.def"
+
+# Custom parameters
+BoxSize = 217      # Matches the flagship mass exactly
+NP = 800**3
+CPD = 175     # PPC = 95
+ZD_Seed = 12507  
+NumZRanks = 2
+LogVerbosity = -1
+
+# We're going to use a lot of time slice outputs, fully sampled
+
+TimeSliceRedshifts_Subsample = [5.0, 4.89239, 4.7867, 4.68291, 4.58098, 4.48088, 4.38258, 4.28604, 4.19123, 4.09812, 4.00668, 3.91688, 3.8287, 3.74209, 3.65704, 3.57351, 3.49148, 3.41092, 3.33181, 3.25411, 3.17781, 3.10288, 3.02929, 2.95702, 2.88605, 2.81635, 2.7479, 2.68068, 2.61467, 2.54983, 2.48616, 2.42364, 2.36223, 2.30193, 2.2427, 2.18454, 2.12743, 2.07133, 2.01625, 1.96215, 1.90902, 1.85684, 1.8056, 1.75528, 1.70587, 1.65733, 1.60967, 1.56287, 1.5169, 1.47176, 1.42742, 1.38389, 1.34113, 1.29914, 1.2579, 1.2174, 1.17763, 1.13858, 1.10022, 1.06255, 1.02556, 0.989227, 0.953549, 0.91851, 0.8841, 0.850307, 0.817121, 0.784529, 0.752522, 0.721089, 0.69022, 0.659905, 0.630133, 0.600895, 0.572182, 0.543984, 0.516291, 0.489095, 0.462387, 0.436158, 0.4104, 0.385103, 0.36026, 0.335863, 0.311903, 0.288373, 0.265265, 0.242571, 0.220285, 0.198398, 0.176904, 0.155795, 0.135065, 0.114707, 0.0947137, 0.0750792, 0.0557968, 0.0368603, 0.0182634, 0.0]
+
+TimeSliceRedshifts_Samples = [ "all" ]
+
+MapLogRedshifts = None  # Turn these off, because the TimeSliceRedshifts will fill them in.
+
+MapForestSize = 3   # We have more TimeSlice outputs than usual; this is overkill, but we have memory to burn
+
+LCOrigins = None   # Don't output lightcones
+LCIsOctant = None
+LCZMax1 = None
+LCZMax2 = None
+LCBoxRepeats = 0
+LCSamplerInner = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+
+FinalRedshift = 0.0  
+
+SCR_Checkpoint_Seconds = 108000   # Never checkpoint for these sims

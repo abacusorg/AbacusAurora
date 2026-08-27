@@ -1,0 +1,1 @@
+This is a simple mass-resolution progression on a box of 215 Mpc/h, sized so that we think the biggest sim can be processed by Rockstar on a 256 GB machine.  The base is 800^3, and the box size matches that to the flagship mass resolution.  We're writing the full particle set at many redshifts.
