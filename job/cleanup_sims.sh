@@ -1,6 +1,9 @@
 #!/bin/bash
-# Delete the working files of simulations that have been post-processed:
-# the checkpoint/ and log/ directories and the FFTW wisdom file.
+# Delete the working files of simulations that have been post-processed --
+# the checkpoint/, log/ and work/ directories and the FFTW wisdom file -- then
+# seal the SimDirectory: create an empty products/ and make everything
+# read-only except products/, which stays user+group writable (and setgid, so
+# that what a collaborator drops there keeps the sim's group).
 #
 # postprocess.done in the SimDirectory is the key: it is written by
 # postprocessing.sh only after the outputs have been checked against their
@@ -8,7 +11,7 @@
 # it is left completely alone -- the logs may be the only remaining record of
 # what went wrong.
 #
-# Note that these three live under WorkingDirectory, which aurora.def points at
+# Note that these four live under WorkingDirectory, which aurora.def points at
 # $ABACUS_WORKING_ROOT$/<SimName> while the SimDirectory is
 # $ABACUS_OUTPUT_ROOT$/<SimName>.  When those two roots are the same, as they are
 # for the runs this is written for, they are right here in the SimDirectory.
@@ -16,7 +19,7 @@
 # nothing, which is the safe way to be wrong.
 #
 # Usage: cleanup_sims.sh [-n] <simdir> [simdir ...]
-#   -n   say what would be deleted, and delete nothing
+#   -n   say what would be done, and touch nothing
 #
 # Exits nonzero if any named sim was skipped, so that a sweep over many sims
 # does not quietly leave some behind.
@@ -90,6 +93,7 @@ for src; do
     failed=0
     remove "$src/checkpoint" dir || failed=1
     remove "$src/log" dir || failed=1
+    remove "$src/work" dir || failed=1
 
     # fftw_<cpd>.wisdom, and any siblings from a run at another cpd.
     shopt -s nullglob
@@ -101,6 +105,45 @@ for src; do
         for w in "${wisdom[@]}"; do
             remove "$w" file || failed=1
         done
+    fi
+
+    # products/ is where anything derived from this sim goes from here on: it is
+    # the one place left writable below.  mkdir -p is content with an existing
+    # one, and does not need write permission on a SimDirectory already sealed
+    # by an earlier run.
+    if [[ -d $src/products ]]; then
+        echo "  products/: already there"
+    elif (( dryrun )); then
+        echo "  would create products/"
+    elif mkdir -p "$src/products"; then
+        echo "  created products/"
+    else
+        echo "  warning: could not create products/" >&2
+        failed=1
+    fi
+
+    # Seal it.  Not if something was left behind: rm needs write permission on
+    # the containing directory, so locking now would make the leftover
+    # undeletable until someone chmods by hand.  Leave it open, warn, and let a
+    # rerun finish the job once the leftover has been sorted out.
+    if (( failed )); then
+        echo "  warning: something was left behind; leaving permissions alone" >&2
+    elif (( dryrun )); then
+        echo "  would make everything read-only, products/ user+group writable"
+    # products/ is pruned rather than stripped and re-opened, so that a rerun
+    # leaves whatever is already in there exactly as its owner left it.  Symlinks
+    # are skipped too: chmod follows them, and the target is somebody else's.
+    elif find "$src" -path "$src/products" -prune -o ! -type l -exec chmod a-w {} + &&
+         chmod ug+w "$src/products"; then
+        # setgid keeps the sim's group on whatever gets dropped into products/,
+        # but the kernel refuses it to anyone who is not a member of that group.
+        # That is a nicety to do without, not a reason to fail the seal.
+        chmod g+s "$src/products" 2>/dev/null ||
+            echo "  note: could not setgid products/; new files there get your default group"
+        echo "  read-only, except products/"
+    else
+        echo "  warning: chmod incomplete; permissions may be half-set" >&2
+        failed=1
     fi
 
     if (( failed )); then
