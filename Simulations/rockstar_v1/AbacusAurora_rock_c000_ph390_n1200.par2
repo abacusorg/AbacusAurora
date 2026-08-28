@@ -1,4 +1,4 @@
-SimName = "AbacusAurora_rock_c000_ph390_n800"
+SimName = "AbacusAurora_rock_c000_ph390_n1200"
 
 #include "../Rockstar.par2"
 #include "../../Cosmologies/abacus_cosm000/cosm.def"
