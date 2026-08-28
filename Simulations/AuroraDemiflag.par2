@@ -1,5 +1,5 @@
 # These are the parameters for our half-sized flagship
-# This should run on 1050 nodes.
+# This should run on 1050 or 1085 nodes.
 # Don't forget the cosm.def file and a ZD_Seed
 
 ### TODO: 
@@ -16,6 +16,7 @@ NP = 18432**3
 CPD = 4375
 NumZRanks = 35
 #  We plan to invoke on 1050 nodes to make 60x35 ranks.  That gives 72.91 slabs on average.  And 125 cells in each Z column.
+#  Or 1085 nodes and 62x35 ranks.  That's 70.56 slabs on average, and the larger slabs have 2.9B particles/ranks.
 
 # The usual set of timeslices:
 TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
