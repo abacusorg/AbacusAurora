@@ -1,0 +1,3 @@
+# Byte-compiled nodehealth.py; a stray one here would block hashrun.sh
+# (check_prod allows untracked files only under untracked/).
+__pycache__/

@@ -86,10 +86,41 @@ if (( required > num_nodes )); then
     exit 1
 fi
 
-# Nodes past what the sims use become a spare pool (future blacklist-and-replace).
+# Node health. The persistent history of nodes that have killed sims before lives
+# outside any one job (job/out is gitignored, so this does not dirty the prod tree
+# that hashrun.sh insists is clean). nodehealth.py picks it up from the environment.
+export ABACUS_NODEHEALTH=${ABACUS_NODEHEALTH:-$HASHRUN_PROD/job/out/nodehealth.tsv}
+nodehealth="$abacus_prod/job/nodehealth.py"
+mkdir -p "$out/nodehealth"
+
+# Hold back nodes we already know are bad, so they are neither assigned to a sim
+# nor handed out as a spare. order-nodes will yield rather than leave the sims
+# unplaceable. Reordering here is safe: nodes.sorted is already our own reordered
+# copy -- $PBS_NODEFILE itself is untouched, as daos.sh requires.
+if [[ -r $nodehealth ]] && python "$nodehealth" order-nodes \
+        --nodes nodes.sorted --good nodes.usable \
+        --quarantine "$out/hostfile_quarantine" --required "$required"; then
+    :
+else
+    echo "WARNING: nodehealth order-nodes unavailable; using the allocation as-is" >&2
+    cp nodes.sorted nodes.usable
+    : > "$out/hostfile_quarantine"
+fi
+num_usable=$(( $(wc -l < nodes.usable) ))
+if (( required > num_usable )); then
+    echo "ERROR: only $num_usable node(s) left after quarantine, need $required" >&2
+    exit 1
+fi
+
+# Nodes past what the sims use become the spare pool that onesim.sh draws on when
+# it blames a node for a crash.
 export HOSTFILE_EXTRA="$out/hostfile_extra"
-tail -n +"$(( required + 1 ))" nodes.sorted > "$HOSTFILE_EXTRA"
-echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
+tail -n +"$(( required + 1 ))" nodes.usable > "$HOSTFILE_EXTRA"
+echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used;" \
+     "$(( num_usable - required )) spare; $(( num_nodes - num_usable )) quarantined"
+if [[ -n ${spare_nodes:-} ]] && (( num_usable - required < spare_nodes )); then
+    echo "WARNING: asked for $spare_nodes spare(s), only $(( num_usable - required )) available" >&2
+fi
 echo
 
 # --- Storage -------------------------------------------------------------------
@@ -129,7 +160,11 @@ for i in "${!par2s[@]}"; do
     hf="$out/nodefile_part_$(printf '%03d' "$i")"
     start=$(( i * nodes_per_sim + 1 ))
     end=$(( (i + 1) * nodes_per_sim ))
-    sed -n "${start},${end}p" nodes.sorted > "$hf"
+    sed -n "${start},${end}p" nodes.usable > "$hf"
+
+    # onesim.sh diagnoses a crash from its own output, so it has to be told which
+    # file that is -- it cannot see the redirection we apply to it.
+    export ABACUS_SIM_INDEX="$i" ABACUS_SIM_LOG="$out/sim_${i}.out"
 
     # < /dev/null keeps the backgrounded onesim from draining our stdin.
     "$onesim" "${par2s[$i]}" "$hf" ${overrides[@]+"${overrides[@]}"} < /dev/null > "sim_${i}.out" 2>&1 &
