@@ -21,9 +21,12 @@ AbacusAurora/
 │   ├── hashrun.sh         #   launcher: build hash-keyed code, verify repo clean, qsub
 │   ├── multisim.pbs       #   PBS batch job: split the allocation, launch each sim
 │   ├── onesim.sh          #   per-sim monitor + restart-on-failure
+│   ├── nodehealth.py      #   blames a node for a crash and swaps in a spare
 │   ├── daos.sh            #   DAOS pool/containers, mount lifecycle, on/off switches
+│   ├── test/              #   offline tests for nodehealth (no Aurora needed)
 │   ├── in/                #   (git-ignored) scratch for par2-list files fed to hashrun
 │   └── out/<jobid>/       #   (git-ignored) per-job staged inputs, stdout/stderr, hostfiles
+├── doc/                   # longer-form notes on how the job machinery works
 ├── scripts/               # DAOS login-node mounts and derivative staging
 ├── README.md
 └── LICENSE
@@ -41,6 +44,11 @@ To add cosmologies (CLASS products + `cosm.def`), see [`util/UserGuide_NewCosmol
 This launches a 10-minute job with 8 nodes-per-sim using the par2 list in `in/list1`. The `-P NumZRanks=2` option is passed to `abacus.run`, and the `-q debug-scaling` option is passed to qsub. The script uses the b346251 Abacus git hash, building it if needed.
 
 See `./hashrun.sh --help` for full usage.
+
+A sim that dies is relaunched a few times by `onesim.sh`. If the crash can be pinned on a
+particular node, that node is swapped for a spare before the relaunch — ask for spares
+with `-x N`. See [`doc/node-replacement.md`](doc/node-replacement.md) for what counts as
+evidence, and for why some crashes deliberately blame nobody.
 
 The hash of this repo (the production repo) is recorded by the job scripts for provenance. To ensure that the hash actually corresponds to the job content, the job scripts enforce that no dirty content is present in the repo. Content that one expects to be dirty (like par2 file lists) should go in one of the git-ignored directories, usually `job/in/`. `job/out/` is also ignored.
 

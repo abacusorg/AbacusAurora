@@ -15,7 +15,10 @@
 #                blank lines and #-comments ignored) — one sim per line
 #   -nps N       nodes per sim (sims are launched on equal N-node slices)
 #   -n TOTAL     total nodes to request (default nps x #par2); the surplus over
-#                nps x #par2 becomes a spare pool for node blacklist/replace
+#                nps x #par2 becomes the spare pool onesim.sh draws on when it
+#                blames a node for a crash and swaps it out
+#   -x SPARE     size that spare pool directly (total = nps x #par2 + SPARE); the
+#                same thing as -n, said the way you actually think about it
 #   -t HH:MM     wall-time budget as HH:MM; sets both -l walltime and PBS_MINUTES
 #   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
 #   -E KEY=VAL   set an environment variable in the job (repeatable)
@@ -40,12 +43,14 @@ die() { echo "error: $*" >&2; exit 1; }
 
 usage() {
     cat <<'EOF'
-usage: hashrun.sh -nps N -t HH:MM [-n TOTAL] [-P KEY=VALUE]... [-E KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
+usage: hashrun.sh -nps N -t HH:MM [-n TOTAL | -x SPARE] [-P KEY=VALUE]... [-E KEY=VALUE]... <code-ref> <par2-list> [qsub args...]
   <code-ref>   git ref in the abacus code repo; resolved & built (cached by hash)
   <par2-list>  file with one par2 path per line, relative to this prod repo's root
                (blank lines and #-comments ignored); one sim per line
   -nps N       nodes per sim (--nodes-per-sim); sims run on equal N-node slices
   -n TOTAL     total nodes (--nodes; default nps x #par2); surplus becomes a spare pool
+  -x SPARE     spare nodes (--spare); total = nps x #par2 + SPARE. Spares replace
+               nodes that onesim.sh blames for a crash. Not combinable with -n.
   -t HH:MM     wall-time budget as HH:MM (--time); sets both -l walltime and PBS_MINUTES
   -P KEY=VAL   override a par2 parameter (repeatable); forwarded to abacus.run
   -E KEY=VAL   set an environment variable in the job (repeatable)
@@ -61,7 +66,7 @@ EOF
 # before them; the first unrecognized flag switches to qsub pass-through.
 # Sets: code_ref par2list nps nodes twall daos_opt daos_force overrides[] env_overrides[] qsub_args[]
 parse_args() {
-    nps="" nodes="" twall="" daos_opt="" daos_force=0
+    nps="" nodes="" spare="" twall="" daos_opt="" daos_force=0
     overrides=() env_overrides=() qsub_args=()
     local positionals=() qsub=0
     while (( $# )); do
@@ -71,6 +76,8 @@ parse_args() {
             -nps=*|--nodes-per-sim=*) nps=${1#*=}; shift ;;
             -n|--nodes)               nodes=$2; shift 2 ;;
             -n=*|--nodes=*)           nodes=${1#*=}; shift ;;
+            -x|--spare)               spare=$2; shift 2 ;;
+            -x=*|--spare=*)           spare=${1#*=}; shift ;;
             -t|--time)                twall=$2; shift 2 ;;
             -t=*|--time=*)            twall=${1#*=}; shift ;;
             -P|--param)               overrides+=("$2"); shift 2 ;;
@@ -91,6 +98,8 @@ parse_args() {
     par2list=${positionals[1]}
     [[ ${nps} =~ ^[1-9][0-9]*$ ]]           || die "-nps/--nodes-per-sim is required and must be a positive integer (got '${nps}')"
     [[ -z ${nodes} || ${nodes} =~ ^[1-9][0-9]*$ ]] || die "-n/--nodes must be a positive integer (got '${nodes}')"
+    [[ -z ${spare} || ${spare} =~ ^[0-9]+$ ]] || die "-x/--spare must be a non-negative integer (got '${spare}')"
+    [[ -z ${nodes} || -z ${spare} ]] || die "-n/--nodes and -x/--spare both set the total; use one"
     [[ ${twall} =~ ^[0-9]+:[0-5][0-9]$ ]] || die "-t/--time is required and must be HH:MM (got '${twall}')"
     local e
     for e in ${env_overrides[@]+"${env_overrides[@]}"}; do
@@ -214,6 +223,7 @@ stage_spec() {
         printf 'abacus_env=%q\n'    "$checkout/$env_script"
         printf 'abacus_prod=%q\n'   "$prod"
         printf 'nodes_per_sim=%q\n' "$nps"
+        printf 'spare_nodes=%q\n'   "$spare_nodes"
         printf 'code_hash=%q\n'     "$code_hash"
         printf 'code_ref=%q\n'      "$code_ref"
         printf 'prod_hash=%q\n'     "$prod_hash"
@@ -241,15 +251,22 @@ stage_spec() {
     ' hashrun "$checkout" "$env_script" "$spec/env_overrides.sh" "$spec/jobspec.sh"
 }
 
-# Derive the node request (-nps x #sims, or -n; surplus = spare pool) and walltime
-# (from -t, also PBS_MINUTES), then submit held so that out/<jobid>/ can be
-# populated (staged spec + qalter'd stdout/stderr) before releasing.
+# Sets: total_nodes spare_nodes.  Needed before stage_spec (the jobspec records the
+# spare count so multisim.pbs can warn when quarantine eats into it) and again by
+# submit (which puts total_nodes in -l select).
+derive_nodes() {
+    local min_nodes=$(( nps * ${#par2s[@]} ))
+    total_nodes=${nodes:-$(( min_nodes + ${spare:-0} ))}
+    (( total_nodes >= min_nodes )) \
+        || die "-n $total_nodes is fewer than nodes-per-sim x #par2 ($nps x ${#par2s[@]} = $min_nodes)"
+    spare_nodes=$(( total_nodes - min_nodes ))
+}
+
+# Derive the walltime (from -t, also PBS_MINUTES) and submit held, so that
+# out/<jobid>/ can be populated (staged spec + qalter'd stdout/stderr) before
+# releasing.  The node count comes from derive_nodes above.
 submit() {
     local nsims=${#par2s[@]}
-    local min_nodes=$(( nps * nsims ))
-    local total_nodes=${nodes:-$min_nodes}
-    (( total_nodes >= min_nodes )) \
-        || die "-n $total_nodes is fewer than nodes-per-sim x #par2 ($nps x $nsims = $min_nodes)"
 
     local hh=${twall%:*} mm=${twall#*:}
     local walltime="${twall}:00"        # PBS HH:MM:SS form
@@ -257,7 +274,7 @@ submit() {
     # path plus $PBS_JOBID; only the path has to be passed in.
     local vlist="HASHRUN_PROD=$prod,PBS_MINUTES=$(( 10#$hh * 60 + 10#$mm ))"
 
-    echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($(( total_nodes - min_nodes )) spare), walltime=$walltime, filesystems=$filesystems"
+    echo "Submitting: code=$code_hash prod=$prod_hash  $nsims sim(s) x $nps node(s), select=$total_nodes ($spare_nodes spare), walltime=$walltime, filesystems=$filesystems"
     local jobid
     jobid=$(qsub -h -l "select=$total_nodes" -l "walltime=$walltime" \
                  -l "filesystems=$filesystems" -v "$vlist" \
@@ -280,5 +297,6 @@ read_par2_list
 check_prod
 setup_daos
 build_code
+derive_nodes
 stage_spec
 submit

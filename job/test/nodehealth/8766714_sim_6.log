@@ -1,0 +1,8 @@
+# Step     z  Rate  Time Conv  Tau   dlna vrms vmax KDir MaxL0  Grp GSpn MxRSS FMrg
+#             Mp/s   sec  sec hMpc        km/s km/s   /p    NP Diam cell   GiB    %
+# ---- ----- ----- ----- ---- ---- ------ ---- ---- ---- ----- ---- ---- ----- ----
+     0  99.0  12.5 239.3  3.2 8674 0.0000    0    0  0.0     0    0  0.0 259.5    -
+     1  99.0  52.3  57.3  3.1 8674 0.0000    0    0  7.9     0    0  0.0 293.6    -
+     2  99.0  79.8  37.6  2.9 8674 0.0000    0    0  7.9     0    0  0.0 294.3    -
+x4400c2s7b0n0.hsn.cm.aurora.alcf.anl.gov: shepherd died from signal 9
+x4400c4s5b0n0.hsn.cm.aurora.alcf.anl.gov: rank 25 died from signal 15

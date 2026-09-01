@@ -1,0 +1,9 @@
+# Step     z  Rate  Time Conv  Tau   dlna vrms vmax KDir MaxL0  Grp GSpn MxRSS FMrg
+#             Mp/s   sec  sec hMpc        km/s km/s   /p    NP Diam cell   GiB    %
+# ---- ----- ----- ----- ---- ---- ------ ---- ---- ---- ----- ---- ---- ----- ----
+     0  99.0  12.5 239.3  3.0 7944 0.0000    0    0  0.0     0    0  0.0 261.3    -
+
+NODEFAIL t_epoch=1787414577 elapsed=240.073 host=x4716c7s5b0n0 rank=9 phase="timestep" op="signal" sig=11
+*** ABACUS FATAL: signal 11 on MPI rank 9 (x4716c7s5b0n0), pid 7964 -- backtrace follows ***
+  [backtrace frames elided]
+*** end ABACUS backtrace ***
