@@ -2,7 +2,7 @@ Simulations/phaseA/AbacusAurora_emulmax_c000_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmax_c001_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmax_c002_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmax_c200_ph300.par2
-Simulations/phaseA/AbacusAurora_emulmax_c201_ph300.par2
+# Simulations/phaseA/AbacusAurora_emulmax_c201_ph300.par2  # Run separately
 Simulations/phaseA/AbacusAurora_emulmed_c116_ph301.par2
 Simulations/phaseA/AbacusAurora_emulmed_c116_ph302.par2
 Simulations/phaseA/AbacusAurora_emulmed_c133_ph300.par2
