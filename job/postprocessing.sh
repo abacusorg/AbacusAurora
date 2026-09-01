@@ -17,7 +17,8 @@
 #      per column, and the per-column directories removed.  Last, so that every
 #      check above runs against the files the run actually wrote.
 #
-# A failing step stops that sim; the remaining sims are still processed.
+# A failing step stops that sim; the remaining sims are still processed, and with
+# -j several sims are processed at once.
 #
 # Each sim's steps are recorded in a `postprocess` file in its SimDirectory,
 # renamed to `postprocess.done` or `postprocess.failed` at the end.  A sim with
@@ -35,8 +36,11 @@
 # out of the sim's parameter file rather than assuming <simdir>/log, and --daos
 # mounts the container that holds it.
 #
-# Usage: postprocessing.sh [-f] [--daos] <simdir> [simdir ...]
+# Usage: postprocessing.sh [-f] [-j N] [--daos] <simdir> [simdir ...]
 #   -f       re-run sims whose last attempt failed or was interrupted
+#   -j N     process up to N sims at once. A parallel sim's output is held back and
+#            printed in one piece when it finishes, so that two sims cannot interleave;
+#            its `postprocess` file shows progress in the meantime.
 #   --daos   mount the DAOS containers first, and resolve the paths a parameter file
 #            recorded on a compute node.  Inside a PBS allocation this mounts across
 #            the allocation; on a login node it mounts per-user, for this node only,
@@ -49,24 +53,33 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: postprocessing.sh [-f] [--daos] <simdir> [simdir ...]" >&2
+    echo "usage: postprocessing.sh [-f] [-j N] [--daos] <simdir> [simdir ...]" >&2
     exit 2
 }
 
 force=0
 daos=0
+jobs=1
 simdirs=()
 while (( $# )); do
     case $1 in
         -f|--force) force=1; shift ;;
         --daos)     daos=1; shift ;;
         -h|--help)  usage ;;
+        -j|--jobs)  (( $# >= 2 )) || { echo "error: $1 needs a count" >&2; usage; }
+                    jobs=$2; shift 2 ;;
+        -j*)        jobs=${1#-j}; shift ;;
+        --jobs=*)   jobs=${1#--jobs=}; shift ;;
         --)         shift; simdirs+=("$@"); break ;;
         -*)         echo "error: unknown option '$1'" >&2; usage ;;
         *)          simdirs+=("$1"); shift ;;
     esac
 done
 (( ${#simdirs[@]} )) || usage
+if [[ ! $jobs =~ ^[1-9][0-9]*$ ]]; then
+    echo "error: -j takes a positive integer, not '$jobs'" >&2
+    usage
+fi
 set -- "${simdirs[@]}"
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -408,30 +421,27 @@ process_sim() {
     say "  ok: combined $ncol column(s)"
 }
 
-ndone=0 nskip=0 nfail=0
-rc=0
-nsim=0 ntotal=$#     # $# is the sim count: getopts was shifted off, and the loop never shifts
+ntotal=$#     # $# is the sim count: getopts was shifted off, and the loop never shifts
 
-for src; do
-    src=${src%/}
-    nsim=$((nsim + 1))
+# One sim, start to finish, leaving $PWD alone.  Exits 0 if the sim is done, 1 if it
+# failed, 2 if an earlier attempt's record is in the way.  Everything it prints
+# belongs to this sim alone, which is what lets -j hold it back and print it whole.
+run_one() {
+    local src=${1%/} nsim=$2 stale
     echo "=== $(basename "$src") ($nsim of $ntotal) ==="
 
     if [[ ! -d $src ]]; then
         echo "  error: not a directory: $src" >&2
-        nfail=$((nfail + 1)); rc=1
-        continue
+        return 1
     fi
     if [[ -e $src/postprocess.done ]]; then
         echo "  postprocess.done is already here; nothing to do"
-        ndone=$((ndone + 1))
-        continue
+        return 0
     fi
     for stale in postprocess.failed postprocess; do
         if [[ -e $src/$stale ]] && (( ! force )); then
             echo "  $stale is from an earlier run; skipping (pass -f to retry)" >&2
-            nskip=$((nskip + 1)); rc=1
-            continue 2
+            return 2
         fi
     done
 
@@ -447,14 +457,74 @@ for src; do
         echo "finished: $(date -Is)  all steps passed" >> "$src/postprocess"
         mv -f -- "$src/postprocess" "$src/postprocess.done"
         echo "  wrote postprocess.done"
-        ndone=$((ndone + 1))
-    else
-        echo "finished: $(date -Is)  FAILED" >> "$src/postprocess"
-        mv -f -- "$src/postprocess" "$src/postprocess.failed"
-        echo "  wrote postprocess.failed" >&2
-        nfail=$((nfail + 1)); rc=1
+        return 0
     fi
-done
+    echo "finished: $(date -Is)  FAILED" >> "$src/postprocess"
+    mv -f -- "$src/postprocess" "$src/postprocess.failed"
+    echo "  wrote postprocess.failed" >&2
+    return 1
+}
+
+ndone=0 nskip=0 nfail=0
+rc=0
+tally() {
+    case $1 in
+        0) ndone=$((ndone + 1)) ;;
+        2) nskip=$((nskip + 1)); rc=1 ;;
+        *) nfail=$((nfail + 1)); rc=1 ;;
+    esac
+}
+
+if (( jobs == 1 )); then
+    nsim=0
+    for src; do
+        nsim=$((nsim + 1))
+        status=0
+        run_one "$src" "$nsim" || status=$?
+        tally "$status"
+    done
+else
+    tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/postprocessing.XXXXXX")
+    trap 'rm -rf -- "$tmpdir"' EXIT
+    declare -A pending=()   # sim index -> launched but not yet reported
+    nrunning=0
+
+    # Block until at least one child has exited, then report every child that has
+    # finished.  `wait -n` says that some child exited but not which one -- bash 4.4
+    # has no `wait -n -p` -- so a child leaves its status behind in a file and we look
+    # for the ones that appeared.  Reporting a child whose exit `wait` has not yet
+    # collected only costs a later `wait -n` that returns at once.
+    reap() {
+        local idx status
+        wait -n 2>/dev/null || true   # a child's nonzero exit is this sim's news, not an error
+        for idx in "${!pending[@]}"; do
+            [[ -e $tmpdir/$idx.status ]] || continue
+            status=$(< "$tmpdir/$idx.status")
+            cat -- "$tmpdir/$idx.out"
+            rm -f -- "$tmpdir/$idx.out" "$tmpdir/$idx.status"
+            unset "pending[$idx]"
+            nrunning=$((nrunning - 1))
+            tally "$status"
+        done
+    }
+
+    nsim=0
+    for src; do
+        nsim=$((nsim + 1))
+        while (( nrunning >= jobs )); do reap; done
+        echo "--- started $(basename "${src%/}") ($nsim of $ntotal) ---"
+        # The status file is written last, so its presence means the output file is
+        # complete: reap() needs no other handshake.
+        (
+            status=0
+            run_one "$src" "$nsim" > "$tmpdir/$nsim.out" 2>&1 || status=$?
+            echo "$status" > "$tmpdir/$nsim.status"
+        ) &
+        pending[$nsim]=1
+        nrunning=$((nrunning + 1))
+    done
+    while (( nrunning )); do reap; done
+fi
 
 echo
 echo "$ndone done, $nskip skipped needing -f, $nfail failed"
