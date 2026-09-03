@@ -1,0 +1,29 @@
+# These are the parameters for a run that is 1/3 of flagship
+# These should run on 328 nodes in a 82x8 domain, chosen to produce a similar number of particles/rank and slabs/rank.
+# Don't forget the cosm.def file and a ZD_Seed
+
+#include "aurora.def"
+#include "base.def"
+
+BoxSize = 3333.333
+NP = 12288**3
+CPD = 2925
+NumZRanks = 8
+
+ZD_Seed = 843    # This will be the most common phase
+
+MapForestSize = 0.6   # Don't need much space because we have few replications in this light cone
+
+# This version has two lightcones.
+# The first is an octant to z=4, with denser coverage to z=2.
+# The second is a fullsky to z=0.8, with sparse coverage.
+
+LCOrigins = (0.,0.,0., 0., 0., 0.)
+LCIsOctant = [1, 0]
+LCZMax1 = [2.0, 0.]
+LCZMax2 = [4.0, 0.8]
+LCBoxRepeats = 4    
+LCSamplerInner = ["subP8", "subP64"] 
+LCSamplerOuter = ["subP64", "subP64"]
+LCDoHealpix = [1, 1]
+LCHealpixZMax = [2.0, 0.5]
