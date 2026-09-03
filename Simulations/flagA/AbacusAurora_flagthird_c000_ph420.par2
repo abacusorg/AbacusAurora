@@ -1,0 +1,6 @@
+SimName = "AbacusAurora_flagthird_c000_ph420"
+
+#include "../FlagThird.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+ZD_Seed = @ZD_Seed@+420-420
