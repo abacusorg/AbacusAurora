@@ -1,5 +1,5 @@
-Simulations/phaseA/AbacusAurora_emulmax_c000_ph300.par2
-Simulations/phaseA/AbacusAurora_emulmax_c001_ph300.par2
+#Simulations/phaseA/AbacusAurora_emulmax_c000_ph300.par2
+#Simulations/phaseA/AbacusAurora_emulmax_c001_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmax_c002_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmax_c200_ph300.par2
 # Simulations/phaseA/AbacusAurora_emulmax_c201_ph300.par2  # Run separately
@@ -16,5 +16,5 @@ Simulations/phaseA/AbacusAurora_emulslim_c232_ph300.par2
 Simulations/phaseA/AbacusAurora_emulslim_c234_ph300.par2
 Simulations/phaseA/AbacusAurora_emulslim_c236_ph300.par2
 Simulations/phaseA/AbacusAurora_emulslim_c238_ph300.par2
-Simulations/phaseA/AbacusAurora_emulslim_c240_ph300.par2
+#Simulations/phaseA/AbacusAurora_emulslim_c240_ph300.par2   # This failed and had to be moved
 Simulations/phaseA/AbacusAurora_emulslim_c255_ph300.par2
