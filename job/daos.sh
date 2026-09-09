@@ -28,6 +28,9 @@ DAOS_CONT_RESOURCES=${ABACUS_DAOS_CONT_RESOURCES:-Resources}
 FLARE_ROOT=/flare/Abacus/$USER
 FLARE_RESOURCES=/flare/Abacus
 
+# Our patched launch-dfuse.sh (for next-eval image)
+DAOS_LAUNCH_DFUSE=$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)/launch-dfuse.sh
+
 _is_on() {
     case ${1:-} in
         [Oo][Ff][Ff]|0|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]) return 1 ;;
@@ -104,7 +107,7 @@ daos_require_containers() {
 daos_mount() {
     local specs=() cont
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    launch-dfuse.sh "${specs[@]}" || return 1
+    "$DAOS_LAUNCH_DFUSE" "${specs[@]}" || return 1
     daos_check_mounts "$@"
 }
 
