@@ -1,0 +1,6 @@
+SimName = "AbacusAurora_emulatormed_c000_ph312"
+
+#include "../EmulatorMed.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+ZD_Seed = @ZD_Seed@+312-300

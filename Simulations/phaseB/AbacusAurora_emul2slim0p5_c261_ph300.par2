@@ -1,6 +1,0 @@
-SimName = "AbacusAurora_emul2slim0p5_c261_ph300"
-
-#include "../EmulatorSlim0p5.par2"
-#include "../../Cosmologies/abacus_cosm261/cosm.def"
-
-ZD_Seed = @ZD_Seed@+300-300
