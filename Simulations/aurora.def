@@ -48,6 +48,14 @@ ReleaseFreeMemoryInterval = 50   # Clear the unused mimalloc pool every N steps,
 
 GPUQueueAssignments = [0, 0, 0]
 
+# Startup GPU health-check ladder (Direct/HealthCheck.sycl.cpp).  4 = every rung, up to
+# and including the real ComputeDirects kernel.  Set explicitly rather than relying on the
+# default because this is the setting that decides whether an intermittently bad device is
+# caught at phase="gpu" (~1 min in) or by segfaulting in step 1 (~13 min in, killing the
+# whole job).  Drop to 2 to skip the kernel rungs, 1 for the historical 4 KiB check only.
+GPUHealthCheckLevel = 4
+GPUHealthCheckTimeoutSeconds = 90   # covers the serialized HBM populate+pin AND the ladder
+
 UseHBM = 1
 HBMNumaNode = 2  # relative to the main thread
 
