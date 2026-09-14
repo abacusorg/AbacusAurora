@@ -43,6 +43,17 @@ shift $((OPTIND - 1))
 
 KEY=postprocess.done
 
+# Use scripts/daosrm for DAOS, which uses the intercept preload and runs in parallel
+DAOSRM=$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)/daosrm
+
+rm_rf() {
+    if [[ $(df --output=fstype "$1" 2>/dev/null | tail -1) == fuse.daos ]]; then
+        "$DAOSRM" -rf -- "$1"
+    else
+        rm -rf -- "$1"
+    fi
+}
+
 # Delete one path, reporting its size first.  A symlink is left alone: rm would
 # take the link and leave the data it points at, which looks like a cleanup but
 # reclaims nothing.
@@ -64,7 +75,7 @@ remove() {
     if (( dryrun )); then
         echo "  would delete $(basename "$path")  ($size)"
     else
-        rm -rf -- "$path"
+        rm_rf "$path"
         echo "  deleted $(basename "$path")  ($size)"
     fi
     return 0
