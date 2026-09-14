@@ -43,6 +43,28 @@ shift $((OPTIND - 1))
 
 KEY=postprocess.done
 
+# Use scripts/daosrm for DAOS, which uses the intercept preload and runs in parallel
+DAOSRM=$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)/daosrm
+
+# du is read-mostly metadata, where the interception library is worth ~1.9x on DAOS
+# (23.6s -> 12.3s per 10k files) and is lost in the noise on flare, so every du gets
+# it.  DAOS_PRELOAD alone is not enough: without the agent socket directory pil4dfs
+# cannot reach the agent.  Resolved once here -- the module load costs ~0.5s.
+if [[ -z ${DAOS_PRELOAD:-} || -z ${DAOS_AGENT_DRPC_DIR:-} ]]; then
+    eval "$(bash -lc '{ module use /soft/modulefiles && module load daos; } >&2 &&
+                      printf "DAOS_PRELOAD=%q\nDAOS_AGENT_DRPC_DIR=%q\n" \
+                             "${DAOS_PRELOAD:-}" "${DAOS_AGENT_DRPC_DIR:-}"' 2>/dev/null)" || true
+fi
+export DAOS_PRELOAD DAOS_AGENT_DRPC_DIR
+
+rm_rf() {
+    if [[ $(df --output=fstype "$1" 2>/dev/null | tail -1) == fuse.daos ]]; then
+        "$DAOSRM" -rf -- "$1"
+    else
+        rm -rf -- "$1"
+    fi
+}
+
 # Delete one path, reporting its size first.  A symlink is left alone: rm would
 # take the link and leave the data it points at, which looks like a cleanup but
 # reclaims nothing.
@@ -60,11 +82,11 @@ remove() {
         echo "  warning: $(basename "$path") is not a directory; leaving it" >&2
         return 1
     fi
-    size=$(du -sh "$path" 2>/dev/null | cut -f1) || size='?'
+    size=$(LD_PRELOAD=${DAOS_PRELOAD:-} du -sh "$path" 2>/dev/null | cut -f1) || size='?'
     if (( dryrun )); then
         echo "  would delete $(basename "$path")  ($size)"
     else
-        rm -rf -- "$path"
+        rm_rf "$path"
         echo "  deleted $(basename "$path")  ($size)"
     fi
     return 0
