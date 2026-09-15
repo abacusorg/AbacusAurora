@@ -6,4 +6,4 @@ SimName = "AbacusAurora_rockV2_c000_ph390_n1200"
 NP = 1200**3
 CPD = 315
 
-FinalRedshift = 0.2
+FinalRedshift = 0.25
