@@ -17,6 +17,8 @@ NumZRanks = 75
 # Or we could do 8700 nodes for 232 x 75.  That's 37.82 slabs on average.  That will correspond to 2.90B particles/rank, which might help with memory pressure.
 # Even more would be 8925 nodes = 238 x 75.  36.87 slabs on average.  2.81B particles/rank.
 
+ZD_Seed = 5843    # This will be the most common phase
+
 # The usual set of timeslices:
 TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
 TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
