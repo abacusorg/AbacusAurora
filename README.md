@@ -20,8 +20,9 @@ AbacusAurora/
 ├── job/                   # job orchestration (run from a login node)
 │   ├── hashrun.sh         #   launcher: build hash-keyed code, verify repo clean, qsub
 │   ├── multisim.pbs       #   PBS batch job: split the allocation, launch each sim
-│   ├── onesim.sh          #   per-sim monitor + restart-on-failure
+│   ├── onesim.sh          #   per-sim monitor + restart-on-failure (not past the halt time)
 │   ├── daos.sh            #   DAOS pool/containers, mount lifecycle, on/off switches
+│   ├── test/              #   standalone tests for the job scripts (no MPI/DAOS needed)
 │   ├── in/                #   (git-ignored) scratch for par2-list files fed to hashrun
 │   └── out/<jobid>/       #   (git-ignored) per-job staged inputs, stdout/stderr, hostfiles
 ├── scripts/               # DAOS login-node mounts and derivative staging

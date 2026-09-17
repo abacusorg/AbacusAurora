@@ -65,6 +65,11 @@ else
     echo "Halt controls: ABACUS_JOB_HALT_FILE=$ABACUS_JOB_HALT_FILE"
     echo "WARNING: PBS_MINUTES ($PBS_MINUTES) <= HALT_BUFFER_MINUTES ($HALT_BUFFER_MINUTES); not setting ABACUS_JOB_HALT_TIME"
 fi
+# Both variables are read by onesim.sh too, not just by Abacus: a sim that dies at or near
+# the deadline (classically, its final state write hanging until StepTimeout kills it) died
+# because the allocation is ending, so onesim gives up on it instead of relaunching into
+# the buffer.  See halt_reason() there; ONESIM_MIN_RELAUNCH_SECONDS tunes how much room it
+# insists on having before the deadline.
 echo
 # -----------------------------------------------------------------------------
 
