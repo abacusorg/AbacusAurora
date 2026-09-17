@@ -35,8 +35,7 @@ TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "s
 # 3-8 are at the remaining 2.5 Gpc/h spaced points.  P64 to z=0.5, HP to z=0.5
 
 LCBoxRepeats = 2    
-LCOrigins = [ \
-    0.,     0.,     0., \
+LCOrigins = [ 0.,     0.,     0., \
     0.,     0.,     0., \
  2500.,  2500.,  2500., \
  2500.,     0.,     0., \
