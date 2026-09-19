@@ -55,7 +55,7 @@ trap cleanup EXIT
 # 2) A wall-clock deadline so the job closes out before the allocation ends.
 #    PBS won't tell us the remaining time, so derive it from PBS_MINUTES (set by
 #    hashrun.sh from -t) minus a safety buffer, added to "now".
-export HALT_BUFFER_MINUTES=30
+export HALT_BUFFER_MINUTES=10
 halt_after_min=$(( PBS_MINUTES - HALT_BUFFER_MINUTES ))
 if (( halt_after_min > 0 )); then
     export ABACUS_JOB_HALT_TIME=$(( $(date +%s) + halt_after_min * 60 ))
