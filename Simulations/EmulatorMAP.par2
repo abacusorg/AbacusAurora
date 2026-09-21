@@ -1,0 +1,37 @@
+# These are the parameters for our standard 1.2 Gpc/h boxes.
+# These should run on 15 nodes in a 10x3 domain, or 36 nodes in a 24x3 domain.
+# Don't forget the cosm.def file and a ZD_Seed
+
+# This is for the cases where we have already run the same simulation and are only re-running to change the MAP parameters.
+# We turn off timeslice outputs; we already have them, and the MAPs include those redshifts.
+# But we still keep a LC 1/64 to z=4, so that we trigger these LightConeNodes in the MapLogs.
+# We may throw out the LightCone files; DM is superfluous.  No HealPix.
+
+#include "aurora.def"
+#include "base.def"
+
+BoxSize = 1215.
+NP = 4480**3
+CPD = 1125
+NumZRanks = 3
+
+ZD_Seed = 243    # This will be the most common phase
+
+# We're turning off subsample off
+TimeSliceRedshifts_Subsample = None
+TimeSliceRedshifts_Samplers  = None
+
+# This version has two lightcones.
+# The first is an octant to z=4, with denser coverage to z=2.
+# The second is a fullsky to z=0.5, with sparse coverage.
+
+LCOrigins = (0.,0.,0., 0., 0., 0.)
+LCIsOctant = [1, 0]
+LCZMax1 = [2.0, 0.]
+LCZMax2 = [4.0, 0.5]
+LCBoxRepeats = 4    
+LCSamplerInner = ["subP64", "subP64"] 
+LCSamplerOuter = ["subP64", "subP64"]
+LCDoHealpix = [0, 0]
+LCHealpixZMax = [0.0, 0.0]
+

@@ -1,0 +1,61 @@
+# columns: SSS BBB CCC PPP MMM
+# SimName (with replacables)          BBB.par2           CCC PPP MMM
+# Base cosmology, MAP variations
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 041
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 042
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 043
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 044
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 046
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 047
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 048
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 050
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 051
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         000 310 052
+
+### To be decided: do we need all 12 of these?  For all 4 cosmologies?  
+### For now, turning off the larger spread in the other 3, so that we just have 30 sims.
+
+# Low sigma8
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 041
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 042
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 043
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 044
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 046
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 047
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 048
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 050
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 051
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         004 310 052
+
+# High sigma8
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 041
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 042
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 043
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 044
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 046
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 047
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 048
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 050
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 051
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         116 310 052
+
+# DESI w0wa
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 041
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 042
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 043
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 044
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 046
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 047
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 048
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 050
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 051
+#AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM     EmulatorMAP         200 310 052
+
