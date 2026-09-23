@@ -1,0 +1,26 @@
+# The FLAMINGO project ran a variety of massive neutrino simulations.  
+# Their base was h=0.673, Om=0.316, Ob=0.0494, As = 2.101e-9, ns=0.966, with 60 meV neutrino.  
+# That's omhh = 0.14313, obhh = 0.022375.
+# They then ran 0.12 eV, 0.24 eV, and 0.48 eV, mostly as a direct replacement of CDM with neutrinos.
+# The 0.12 eV case was just a little different: Ob = 0.0496 and As=2.113e-9.   obhh = 0.022465
+
+# And then they have a 0.24 case that is a variant: h=0.662, Om = 0.328, Ob = 0.0510, ns = 0.968, As = 2.109e-9
+
+# 60 meV is omega_ncdm = 0.0006442
+
+
+#num   A_s        ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
+#
+202  2.101e-9   0.1201   0.966   0.022375    -1     0.0  2.0328   0.000    0.0006442     # FLAMINGO Planck
+203  2.113e-9   0.1194   0.966   0.022465    -1     0.0  2.0328   0.000    0.0012884     # FLAMINGO PlanckNu0p12Var
+204  2.101e-9   0.1182   0.966   0.022375    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Fix
+205  2.101e-9   0.1156   0.966   0.022375    -1     0.0  2.0328   0.000    0.0051536     # FLAMINGO PlanckNu0p48Fix
+206  2.109e-9   0.1188   0.968   0.022350    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Var
+
+
+# We want to then run models that are perturbations around our c000
+
+
+
+
+
