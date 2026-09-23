@@ -1,6 +1,7 @@
 #!/bin/bash
 # Delete the working files of simulations that have been post-processed --
-# the checkpoint/, log/ and work/ directories and the FFTW wisdom file -- then
+# the checkpoint/, log/ and work/ directories, the FFTW wisdom file, and any
+# archived failed attempts (<SimName>.old.N) -- then
 # seal the SimDirectory: create an empty products/ and make everything
 # read-only except products/, which stays user+group writable (and setgid, so
 # that what a collaborator drops there keeps the sim's group).
@@ -126,6 +127,18 @@ for src; do
     else
         for w in "${wisdom[@]}"; do
             remove "$w" file || failed=1
+        done
+    fi
+
+    # Prior failed attempts of this sim
+    shopt -s nullglob
+    attempts=("$src".old.[0-9]*)
+    shopt -u nullglob
+    if (( ${#attempts[@]} == 0 )); then
+        echo "  *.old.N: already gone"
+    else
+        for a in "${attempts[@]}"; do
+            remove "$a" dir || failed=1
         done
     fi
 
