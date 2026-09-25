@@ -9,18 +9,35 @@
 # 60 meV is omega_ncdm = 0.0006442
 
 
-#num   A_s        ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
+#num   A_s        h      ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
 #
-202  2.101e-9   0.1201   0.966   0.022375    -1     0.0  2.0328   0.000    0.0006442     # FLAMINGO Planck
-203  2.113e-9   0.1194   0.966   0.022465    -1     0.0  2.0328   0.000    0.0012884     # FLAMINGO PlanckNu0p12Var
-204  2.101e-9   0.1182   0.966   0.022375    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Fix
-205  2.101e-9   0.1156   0.966   0.022375    -1     0.0  2.0328   0.000    0.0051536     # FLAMINGO PlanckNu0p48Fix
-206  2.109e-9   0.1188   0.968   0.022350    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Var
+202  2.101e-9   0.673   0.1201   0.966   0.022375    -1     0.0  2.0328   0.000    0.0006442     # FLAMINGO Planck
+203  2.113e-9   0.673   0.1194   0.966   0.022465    -1     0.0  2.0328   0.000    0.0012884     # FLAMINGO PlanckNu0p12Var
+204  2.101e-9   0.673   0.1182   0.966   0.022375    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Fix
+205  2.101e-9   0.673   0.1156   0.966   0.022375    -1     0.0  2.0328   0.000    0.0051536     # FLAMINGO PlanckNu0p48Fix
+206  2.109e-9   0.662   0.1188   0.968   0.022350    -1     0.0  2.0328   0.000    0.0025768     # FLAMINGO PlanckNu0p24Var
 
+# We want to then run models that are perturbations around our c000.  But we already have some from the AbacusSummit set.
+# In particular, c020 is massless and c019 is the inverted hierarchy.  So we just have two to do.
 
-# We want to then run models that are perturbations around our c000
+#num  h   sigma8,bc  ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
+211   TBD  0.811355  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0012884    # 0.12 eV single species
+212   TBD  0.811355  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0025768    # 0.24 eV single species
 
+# Recalling:
+#| abacus_cosm009     | Baseline LCDM with massless neutrinos matching omega_cb & sigma8_cb  | 0.02237 |  0.1200   | 0.6736 | 2.0417e-9 | 0.9649 | 0.0     | 3.046  | 0      | 0.0        | -1.0   | 0.0    |
+#| abacus_cosm019     | Baseline LCDM with two 0.06 eV neutrinos                             | 0.02237 |  0.1200   | TBD    | 2.TBD e-9 | 0.9649 | 0.0     | 1.0196 | 2      | 0.00064420,0.00064420 | -1.0   | 0.0    |
+#| abacus_cosm020     | Baseline LCDM w/ massless neutrinos matching theta_star & sigma8_cb  | 0.02237 |  0.1200   | TBD    | 2.TBD e-9 | 0.9649 | 0.0     | 3.046  | 0      | 0.0        | -1.0   | 0.0    |
 
+# Then we'll do some progressions at other sigma8 values, using the 104 and 116 secondary cosmologies.
 
+#num  h   sigma8,bc  ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
+213   TBD  0.753159  0.1200  0.9649  0.02237  -1.000   0.000  3.046    0.000   0.0          # massless neutrino
+214   TBD  0.753159  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0012884    # 0.12 eV single species
+215   TBD  0.753159  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0025768    # 0.24 eV single species
+
+216   TBD  0.869782  0.1200  0.9649  0.02237  -1.000   0.000  3.046    0.000   0.0          # massless neutrino
+217   TBD  0.869782  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0012884    # 0.12 eV single species
+218   TBD  0.869782  0.1200  0.9649  0.02237  -1.000   0.000  2.0328   0.000   0.0025768    # 0.24 eV single species
 
 
