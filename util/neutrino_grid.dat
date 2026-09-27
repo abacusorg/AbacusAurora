@@ -29,7 +29,7 @@
 #| abacus_cosm019     | Baseline LCDM with two 0.06 eV neutrinos                             | 0.02237 |  0.1200   | TBD    | 2.TBD e-9 | 0.9649 | 0.0     | 1.0196 | 2      | 0.00064420,0.00064420 | -1.0   | 0.0    |
 #| abacus_cosm020     | Baseline LCDM w/ massless neutrinos matching theta_star & sigma8_cb  | 0.02237 |  0.1200   | TBD    | 2.TBD e-9 | 0.9649 | 0.0     | 3.046  | 0      | 0.0        | -1.0   | 0.0    |
 
-# Then we'll do some progressions at other sigma8 values, using the 104 and 116 secondary cosmologies.
+# Then we'll do some progressions at other sigma8 values, using the 004 and 116 secondary cosmologies.
 
 #num  h   sigma8,bc  ochh      ns     obhh      w0      wa     Nur     nrun   omega_ncdm
 213   TBD  0.753159  0.1200  0.9649  0.02237  -1.000   0.000  3.046    0.000   0.0          # massless neutrino
