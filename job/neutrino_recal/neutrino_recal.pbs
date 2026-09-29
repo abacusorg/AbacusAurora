@@ -1,0 +1,20 @@
+#!/bin/bash -l
+#PBS -A Abacus
+#PBS -l filesystems=home
+#PBS -l place=scatter
+#PBS -l select=5
+#PBS -l walltime=01:00:00
+#PBS -q debug-scaling
+#PBS -j oe
+#PBS -m abe
+#PBS -M helenshao0904@gmail.com
+# Submit with: qsub -v STAGE=calib|final[,EXTRA_ARGS=...] (see submit_and_watch.sh)
+set -euo pipefail
+export PATH=/opt/aurora/26.26.0/frameworks/aurora_frameworks-2025.3.1/bin:$PATH
+export PYTHONPATH=/home/helenshao/python_modules
+export LD_LIBRARY_PATH=/opt/aurora/26.26.0/spack/unified/1.1.1/install/linux-x86_64/gcc-runtime-13.4.0-2tg3zy7/lib:${LD_LIBRARY_PATH:-}
+export OMP_NUM_THREADS=104
+export ROOTS="212 214 215 217 218"
+export EXTRA_ARGS="${EXTRA_ARGS:-}"
+cd /home/helenshao/InitialConditions/AbacusAurora/job/neutrino_recal
+mpiexec -n 5 --ppn 1 --cpu-bind none bash run_stage.sh
