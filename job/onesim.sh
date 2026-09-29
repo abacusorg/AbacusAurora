@@ -115,7 +115,7 @@ while true; do
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
     # not-taken if with no else returns 0, masking the real failure code.)
-    python -m abacus.run "$par2" ${pargs[@]+"${pargs[@]}"}
+    python -u -m abacus.run "$par2" ${pargs[@]+"${pargs[@]}"}
     rc=$?
     dt=$((SECONDS - t0))
 

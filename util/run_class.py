@@ -26,6 +26,14 @@ GLASS_DAT = "desi_secondaries.dat"
 DEFAULT_TABLE = "../Cosmologies/desi_secondaries_grid"
 
 
+def _has_massive_nu(ini):
+    for line in open(ini):
+        key, _, val = line.partition("=")
+        if key.strip() == "N_ncdm":
+            return float(val) > 0
+    return False
+
+
 def _finished_rows(readme_txt):
     """
     Rows in README.txt that already have measured sigma8 (keep across re-runs).
@@ -110,7 +118,10 @@ def main(
         shutil.copy("../" + ini, ini)
 
         if "With A_s calibration" in open(ini).read():
-            _run(class_dir + ini + " ../abacus_base_fast.pre > " + root + ".out")
+            # The fast .pre uses the ncdm fluid approximation, which underestimates
+            # sigma8_cb by ~0.04% per 0.001 in omega_ncdm relative to abacus_base.pre
+            cal_pre = "abacus_base.pre" if _has_massive_nu(ini) else "abacus_base_fast.pre"
+            _run(class_dir + ini + " ../" + cal_pre + " > " + root + ".out")
             os.chdir("../../util/")
             os.environ["ABACUS_GLASS_DAT"] = glass_dat
             _run(

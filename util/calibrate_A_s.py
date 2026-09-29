@@ -68,7 +68,10 @@ for line in open(output):
         s8_cb = format(s8_cb, "9.6f")
 
 if "s8_cb" not in dir() or s8_cb is None:
-    raise SystemExit(f"calibrate_A_s: no sigma8 baryons+cdm in {output}")
+    # No massive neutrinos: CLASS prints only total matter, which equals cb
+    if "s8_m" not in dir():
+        raise SystemExit(f"calibrate_A_s: no sigma8 in {output}")
+    s8_cb = format(float(s8_m), "9.6f")
 
 if not from_emulator:
     param_dict_base = construct_dict(root_base, table, output_s8=True)
