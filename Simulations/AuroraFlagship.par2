@@ -19,6 +19,8 @@ NumZRanks = 75
 
 ZD_Seed = 5843    # This will be the most common phase
 
+TimeStepAccel = 0.3   # We found in comparing DemiFlag to Emulator that the larger box has more extreme cases that drive the timesteps lower.  But we think this is overkill: cases that don't occur in 1.2 Gpc/h are rare enough that we shouldn't let them drive our global timestep.
+
 # The usual set of timeslices:
 TimeSliceRedshifts_Subsample = [0.1, 0.3, 0.5, 0.8, 1.1, 1.4, 2.0, 2.35, 3.0, 3.5, 4.0]
 TimeSliceRedshifts_Samplers = [ "subP8", "subP64", "subP8", "subP8", "subP8", "subP8", "subP64", "subP8", "subP64", "subP64", "subP64" ]
