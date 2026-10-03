@@ -1,0 +1,31 @@
+# These are the parameters for our standard 1.2 Gpc/h boxes.
+# These should run on 15 nodes in a 10x3 domain
+# Don't forget the cosm.def file and a ZD_Seed
+
+# This will output the usual TimeSlices, but turns off all LC outputs.
+# This is intended for variations in TimeStepAccel or other dynamical parameters.
+# May also be a good base for variations in particle mass.
+
+#include "aurora.def"
+#include "base.def"
+
+BoxSize = 1215.
+NP = 4480**3
+CPD = 1125
+NumZRanks = 3
+
+ZD_Seed = 243    # This will be the most common phase
+
+# This version has two lightcones.
+# The first is an octant to z=4, with denser coverage to z=2.
+# The second is a fullsky to z=0.5, with sparse coverage.
+
+LCOrigins = None
+LCIsOctant = None
+LCZMax1 = None
+LCZMax2 = None
+LCBoxRepeats = 4    
+LCSamplerInner = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None

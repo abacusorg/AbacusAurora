@@ -1,0 +1,36 @@
+# columns: SSS BBB CCC PPP MMM
+# SimName (with replacables)     BBB.par2         CCC PPP MMM
+# 
+# We want to run MAP variations.  We've already run these boxes, so we don't need DM particle outputs.
+#
+# First around the baseline c000
+# We're running the two univariate pairs in each of the 3 major variables: m041..052
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 041
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 042
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 043
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 044
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 046
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 047
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 048
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 050
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 051
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 052
+# m046 and m047 are the bmerge close pair.  m050 and m051 are the A_accrete close pair.  Bivariate is 68..71.
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 068
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 069
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 070
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     000 310 071
+
+# Next, high sigma8, perturbing around c116
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     116 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     116 310 048
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     116 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     116 310 052
+
+# Next, low sigma8, perturbing around c004
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     004 310 045
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     004 310 048
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     004 310 049
+AbacusAurora_emulatorMAP_cCCC_phPPP_mMMM    EmulatorMAP     004 310 052

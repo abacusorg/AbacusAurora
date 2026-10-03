@@ -1,0 +1,6 @@
+SimName = "SSS"
+
+#include "../BBB.par2"
+#include "../../Cosmologies/abacus_cosmCCC/cosm.def"
+
+ZD_Seed = @ZD_Seed@+PPP-300

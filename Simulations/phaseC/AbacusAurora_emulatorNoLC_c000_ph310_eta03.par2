@@ -1,0 +1,8 @@
+SimName = "AbacusAurora_emulatorNoLC_c000_ph311_eta03"
+
+#include "../EmulatorNoLC.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+TimeStepAccel = 0.3
+
+ZD_Seed = @ZD_Seed@+310-300

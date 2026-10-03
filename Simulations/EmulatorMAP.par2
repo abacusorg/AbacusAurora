@@ -17,10 +17,11 @@ NumZRanks = 3
 
 ZD_Seed = 243    # This will be the most common phase
 
-# We're turning off subsample off
+# We're turning off subsample off, because we have all of the timesteps in the MapLogs
 TimeSliceRedshifts_Subsample = None
 TimeSliceRedshifts_Samplers  = None
 
+# Leaving on the LightCones, even though we may move the particles to tape, so that we keep the LightConeNodes in the MapLogs
 # This version has two lightcones.
 # The first is an octant to z=4, with denser coverage to z=2.
 # The second is a fullsky to z=0.5, with sparse coverage.

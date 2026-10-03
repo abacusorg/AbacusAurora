@@ -1,0 +1,54 @@
+# columns: SSS BBB CCC PPP
+# SimName (with replacables)     BBB.par2         CCC PPP
+# 
+# We want to run the neutrino cosmologies
+# First around the baseline c000
+# Massless
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     020 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  020 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  020 312
+# Inverted 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     019 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  019 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  019 312
+# 0.12 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     211 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  211 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  211 312
+# 0.24 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     212 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  212 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  212 312
+
+
+# Next, high sigma8, perturbing around c116
+# Massless
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     216 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  216 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  216 312
+# 0.12 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     217 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  217 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  217 312
+# 0.24 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     218 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  218 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  218 312
+
+
+# Next, low sigma8, perturbing around c004
+# Massless
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     213 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  213 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  213 312
+# 0.12 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     214 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  214 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  214 312
+# 0.24 eV 
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     215 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  215 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  215 312
+
+# We also have the FLAMINGO cosmologies, but maybe this is only worth doing for the matched sims?
+

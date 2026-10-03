@@ -1,0 +1,7 @@
+SimName = "AbacusAurora_emulatorMAP_c004_ph310_m052"
+
+#include "../EmulatorMAP.par2"
+#include "../../Cosmologies/abacus_cosm004/cosm.def"
+#include "../../MapVariations/mapvar052.def"
+
+ZD_Seed = @ZD_Seed@+310-300
