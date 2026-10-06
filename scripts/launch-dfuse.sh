@@ -1,20 +1,11 @@
 #!/bin/bash
-# Patched copy of ALCF's /soft/daos/bin/launch-dfuse.sh (a symlink to
+# Copy of ALCF's /soft/daos/bin/launch-dfuse.sh (a symlink to
 # launch-dfuse_user_clush.sh; md5 42ef04e2, 2026-04-21).  The mount recipe is theirs
 # verbatim, so `diff` this against /soft/daos/bin/launch-dfuse.sh after an image roll
 # to see whether the fork has drifted.
 #
-# The fork exists because this image leaves libfabric out of the linker cache:
-# /etc/ld.so.conf.d/libfabric.conf names libfabric.so.1 itself where ldconfig will
-# only read a directory, so ldconfig skips it.  Everything still works wherever a
-# module has put libfabric on LD_LIBRARY_PATH, but clush reaches the other nodes over
-# ssh, which strips LD_* and runs no rc files, so dfuse there cannot dlopen mercury's
-# OFI plugin.  Every node past the first then fails to mount with DER_HG(-1020)
-# 'Transport layer mercury error' -- an error that never mentions libfabric.  Retire
-# the fork once ALCF ships a libfabric.conf that ldconfig accepts.
-#
-# Nothing here is specific to the broken image: on one where ldconfig finds libfabric
-# the extra path is unused, so this is safe to keep as the only copy anyone runs.
+# ssh strips LD_*, so remote dfuse finds libfabric only through the linker cache.  If
+# every node past the first fails with DER_HG(-1020), check /etc/ld.so.conf.d/libfabric.conf.
 #
 # Usage: launch-dfuse.sh <pool>:<container> [<pool>:<container> ...]
 #
@@ -22,9 +13,6 @@
 # from daos_mount.
 
 set -euo pipefail
-
-# hard-code the location in the new image
-LIBFABRIC_LIBDIR=${LIBFABRIC_LIBDIR:-/opt/cray/libfabric/2.3.1/lib64}
 
 module use /soft/modulefiles
 module load mpifileutils
@@ -55,7 +43,6 @@ then
   # start dfuse on all other nodes
   tail -n +2 $PBS_NODEFILE > /tmp/${USER}_node_list
   clush --hostfile=/tmp/${USER}_node_list -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
-     env LD_LIBRARY_PATH="$LIBFABRIC_LIBDIR" \
      ${BINDIR}/start-dfuse.sh oneScratch \
      --pool ${ids[0]} \
      --cont ${ids[1]} \
