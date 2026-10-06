@@ -6,7 +6,8 @@
 #
 # The patch: the remote mounts for every container go out in one clush sweep, one ssh
 # per node, where ALCF runs a sweep per container, and each node starts its mounts
-# concurrently.  clush reaches the nodes 208 at a time, so a sweep costs N/208 times the
+# concurrently and then checks them, failing this script if any is missing (ALCF's never
+# fails).  clush reaches the nodes 208 at a time, so a sweep costs N/208 times the
 # per-node time: ~1 s of ssh plus ~2 s for the overlapping dfuse starts (2026-10-06).
 #
 # ssh strips LD_*, so remote dfuse finds libfabric only through the linker cache.  If
@@ -28,6 +29,7 @@ NNODES=$(cat $PBS_NODEFILE | wc -l)
 # One ssh per remote node starts every container's dfuse concurrently and waits for all.
 # printf %q because the remote shell re-parses the string clush sends.
 remote_cmd=""
+mountpts=()
 
 for mnt in "$@";
 do
@@ -35,6 +37,7 @@ do
 IFS=':' read -ra ids <<< ${mnt}
 
 mountpt="/tmp/${ids[0]}/${ids[1]}"
+mountpts+=("${mountpt}")
 
 # create mountpoint
 mpiexec --no-vni -np $NNODES -ppn 1 mkdir -p ${mountpt}
@@ -55,14 +58,18 @@ remote_cmd+="$(printf '%q ' ${BINDIR}/start-dfuse.sh oneScratch \
      --disable-wb-cache)& "
 
 done
-remote_cmd+="wait"
+
+# start-dfuse.sh exits 0 even when dfuse fails, and the mountpoint already exists, so an
+# unchecked failure would leave that node's ranks writing to its local /tmp instead.
+remote_cmd+="wait; bad=0; for m in $(printf '%q ' "${mountpts[@]}"); do mountpoint -q \$m || { echo \"\$m not mounted\"; bad=1; }; done; exit \$bad"
 
 if [ $NNODES -gt 1 ];
 then
 
-  # start dfuse on all other nodes
+  # start dfuse on all other nodes; -S because clush otherwise exits 0 whatever the
+  # remote commands (or ssh itself) return
   tail -n +2 $PBS_NODEFILE > /tmp/${USER}_node_list
-  clush --hostfile=/tmp/${USER}_node_list -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
+  clush -S --hostfile=/tmp/${USER}_node_list -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
      "$remote_cmd"
 fi
 

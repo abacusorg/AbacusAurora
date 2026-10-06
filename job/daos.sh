@@ -107,25 +107,7 @@ daos_require_containers() {
 daos_mount() {
     local specs=() cont
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    "$DAOS_LAUNCH_DFUSE" "${specs[@]}" || return 1
-    daos_check_mounts "$@"
-}
-
-# Confirm the mounts really landed everywhere: a partial mount would have some ranks
-# writing to the underlying /tmp instead, which looks like success until the restart.
-daos_check_mounts() {
-    local cont mnt bad
-    for cont; do
-        mnt=$(daos_mountpoint "$cont")
-        bad=$(clush --hostfile="$PBS_NODEFILE" -f 208 -N \
-                    -o '-o LogLevel=QUIET -o StrictHostKeyChecking=no' \
-                    "mountpoint -q $mnt || hostname" 2>&1 | sort -u)
-        if [[ -n $bad ]]; then
-            echo "error: $mnt is not mounted on:" >&2
-            echo "$bad" >&2
-            return 1
-        fi
-    done
+    "$DAOS_LAUNCH_DFUSE" "${specs[@]}"
 }
 
 # Mount the given containers on THIS NODE only, at the per-user login mountpoint.
