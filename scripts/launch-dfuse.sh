@@ -5,9 +5,9 @@
 # image roll to see whether it has changed upstream.
 #
 # The patch: the remote mounts for every container go out in one clush sweep, one ssh
-# per node, where ALCF runs a sweep per container.  clush reaches the nodes over ssh,
-# 208 at a time, so a sweep's cost grows with the node count: minutes each at flagship
-# scale.
+# per node, where ALCF runs a sweep per container, and each node starts its mounts
+# concurrently.  clush reaches the nodes 208 at a time, so a sweep costs N/208 times the
+# per-node time: ~1 s of ssh plus ~2 s for the overlapping dfuse starts (2026-10-06).
 #
 # ssh strips LD_*, so remote dfuse finds libfabric only through the linker cache.  If
 # every node past the first fails with DER_HG(-1020), check /etc/ld.so.conf.d/libfabric.conf.
@@ -25,7 +25,7 @@ module load mpifileutils
 BINDIR=/soft/daos/bin
 NNODES=$(cat $PBS_NODEFILE | wc -l)
 
-# Every container's start-dfuse.sh, run back to back by one ssh on each remote node.
+# One ssh per remote node starts every container's dfuse concurrently and waits for all.
 # printf %q because the remote shell re-parses the string clush sends.
 remote_cmd=""
 
@@ -52,9 +52,10 @@ remote_cmd+="$(printf '%q ' ${BINDIR}/start-dfuse.sh oneScratch \
      -m "${mountpt}" \
      --read-handles "${hfile}" \
      --disable-caching \
-     --disable-wb-cache);"
+     --disable-wb-cache)& "
 
 done
+remote_cmd+="wait"
 
 if [ $NNODES -gt 1 ];
 then
