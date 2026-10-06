@@ -39,14 +39,15 @@ IFS=':' read -ra ids <<< ${mnt}
 mountpt="/tmp/${ids[0]}/${ids[1]}"
 mountpts+=("${mountpt}")
 
-# create mountpoint
-mpiexec --no-vni -np $NNODES -ppn 1 mkdir -p ${mountpt}
-
-# mount dfuse on head node
+# mount dfuse on head node; the remote nodes make their mountpoints in their own ssh
+mkdir -p ${mountpt}
 hfile=$(mktemp /tmp/${USER}_handles.XXXXX)
 dfuse --pool ${ids[0]} --cont ${ids[1]} -m ${mountpt} --dump-handles ${hfile} --disable-caching --disable-wb-cache
 
 # copy handles to other nodes
+# TODO: can we bundle 3 mpiexec dbcast into 1? dbcast only accepts 1 file, but we could tar it.
+# However, the man page says that the file needs to be globally readable, which already isn't true
+# in ALCF's version.
 mpiexec --no-vni -np $(( NNODES * 2 )) -ppn 2 dbcast ${hfile} ${hfile} > /dev/null
 
 remote_cmd+="$(printf '%q ' ${BINDIR}/start-dfuse.sh oneScratch \
@@ -61,7 +62,7 @@ done
 
 # start-dfuse.sh exits 0 even when dfuse fails, and the mountpoint already exists, so an
 # unchecked failure would leave that node's ranks writing to its local /tmp instead.
-remote_cmd+="wait; bad=0; for m in $(printf '%q ' "${mountpts[@]}"); do mountpoint -q \$m || { echo \"\$m not mounted\"; bad=1; }; done; exit \$bad"
+remote_cmd="mkdir -p $(printf '%q ' "${mountpts[@]}"); ${remote_cmd}wait; bad=0; for m in $(printf '%q ' "${mountpts[@]}"); do mountpoint -q \$m || { echo \"\$m not mounted\"; bad=1; }; done; exit \$bad"
 
 if [ $NNODES -gt 1 ];
 then
