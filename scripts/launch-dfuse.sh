@@ -1,8 +1,13 @@
 #!/bin/bash
-# Copy of ALCF's /soft/daos/bin/launch-dfuse.sh (a symlink to
-# launch-dfuse_user_clush.sh; md5 42ef04e2, 2026-04-21).  The mount recipe is theirs
-# verbatim, so `diff` this against /soft/daos/bin/launch-dfuse.sh after an image roll
-# to see whether the fork has drifted.
+# Patched copy of ALCF's /soft/daos/bin/launch-dfuse.sh (a symlink to
+# launch-dfuse_user_clush.sh; md5 42ef04e2, 2026-04-21).  The per-container mount
+# recipe is theirs, so `diff` this against /soft/daos/bin/launch-dfuse.sh after an
+# image roll to see whether it has changed upstream.
+#
+# The patch: the remote mounts for every container go out in one clush sweep, one ssh
+# per node, where ALCF runs a sweep per container.  clush reaches the nodes over ssh,
+# 208 at a time, so a sweep's cost grows with the node count: minutes each at flagship
+# scale.
 #
 # ssh strips LD_*, so remote dfuse finds libfabric only through the linker cache.  If
 # every node past the first fails with DER_HG(-1020), check /etc/ld.so.conf.d/libfabric.conf.
@@ -18,6 +23,11 @@ module use /soft/modulefiles
 module load mpifileutils
 
 BINDIR=/soft/daos/bin
+NNODES=$(cat $PBS_NODEFILE | wc -l)
+
+# Every container's start-dfuse.sh, run back to back by one ssh on each remote node.
+# printf %q because the remote shell re-parses the string clush sends.
+remote_cmd=""
 
 for mnt in "$@";
 do
@@ -25,7 +35,6 @@ do
 IFS=':' read -ra ids <<< ${mnt}
 
 mountpt="/tmp/${ids[0]}/${ids[1]}"
-NNODES=$(cat $PBS_NODEFILE | wc -l)
 
 # create mountpoint
 mpiexec --no-vni -np $NNODES -ppn 1 mkdir -p ${mountpt}
@@ -37,20 +46,22 @@ dfuse --pool ${ids[0]} --cont ${ids[1]} -m ${mountpt} --dump-handles ${hfile} --
 # copy handles to other nodes
 mpiexec --no-vni -np $(( NNODES * 2 )) -ppn 2 dbcast ${hfile} ${hfile} > /dev/null
 
+remote_cmd+="$(printf '%q ' ${BINDIR}/start-dfuse.sh oneScratch \
+     --pool "${ids[0]}" \
+     --cont "${ids[1]}" \
+     -m "${mountpt}" \
+     --read-handles "${hfile}" \
+     --disable-caching \
+     --disable-wb-cache);"
+
+done
+
 if [ $NNODES -gt 1 ];
 then
 
   # start dfuse on all other nodes
   tail -n +2 $PBS_NODEFILE > /tmp/${USER}_node_list
   clush --hostfile=/tmp/${USER}_node_list -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
-     ${BINDIR}/start-dfuse.sh oneScratch \
-     --pool ${ids[0]} \
-     --cont ${ids[1]} \
-     -m ${mountpt} \
-     --read-handles ${hfile} \
-     --disable-caching \
-     --disable-wb-cache
+     "$remote_cmd"
 fi
-
-done
 
