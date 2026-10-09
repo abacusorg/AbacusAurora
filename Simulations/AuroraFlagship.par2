@@ -19,6 +19,12 @@ NumZRanks = 75
 
 ZD_Seed = 5843    # This will be the most common phase
 
+MapForestSize = 0.9   # We ran a little big in DemiFlag
+
+ExitAfterCheckpoint = 1   # Runs on DAOS appear to crash on the non-Checkpoint final write, so don't do them.
+
+SCR_Checkpoint_Seconds = 2400
+
 TimeStepAccel = 0.3   # We found in comparing DemiFlag to Emulator that the larger box has more extreme cases that drive the timesteps lower.  But we think this is overkill: cases that don't occur in 1.2 Gpc/h are rare enough that we shouldn't let them drive our global timestep.
 
 # The usual set of timeslices:
