@@ -144,6 +144,21 @@ FFTWisdomDirectory = "$ABACUS_RESOURCE_ROOT$/Wisdom"
 mpirun_cmd = "mpirun $_ABACUS_MPIRUN_ARGS$ -ppn 2 --cpu-bind list:1-51,105-155:53-103,157-207 --gpu-bind list:0-2:3-5 --mem-bind list:0:1 -np " + str(2 * $NNODES$) + " -- "
 
 
+# Wrap each rank to drop the "cxil_map: write error" flood from its stderr.  exec_prefix is
+# spliced in AFTER mpirun_cmd, so the script runs per rank on the compute node and the
+# discarded lines never reach the PALS aggregation path -- filtering further downstream
+# would not relieve that load, which is the point.  At flagship scale this is millions of
+# lines per step, burying the NODEFAIL / FSSTALL / TERMSTACK markers that are the only
+# diagnostic channel at LogVerbosity = -1.  Only that one exact message is dropped.
+#
+# The cause of the message is NOT understood -- see abacus_cxil_stderr_filter_plan.md --
+# so this is symptom relief, and the line should come back out once the cause is found.
+# Comment it out to see the message again.
+#
+# The script lives in the code repo (src/Util/stderr-filter.sh) and meson copies it into
+# the build tree, so it travels with the hash-keyed build like multistep itself.
+exec_prefix = @BuildDirectory@ + "/src/Util/stderr-filter.sh"
+
 # Just leaving these here as examples
 #exec_prefix = "vtune -collect gpu-offload -r /flare/Abacus/eisenste/vtune/ "
 #exec_prefix = "iprof --tracing-mode full"
