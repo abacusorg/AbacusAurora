@@ -1,0 +1,4 @@
+SimName = "SSS"
+
+#include "../BBB.par2"
+#include "../../Cosmologies/abacus_cosmCCC/cosm.def"
