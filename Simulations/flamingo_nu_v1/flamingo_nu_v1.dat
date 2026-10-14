@@ -1,0 +1,8 @@
+# columns: SSS BBB CCC
+# SimName (with replacables)          BBB.par2       CCC
+# FLAMINGO DMO cosmology variations (FLAMINGO/L1_m9/<name>_DMO)
+AbacusAurora_FLAMINGO_nu_cCCC_N1800   FLAMINGO       202   # Planck
+AbacusAurora_FLAMINGO_nu_cCCC_N1800   FLAMINGO       203   # PlanckNu0p12Var
+AbacusAurora_FLAMINGO_nu_cCCC_N1800   FLAMINGO       204   # PlanckNu0p24Fix
+AbacusAurora_FLAMINGO_nu_cCCC_N1800   FLAMINGO       205   # PlanckNu0p48Fix
+AbacusAurora_FLAMINGO_nu_cCCC_N1800   FLAMINGO       206   # PlanckNu0p24Var

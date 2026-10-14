@@ -1,0 +1,4 @@
+SimName = "AbacusAurora_FLAMINGO_nu_c202_N1800"
+
+#include "../FLAMINGO.par2"
+#include "../../Cosmologies/abacus_cosm202/cosm.def"

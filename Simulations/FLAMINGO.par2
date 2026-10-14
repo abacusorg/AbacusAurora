@@ -1,0 +1,33 @@
+# This is the template for the FLAMINGO-phase-matched neutrino boxes: FLAMINGO's L1000N1800 (m9) volume.
+
+## includes
+#include "./$ABACUS_SITE$.def"
+#include "../Cosmologies/abacus_cosm202/cosm.def"
+# FLAMINGO L = 1000 Mpc in Mpc/h, using H0 from the cosm.def included above.  
+# Must precede base.def since it uses @BoxSize@.
+BoxSize = 10*@H0@
+#include "./base.def"
+
+# Custom parameters
+NP = 1800**3       # FLAMINGO L1000N1800 (m9) resolution
+CPD = 441          # PPC = 68.6; Small.par2 names 441 as the next step for 1800^3
+NumZRanks = 2
+LogVerbosity = -1
+
+ZD_Seed = 0                 # unused with LOAD_EXTERNAL_NOISE (required by the parameter parser)
+ZD_CornerModes = 1          # keep |k| >= N/2 cube corners, as monofonIC does (FLAMINGO mode set)
+ZD_f_cluster = 1 - @Omega_Smooth@/@Omega_M@   # smooth neutrinos are not displaced
+
+LCOrigins = None   # Don't output lightcones
+LCIsOctant = None
+LCZMax1 = None
+LCZMax2 = None
+LCBoxRepeats = 0
+LCSamplerInner = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+
+FinalRedshift = 0.0   # to z = 0 for comparison with FLAMINGO snapshots
+
+SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
