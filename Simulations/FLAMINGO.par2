@@ -2,13 +2,10 @@
 
 ## includes
 #include "./$ABACUS_SITE$.def"
-#include "../Cosmologies/abacus_cosm202/cosm.def"
-# FLAMINGO L = 1000 Mpc in Mpc/h, using H0 from the cosm.def included above.  
-# Must precede base.def since it uses @BoxSize@.
-BoxSize = 10*@H0@
 #include "./base.def"
 
 # Custom parameters
+BoxSize = 10*@H0@  # FLAMINGO L = 1000 Mpc in Mpc/h, using H0 from the cosm.def that the per-sim par2 includes.
 NP = 1800**3       # FLAMINGO L1000N1800 (m9) resolution
 CPD = 441          # PPC = 68.6; Small.par2 names 441 as the next step for 1800^3
 NumZRanks = 2
@@ -29,5 +26,9 @@ LCDoHealpix = None
 LCHealpixZMax = None
 
 FinalRedshift = 0.0   # to z = 0 for comparison with FLAMINGO snapshots
+
+# FLAMINGO L1_m9 DMO snapshot redshifts (flamingo_0009 ... flamingo_0077)
+TimeSliceRedshifts_Subsample = [5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
+TimeSliceRedshifts_Samplers = [ "subP8" ]
 
 SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
