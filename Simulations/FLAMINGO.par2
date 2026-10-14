@@ -27,8 +27,9 @@ LCHealpixZMax = None
 
 FinalRedshift = 0.0   # to z = 0 for comparison with FLAMINGO snapshots
 
-# FLAMINGO L1_m9 DMO snapshot redshifts (flamingo_0009 ... flamingo_0077)
-TimeSliceRedshifts_Subsample = [5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
-TimeSliceRedshifts_Samplers = [ "subP8" ]
+# Union of the FLAMINGO L1_m9 DMO snapshot redshifts (flamingo_0009 ... flamingo_0077)
+# and the base.def time slices; all particles at z = 0, 0.5, 1.0.
+TimeSliceRedshifts_Subsample = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 0.8, 1.0, 1.1, 1.4, 1.5, 2.0, 2.35, 3.0, 3.5, 4.0, 5.0]
+TimeSliceRedshifts_Samplers = [ "all", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8" ]
 
 SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
