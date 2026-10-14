@@ -1,0 +1,153 @@
+# columns: SSS BBB CCC PPP
+# SimName (with replacables)     BBB.par2         CCC PPP
+# 
+# We want to run the w0wa cosmologies
+
+# Tight derivatives
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     108 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  108 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  108 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     109 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  109 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  109 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     110 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  110 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  110 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     111 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  111 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  111 312
+
+# wa=+0.4
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     270 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  270 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  270 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     271 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  271 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  271 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     272 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  272 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  272 313
+
+# wa=0.0.  These are the constant w cases
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     273 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  273 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  273 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     274 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  274 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  274 313
+
+# wa=-0.4
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     275 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  275 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  275 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     276 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  276 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  276 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     277 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  277 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  277 313
+
+# wa=-0.64
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     278 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  278 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  278 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     279 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  279 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  279 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     280 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  280 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  280 313
+
+
+# wa=-0.9
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     281 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  281 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  281 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     282 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  282 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  282 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     283 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  283 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  283 313
+
+
+# wa=-1.3
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     284 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  284 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  284 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     285 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  285 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  285 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     286 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  286 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  286 313
+
+# wa=-2.0
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     287 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  287 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  287 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     288 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  288 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  288 313
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     289 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  289 314
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  289 313
+
+# wa=-3.0
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     290 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  290 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  290 313
+
+
+# Non-w0wa derivatives around c200.  Use the phases that allow tight comparisons to a similar set around c000.
+# sigma8
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     291 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  291 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  291 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     292 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  292 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  292 312
+
+# omega_c
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     293 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  293 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  293 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     294 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  294 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  294 312
+
+# n_s
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     295 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  295 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  295 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     296 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  296 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  296 312
+
+# theta_star
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     297 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  297 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  297 312
+#
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     298 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  298 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  298 312
