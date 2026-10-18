@@ -1,0 +1,1 @@
+The sims in parfiles_D2 were run with Derivatives that were generated at run-time, not the usual set of pre-generated files.  The irregularity is that they were being generated 8-fold in parallel, so the files were overwriting.  But comparing to the usual files, the values in the files seemed fine.
