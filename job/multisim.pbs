@@ -81,7 +81,11 @@ onesim="$abacus_prod/job/onesim.sh"   # not $BASH_SOURCE — PBS executes a spoo
 # Node allocation: unique, sorted list (PBS_NODEFILE repeats a node per rank/chunk).
 # nodes_per_sim comes from the job spec (falls back to the whole allocation if unset).
 : "${PBS_NODEFILE:?not set — run under PBS}"
-sort -u "$PBS_NODEFILE" > nodes.sorted
+# ABACUS_EXCLUDE_NODES (short hostnames, space- or comma-separated; e.g. via hashrun -E) keeps
+# suspect nodes out of every sim.  They still count toward the request, so ask for spares with -n.
+sort -u "$PBS_NODEFILE" | awk -v ex="${ABACUS_EXCLUDE_NODES:-}" '
+    BEGIN { n = split(ex, a, /[ ,]+/); for (i = 1; i <= n; i++) if (a[i] != "") skip[a[i]] = 1 }
+    { h = $0; sub(/\..*/, "", h); if (h in skip) print "Excluding node " h > "/dev/stderr"; else print }' > nodes.sorted
 num_nodes=$(( $(wc -l < nodes.sorted) ))
 nodes_per_sim=${nodes_per_sim:-$num_nodes}
 
