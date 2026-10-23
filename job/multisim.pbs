@@ -12,7 +12,8 @@
 # by hashrun.sh, which stages the job inputs (jobspec + par2 list + env overrides
 # + its own command line) into the prod repo's git-ignored out/<jobid>/ and routes
 # PBS's stdout/stderr there too; per-sim provenance goes to each
-# OutputDirectory/provenance/.
+# OutputDirectory/provenance/.  With ABACUS_NODE_ORDERS it instead runs a single sim
+# several times in sequence, once per rank placement (see nodeorder.sh).
 
 set -euo pipefail
 
@@ -35,6 +36,7 @@ source "$out/env_overrides.sh"
 
 source "$abacus_prod/job/daos.sh"
 source "$abacus_prod/job/nodeprep.sh"
+source "$abacus_prod/job/nodeorder.sh"
 
 # --- Halt controls -----------------------------------------------------------
 # Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two
@@ -96,6 +98,8 @@ if (( required > num_nodes )); then
     exit 1
 fi
 
+nodeorder_check   # here, before the DAOS mount is paid for; the sweep runs after it
+
 # Nodes past what the sims use become a spare pool (future blacklist-and-replace).
 export HOSTFILE_EXTRA="$out/hostfile_extra"
 tail -n +"$(( required + 1 ))" nodes.sorted > "$HOSTFILE_EXTRA"
@@ -155,6 +159,10 @@ echo "               resources=$ABACUS_RESOURCE_ROOT"
 echo "ABACUS_MPIRUN_ARGS=$ABACUS_MPIRUN_ARGS"
 echo
 # -------------------------------------------------------------------------------
+
+if (( ${#node_orders[@]} )); then
+    nodeorder_sweep   # exits; it replaces the parallel launch below
+fi
 
 # Launch each sim on its own node slice via the per-sim monitor. A failed sim is
 # not fatal to the batch, so drop -e here and collect exit codes afterward.
