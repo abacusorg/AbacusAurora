@@ -173,14 +173,6 @@ daos_localize_path() {
     printf '%s\n' "${p/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"
 }
 
-# clean-dfuse.sh is global (it SIGKILLs every dfuse on every node), so one call
-# covers all containers.  Best-effort: this runs from an EXIT trap.
-daos_unmount() {
-    local specs=() cont
-    for cont; do specs+=("$DAOS_POOL:$cont"); done
-    clean-dfuse.sh "${specs[@]}" >/dev/null 2>&1 || true
-}
-
 # Extend $ABACUS_MPIRUN_ARGS, which onesim.sh appends --hostfile to.  Nothing is added
 # unless DAOS is actually in play; both go on the mpirun line so they reach the ranks
 # only, never python/uv/meson, and each is skipped if the operator already supplied it
