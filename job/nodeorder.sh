@@ -7,6 +7,9 @@
 #   random  a seeded shuffle of the nodes
 #   block   nodelist_block.py's 4x4 rank blocks, in seeded random order
 # Both seeds are ABACUS_NODE_ORDER_SEED (default 1).  Run i is SimName-<jobid>-i-<order>.
+# One order's run can take extra KEY=VALUE overrides from <par2 without .par2>.<order>.overrides,
+# one per line ('#' starts a comment line); e.g. in/flagship_lattice.block.overrides profiles
+# only the block run.
 #
 # Like daos.sh, these functions work on multisim.pbs's globals (num_sims, par2s, overrides,
 # nodes_per_sim, out, onesim, abacus_prod) rather than taking arguments.
@@ -30,7 +33,7 @@ nodeorder_check() {
 # Write one hostfile per order, run the sim on each in turn, and exit with the sweep's status.
 nodeorder_sweep() {
     local ppn=2   # aurora.def's mpirun_cmd
-    local par2=${par2s[0]} pargs=() hostfiles=() o i hf sim_name nz nx seed rc=0
+    local par2=${par2s[0]} pargs=() hostfiles=() order_args=() o i hf sim_name nz nx seed line rc=0
     for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
     python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o sweep.par
     sim_name=$(awk -F'"' '/^SimName[[:space:]]*=/ {print $2; exit}' sweep.par)
@@ -66,8 +69,16 @@ open(sys.argv[3], "w").write("\n".join(hosts) + "\n")' nodes.sweep "$seed" "$hf"
             rc=1
             break
         fi
+        order_args=()
+        if [[ -e ${par2%.par2}.$o.overrides ]]; then
+            while IFS= read -r line; do
+                [[ $line =~ ^[[:space:]]*(#|$) ]] || order_args+=("$line")
+            done < "${par2%.par2}.$o.overrides"
+        fi
         echo "Order $i: $o on $nodes_per_sim node(s) -> sim_${i}.out"
+        (( ${#order_args[@]} )) && printf '  override: %s\n' "${order_args[@]}"
         "$onesim" "$par2" "${hostfiles[$i]}" ${overrides[@]+"${overrides[@]}"} \
+            ${order_args[@]+"${order_args[@]}"} \
             "SimName=$sim_name-${PBS_JOBID%%.*}-$i-$o" < /dev/null > "sim_${i}.out" 2>&1 \
             || { echo "Order $i ($o) exited nonzero" >&2; rc=1; }
     done
