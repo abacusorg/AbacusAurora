@@ -1,20 +1,17 @@
 #!/bin/bash
 # Per-rank profiler launcher, chained after stderr-filter.sh in exec_prefix:
-#   prof-wrap.sh [--tau] [--vtune RANK=ANALYSIS,...] [--perf RANK=MODE,...] [--paused]
+#   prof-wrap.sh [--vtune RANK=ANALYSIS,...] [--perf RANK=MODE,...] [--paused]
 #                --out DIR -- multistep ARGS...
-# --tau profiles MPI calls on every rank.  --vtune runs one VTune analysis on each listed
-# rank (hotspots means hardware sampling without stacks).  --perf runs perf record on each
-# listed rank, MODE lbr (hardware call stacks) or flat.  Keep VTune and perf on different
-# nodes: VTune's sampling driver takes the whole node's PMU.  Ranks with no tool exec the
-# command untouched.
-# --paused starts VTune and perf paused, for runs whose ProfileStartStep/ProfileStartSeconds
-# window resumes them; TAU needs no flag, since multistep switches it off at startup itself.
+# --vtune runs one VTune analysis on each listed rank (hotspots means hardware sampling
+# without stacks).  --perf runs perf record on each listed rank, MODE lbr (hardware call
+# stacks) or flat.  Keep VTune and perf on different nodes: VTune's sampling driver takes the
+# whole node's PMU.  Ranks with no tool exec the command untouched.
+# --paused starts VTune and perf paused, for runs whose ProfileStartStep window resumes them.
 set -u
 
-tau=0 vtune_spec="" perf_spec="" paused=() out=""
+vtune_spec="" perf_spec="" paused=() out=""
 while (( $# )); do
     case $1 in
-        --tau) tau=1; shift ;;
         --vtune) vtune_spec=$2; shift 2 ;;
         --perf) perf_spec=$2; shift 2 ;;
         --paused) paused=(-start-paused); shift ;;
@@ -36,7 +33,7 @@ entry_for_rank() {
 }
 perf_mode=$(entry_for_rank "$perf_spec")
 analysis=$(entry_for_rank "$vtune_spec")
-(( tau )) || [[ -n $perf_mode || -n $analysis ]] || exec "${cmd[@]}"
+[[ -n $perf_mode || -n $analysis ]] || exec "${cmd[@]}"
 
 mkdir -p "$out"
 # multistep writes its thread names here when the profiling window opens.
@@ -49,20 +46,6 @@ export ABACUS_PROFILE_DIR=$out
     echo "LD_PRELOAD ${LD_PRELOAD:-}"
     chronyc tracking 2>&1   # how well this node's clock agrees, for MPITimeline
 } > "$out/node.r$rank.txt"
-
-if (( tau )); then
-    export TAU_DIR=/soft/perftools/tau/tau-2.35.2/x86_64
-    export PATH=$TAU_DIR/bin:$PATH   # tau_exec calls tau-config
-    # The TAU module would also prepend an older MPICH; take only the PAPI it needs.
-    export LD_LIBRARY_PATH=/opt/aurora/26.181.0/spack/unified/1.1.1/install/linux-x86_64/papi-7.2.0-otce6vj/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-    export TAU_TRACE=1 TAU_TRACE_FORMAT=otf2 TAU_TRACK_MESSAGE=1 TAU_SYNCHRONIZE_CLOCKS=1
-    export TAU_PROFILE=1 TAU_COMM_MATRIX=1
-    export TRACEDIR=$out/tau PROFILEDIR=$out/tau
-    # libTAU exports ompt_start_tool, which would turn on OpenMP tracking unasked.
-    export OMP_TOOL=disabled
-    mkdir -p "$out/tau"
-    cmd=("$TAU_DIR/bin/tau_exec" -T mpi -- "${cmd[@]}")
-fi
 
 # vtune's own processes load its bundled libssl, which is too old for the DAOS client that
 # libpil4dfs starts; keep the preload off the profiler and give it back to the application.
