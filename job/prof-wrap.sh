@@ -51,6 +51,9 @@ export ABACUS_PROFILE_DIR=$out
 # libpil4dfs starts; keep the preload off the profiler and give it back to the application.
 preload_app_only() {
     local app_preload=${LD_PRELOAD:-}
+    # vtune's relaunch drops an empty argument, and the shell below would then take the
+    # program for the preload.
+    [[ -n $app_preload ]] || return 0
     unset LD_PRELOAD
     cmd=(bash -c '[[ -n $1 ]] && export LD_PRELOAD=${LD_PRELOAD:+$LD_PRELOAD:}$1; shift; exec "$@"'
          bash "$app_preload" "${cmd[@]}")
