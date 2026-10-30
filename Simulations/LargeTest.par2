@@ -1,0 +1,46 @@
+# These are the parameters for our large boxes with coarse (15x) particles, intended to support PNG applications.
+# This is a 1/3-scale version, for tests
+# Don't forget the cosm.def file and a ZD_Seed
+
+
+#include "aurora.def"
+#include "base.def"
+
+MapForestSize = 0.8
+
+BoxSize = 2666.667
+NP = 4000**3
+CPD = 875    # PPC = 96
+NumZRanks = 4
+# We plan to invoke on 14 nodes to make 7*4 ranks.  That gives 125 slabs per rank.  And 218.75 cells in each Z column.
+# This is 2.3G particles/socket
+
+# We are using a coarser softening, even as a function of the interparticle spacing, because coarser scales go non-linear at a lower redshift.
+SofteningLength = @BoxSize@/@NP@**(1/3)/30  # Plummer-equivalent
+Map_bmerge_max_ips= @Map_bmerge_proper@*@SofteningMax@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
+
+# We're explicitly going to sample the time evolution less well; about half as many timesteps as in our normal sims.  
+# This means that the inner parts of clusters will be a little under-resolved.  But these sims aren't meant for lensing applications.
+TimeStepAccel = @TimeStepAccel@*2
+
+
+ZD_Seed = 3913    # This will be the most common phase
+
+FinalRedshift = 0.3 # We are supporting the full DESI LRG range, but there's not enough volume to make PNG viable at low redshifts.
+
+# An abridged set of timeslices, because we're supporting only heavier tracers:
+TimeSliceRedshifts_Subsample = [0.3, 0.5, 0.8, 1.1, 1.4, 2.0 ]
+TimeSliceRedshifts_Samplers = [ "subP8", "subP8", "subP8", "subP8", "subP8", "subP8" ]
+
+# Lightcones: We're doing no lightcones in this test sim
+
+LCBoxRepeats = 2    
+LCOrigins = None
+LCIsOctant = None
+LCZMax1 = None
+LCSamplerInner = None
+LCZMax2 = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+
