@@ -1,0 +1,8 @@
+SimName = "AbacusAurora_emulatorslim_c000_ph301"
+
+#include "../EmulatorSlim.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+# This sim uses the usual CPD = 1125.  Test for timing, but it is a full output set, matched to a phaseA phase.
+
+ZD_Seed = @ZD_Seed@+301-300
