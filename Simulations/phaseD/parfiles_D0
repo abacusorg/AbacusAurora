@@ -1,0 +1,11 @@
+# This is a progression of sims varying CPD for timing.  Also useful because they duplicate phases used in the phaseA study, before the MAP teleportation bug was fixed.
+Simulations/phaseD/AbacusAurora_emulatorslim_c000_ph301.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c000_ph302.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c000_ph303.par2
+
+# Here are 5 planned phaseD sims just to fill out the bundle
+Simulations/phaseD/AbacusAurora_emulatorslim_c108_ph310.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c109_ph310.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c110_ph310.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c111_ph310.par2
+Simulations/phaseD/AbacusAurora_emulatorslim_c270_ph310.par2
