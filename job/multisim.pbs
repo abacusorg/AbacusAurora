@@ -29,6 +29,9 @@ source "$out/jobspec.sh"
 # hashrun's -E overrides live in their own file, sourced here (after env.sh) so they
 # win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
 source "$out/env_overrides.sh"
+# env.sh allows unlimited core dumps, and mpiexec hands the core limit to every rank
+# (PALS_RLIMITS); -E ABACUS_CORE_LIMIT=0 turns them off for runs too big to dump.
+[[ -z ${ABACUS_CORE_LIMIT:-} ]] || ulimit -c "$ABACUS_CORE_LIMIT"
 
 source "$abacus_prod/job/daos.sh"
 
