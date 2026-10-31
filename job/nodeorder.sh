@@ -6,8 +6,10 @@
 #   sorted  rack, chassis, slot: the placement every other job gets
 #   random  a seeded shuffle of the nodes
 #   block   nodelist_block.py's 4x4 rank blocks, in seeded random order
-# Both seeds are ABACUS_NODE_ORDER_SEED (default 1).  Run i is SimName-<jobid>-i-<order>.
-# One order's run can take extra KEY=VALUE overrides from <par2 without .par2>.<order>.overrides,
+# Both seeds are ABACUS_NODE_ORDER_SEED (default 1).  An entry may carry a label after a hyphen,
+# e.g. block-accstats: the part before the hyphen picks the order (so it lands on the same
+# hostfile as plain block), and the whole entry names the run.  Run i is SimName-<jobid>-i-<entry>.
+# One entry's run can take extra KEY=VALUE overrides from <par2 without .par2>.<entry>.overrides,
 # one per line ('#' starts a comment line); e.g. in/flagship_lattice.block.overrides profiles
 # only the block run.
 #
@@ -19,9 +21,9 @@ nodeorder_check() {
     local o
     IFS=', ' read -r -a node_orders <<< "${ABACUS_NODE_ORDERS:-}"
     for o in ${node_orders[@]+"${node_orders[@]}"}; do
-        case $o in
+        case ${o%%-*} in
             sorted|random|block) ;;
-            *) echo "ERROR: ABACUS_NODE_ORDERS: unknown order '$o' (sorted, random, block)" >&2; exit 1 ;;
+            *) echo "ERROR: ABACUS_NODE_ORDERS: unknown order in '$o' (sorted, random, block)" >&2; exit 1 ;;
         esac
     done
     if (( ${#node_orders[@]} && num_sims != 1 )); then
@@ -48,7 +50,7 @@ nodeorder_sweep() {
 
     for i in "${!node_orders[@]}"; do
         hf="$out/nodefile_order_${i}_${node_orders[$i]}"
-        case ${node_orders[$i]} in
+        case ${node_orders[$i]%%-*} in
             sorted) cp nodes.sweep "$hf" ;;
             random) python -c 'import random, sys
 hosts = open(sys.argv[1]).read().split()
