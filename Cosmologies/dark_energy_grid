@@ -1,0 +1,36 @@
+## Dark energy staging table (cosm270-298: w0wa grid, plus derivatives around c200)
+## Built from util/dark_energy_grid.dat by util/dark_energy_grid_to_grid.py. Working copy for H0_search → README.txt.
+## theta_s in .dat is a factor; use --per-cosm-theta with --glass dark_energy_grid.dat.
+## Do not confuse with the full emulator_grid / README.md.
+
+| root               | notes                                                                | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur   | N_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | -----                                                                | ------- | --------- | ------ | --------- | ------ | ------- | ------ | ------ | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm270     | dark energy w0=-0.900 wa=0.400; theta_s factor=1.0000              | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.900 | 0.400  | 
+| abacus_cosm271     | dark energy w0=-1.100 wa=0.400; theta_s factor=1.0000              | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.100 | 0.400  | 
+| abacus_cosm272     | dark energy w0=-1.300 wa=0.400; theta_s factor=1.0000              | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.300 | 0.400  | 
+| abacus_cosm273     | dark energy w0=-0.700 wa=0.000; theta_s factor=1.0000              | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.700 | 0.000  | 
+| abacus_cosm274     | dark energy w0=-1.300 wa=0.000; theta_s factor=1.0000              | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.300 | 0.000  | 
+| abacus_cosm275     | dark energy w0=-0.700 wa=-0.400; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.700 | -0.400 | 
+| abacus_cosm276     | dark energy w0=-0.900 wa=-0.400; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.900 | -0.400 | 
+| abacus_cosm277     | dark energy w0=-1.100 wa=-0.400; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.100 | -0.400 | 
+| abacus_cosm278     | dark energy w0=-0.640 wa=-0.640; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.640 | -0.640 | 
+| abacus_cosm279     | dark energy w0=-0.840 wa=-0.640; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.840 | -0.640 | 
+| abacus_cosm280     | dark energy w0=-1.040 wa=-0.640; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.040 | -0.640 | 
+| abacus_cosm281     | dark energy w0=-0.575 wa=-0.900; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.575 | -0.900 | 
+| abacus_cosm282     | dark energy w0=-0.775 wa=-0.900; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.775 | -0.900 | 
+| abacus_cosm283     | dark energy w0=-0.975 wa=-0.900; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.975 | -0.900 | 
+| abacus_cosm284     | dark energy w0=-0.475 wa=-1.300; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.475 | -1.300 | 
+| abacus_cosm285     | dark energy w0=-0.675 wa=-1.300; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.675 | -1.300 | 
+| abacus_cosm286     | dark energy w0=-0.875 wa=-1.300; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.875 | -1.300 | 
+| abacus_cosm287     | dark energy w0=-0.300 wa=-2.000; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.300 | -2.000 | 
+| abacus_cosm288     | dark energy w0=-0.500 wa=-2.000; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.500 | -2.000 | 
+| abacus_cosm289     | dark energy w0=-0.700 wa=-2.000; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.700 | -2.000 | 
+| abacus_cosm290     | dark energy w0=-0.250 wa=-3.000; theta_s factor=1.0000             | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.250 | -3.000 | 
+| abacus_cosm291     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm292     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm293     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1238    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm294     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1159    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm295     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9813 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm296     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0000             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9613 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm297     | dark energy w0=-0.824 wa=-0.641; theta_s factor=1.0200             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
+| abacus_cosm298     | dark energy w0=-0.824 wa=-0.641; theta_s factor=0.9800             | 0.02242 | 0.1198    | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 
