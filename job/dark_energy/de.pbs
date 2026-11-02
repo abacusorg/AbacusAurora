@@ -1,0 +1,27 @@
+#!/bin/bash -l
+#PBS -A Abacus
+#PBS -l filesystems=home
+#PBS -l place=scatter
+#PBS -l walltime=01:00:00
+#PBS -q debug-scaling
+#PBS -j oe
+# CLASS pipeline for the dark energy grid (cosm270-298), one cosm per node.
+# Submit with submit.sh, which writes roots.txt and sets -l select=<ncosm> and -v STAGE=h|calib|final.
+
+module load frameworks   # before set -u: the lmod init reads unset variables
+set -euo pipefail
+export OMP_NUM_THREADS=104
+export PYTHONPATH=$HOME/class_public/python/build/lib.linux-x86_64-cpython-312:${PYTHONPATH:-}
+
+echo "job $PBS_JOBID stage $STAGE on $(wc -l < "$PBS_NODEFILE") nodes at $(date)"
+cd /home/helenshao/InitialConditions/AbacusAurora/job/dark_energy
+if [[ $STAGE == pool ]]; then
+    # WALL_SEC must match -l walltime; leave a 5 min margin for startup/teardown
+    export DEADLINE=$(( $(date +%s) + ${WALL_SEC:?set WALL_SEC for STAGE=pool} - 300 ))
+    n=$(wc -l < "$PBS_NODEFILE")
+else
+    export ROOTS=$(cat "${ROOTS_FILE:-roots.txt}")
+    n=$(wc -w <<< "$ROOTS")
+fi
+mpiexec -n "$n" --ppn 1 --cpu-bind none bash run_stage.sh
+echo "stage $STAGE done at $(date)"
