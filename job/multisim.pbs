@@ -107,8 +107,30 @@ export ABACUS_WORKING_ROOT=$working_root
 export ABACUS_OUTPUT_ROOT=$output_root
 export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
 export ABACUS_RESOURCE_ROOT=$resource_root
+# Read by aurora.def: the pool for per-checkpoint containers, and whether to use them.
+# Specs from before the switch existed carry no ckpt_containers: off.
+export ABACUS_DAOS_POOL=$daos_pool
+export ABACUS_CHECKPOINT_CONTAINERS=${ckpt_containers:-0}
 if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
+    # One container per checkpoint: each sim's nodes also mount the containers its
+    # checkpoint directory links to, in this same sweep.  The map says which node gets
+    # which; the slices are the ones the launch loop below hands out.
+    if (( ABACUS_CHECKPOINT_CONTAINERS )); then
+        export DAOS_CKPT_MAP=$out/ckpt_mounts.map
+        : > "$DAOS_CKPT_MAP"
+        for i in "${!par2s[@]}"; do
+            ckptdir=$(daos_ckpt_prefix "${par2s[$i]}" ${overrides[@]+"${overrides[@]}"}) || ckptdir=
+            if [[ -z $ckptdir ]]; then
+                echo "warning: could not resolve CheckpointDirectory for ${par2s[$i]}; its containers mount at launch instead" >&2
+                continue
+            fi
+            daos_ckpt_map "$ckptdir" \
+                <(sed -n "$(( i * nodes_per_sim + 1 )),$(( (i + 1) * nodes_per_sim ))p" nodes.sorted) \
+                "$DAOS_CKPT_MAP"
+        done
+        echo "DAOS: one container per checkpoint; $(cut -d' ' -f2- "$DAOS_CKPT_MAP" | tr ' ' '\n' | grep -c . || true) checkpoint mount(s) in $DAOS_CKPT_MAP"
+    fi
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
     daos_mount "${daos_conts[@]}" || exit 1
     daos_mounted=1
