@@ -66,6 +66,45 @@ rm_rf() {
     fi
 }
 
+# One DAOS container per checkpoint (ABACUS_DAOS_CKPT_CONTAINERS): a checkpoint directory
+# then holds only links into the containers, so deleting it would leave the containers --
+# the actual checkpoints -- with nothing pointing at them.  Every container linked from a
+# directory is destroyed before the directory goes, through Abacus's helper, which refuses
+# any label that is not ckpt-*.  Found via $ABACUS_CKPT_HELPER, else $ABACUS_BUILD.
+CKPT_HELPER=${ABACUS_CKPT_HELPER:-${ABACUS_BUILD:+${ABACUS_BUILD%/}/src/Util/ckpt-container.sh}}
+
+# "<pool> <label>" for every checkpoint container linked from anywhere under <path>.
+container_links() {
+    local l t
+    find "$1" -type l 2>/dev/null | while read -r l; do
+        t=$(readlink "$l")
+        if [[ $t =~ ^/tmp/([^/]+)/(ckpt-[^/]+)(/|$) ]]; then
+            echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
+        fi
+    done | sort -u
+}
+
+# Destroy the containers linked from under <path>.  Nonzero if any is left, in which case
+# the caller must not delete <path>: its links are the only record of those containers.
+destroy_containers() {
+    local path=$1 pool label rc=0
+    while read -r pool label; do
+        [[ -n $label ]] || continue
+        if (( dryrun )); then
+            echo "  would destroy checkpoint container $pool:$label"
+        elif [[ -z $CKPT_HELPER || ! -f $CKPT_HELPER ]]; then
+            echo "  warning: no ckpt-container.sh to destroy $pool:$label (set ABACUS_BUILD or ABACUS_CKPT_HELPER)" >&2
+            rc=1
+        elif out=$(bash "$CKPT_HELPER" destroy "$pool" "$label" 2>&1); then
+            echo "  destroyed checkpoint container $pool:$label"
+        else
+            echo "  warning: could not destroy $pool:$label: $(tail -1 <<<"$out")" >&2
+            rc=1
+        fi
+    done < <(container_links "$path")
+    return $rc
+}
+
 # Delete one path, reporting its size first.  A symlink is left alone: rm would
 # take the link and leave the data it points at, which looks like a cleanup but
 # reclaims nothing.
@@ -81,6 +120,10 @@ remove() {
     fi
     if [[ $kind == dir && ! -d $path ]]; then
         echo "  warning: $(basename "$path") is not a directory; leaving it" >&2
+        return 1
+    fi
+    if [[ $kind == dir ]] && ! destroy_containers "$path"; then
+        echo "  warning: leaving $(basename "$path"): not every checkpoint container it links to was destroyed" >&2
         return 1
     fi
     size=$(LD_PRELOAD=${DAOS_PRELOAD:-} du -sh "$path" 2>/dev/null | cut -f1) || size='?'
