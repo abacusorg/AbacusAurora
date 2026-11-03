@@ -19,6 +19,15 @@
 #                               set that is missing at run time is regenerated from
 #                               scratch on one node, not fetched from flare.
 #   ABACUS_DAOS_PRELOAD=off     don't LD_PRELOAD the interception library
+#   ABACUS_DAOS_CKPT_CONTAINERS=on
+#                               one DAOS container per checkpoint, destroyed when the
+#                               checkpoint retires (Abacus's CheckpointContainers; see
+#                               abacus doc/checkpoints.md).  The checkpoint root then stays
+#                               on flare -- it holds SCR's index and the links into the
+#                               containers -- and `Checkpoints` is not mounted.  Default off.
+#
+# Also exported for aurora.def: ABACUS_DAOS_POOL (the pool the containers are made in) and
+# ABACUS_CHECKPOINT_CONTAINERS (1 or 0, from the switch above).
 
 DAOS_POOL=${ABACUS_DAOS_POOL:-AbacusAurora}
 DAOS_CONT_OUTPUTS=${ABACUS_DAOS_CONT_OUTPUTS:-Outputs}
@@ -52,12 +61,21 @@ daos_resolve() {
     export ABACUS_OUTPUT_ROOT=$FLARE_ROOT
     export ABACUS_CHECKPOINT_ROOT=$FLARE_ROOT
     export ABACUS_RESOURCE_ROOT=$FLARE_RESOURCES
+    export ABACUS_DAOS_POOL=$DAOS_POOL
+    export ABACUS_CHECKPOINT_CONTAINERS=0
     _is_on "${ABACUS_DAOS:-off}" || return 0   # the DAOS on/off default
 
     # Outputs comes along even when the outputs stay on flare: it hosts the working
-    # directory.
-    daos_conts+=("$DAOS_CONT_CHECKPOINTS" "$DAOS_CONT_OUTPUTS")
-    ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
+    # directory.  With a container per checkpoint the checkpoint root stays on flare,
+    # where Abacus keeps SCR's index and the links into the containers, so `Checkpoints`
+    # is not needed at all.
+    if _is_on "${ABACUS_DAOS_CKPT_CONTAINERS:-off}"; then   # the per-checkpoint default
+        ABACUS_CHECKPOINT_CONTAINERS=1
+    else
+        daos_conts+=("$DAOS_CONT_CHECKPOINTS")
+        ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
+    fi
+    daos_conts+=("$DAOS_CONT_OUTPUTS")
     ABACUS_WORKING_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     if _is_on "${ABACUS_DAOS_OUTPUTS:-off}"; then   # the outputs-on-DAOS default
         ABACUS_OUTPUT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
@@ -104,10 +122,60 @@ daos_require_containers() {
 # it (a sort, say) leaves line 1 unmounted, mounts the true head node twice ("Pool
 # specified multiple ways"), and points dbcast at a host with no handles file, so
 # every remaining node fails with DER_NONEXIST.
+#
+# With $DAOS_CKPT_MAP set (see daos_ckpt_map), the same ssh per node also mounts that
+# node's sim's checkpoint containers, so they cost no extra sweep.
 daos_mount() {
-    local specs=() cont
+    local specs=() cont map_args=()
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    "$DAOS_LAUNCH_DFUSE" "${specs[@]}"
+    if [[ -n ${DAOS_CKPT_MAP:-} ]]; then
+        map_args=(--ckpt-map "$(daos_ckpt_helper)" "$DAOS_POOL" "$DAOS_CKPT_MAP")
+    fi
+    "$DAOS_LAUNCH_DFUSE" ${map_args[@]+"${map_args[@]}"} "${specs[@]}"
+}
+
+# --- One container per checkpoint (ABACUS_DAOS_CKPT_CONTAINERS) ---------------------
+# Abacus creates, mounts, unmounts and destroys them itself, mid-run.  The job's part is
+# to have each sim's existing containers mounted on that sim's nodes before it starts,
+# in the same sweep as the global containers.  All DAOS commands go through Abacus's
+# helper, src/Util/ckpt-container.sh, which refuses to create or destroy anything that
+# is not a ckpt-* label.
+
+daos_ckpt_helper() { printf '%s/src/Util/ckpt-container.sh\n' "${ABACUS_BUILD%/}"; }
+
+# The checkpoint containers a prefix links to, one label per line: the targets of its
+# state_* and spare links that are /tmp/<pool>/ckpt-*.  The prefix is on flare, so this
+# needs no DAOS mount.
+daos_ckpt_labels() {
+    local prefix=$1 link target
+    for link in "$prefix"/state_* "$prefix"/spare; do
+        [[ -L $link ]] || continue   # also skips an unmatched glob
+        target=$(readlink "$link")
+        if [[ $target =~ ^/tmp/[^/]+/(ckpt-[^/]+)(/|$) ]]; then
+            echo "${BASH_REMATCH[1]}"
+        fi
+    done | sort -u
+}
+
+# Append "<host> <label>..." for every host in <hostfile>, the labels being the
+# containers <prefix> links to.  The helper's `ensure` reads this.
+daos_ckpt_map() {
+    local prefix=$1 hostfile=$2 map=$3 labels host
+    labels=$(daos_ckpt_labels "$prefix" | tr '\n' ' ')
+    [[ -n $labels ]] || return 0
+    while read -r host; do
+        [[ -n $host ]] && printf '%s %s\n' "$host" "$labels"
+    done < <(sort -u "$hostfile") >> "$map"
+}
+
+# A sim's CheckpointDirectory, from its par2 (plus any -P overrides), parsed in the job's
+# environment, as onesim.sh does for OutputDirectory.
+daos_ckpt_prefix() {
+    local par2=$1; shift
+    local pargs=() o
+    for o; do pargs+=(-P "$o"); done
+    python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null \
+        | awk -F'"' '/^CheckpointDirectory[[:space:]]*=/{print $2; exit}'
 }
 
 # Mount the given containers on THIS NODE only, at the per-user login mountpoint.
@@ -227,6 +295,10 @@ daos_status() {
     printf '  %-14s %s\n' output      "$ABACUS_OUTPUT_ROOT"
     printf '  %-14s %s\n' checkpoint  "$ABACUS_CHECKPOINT_ROOT"
     printf '  %-14s %s\n' resources   "$ABACUS_RESOURCE_ROOT"
+    if (( ABACUS_CHECKPOINT_CONTAINERS )); then
+        echo
+        echo "one DAOS container per checkpoint: on (pool $DAOS_POOL; checkpoint root on flare)"
+    fi
 }
 
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then

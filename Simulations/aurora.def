@@ -88,6 +88,14 @@ CheckpointsToKeep = 2      # minimum complete checkpoints kept on prefix
 SCRDiskCheckpointSlots   = 3      # max prefix slots (having 2 extra allows write‖delete overlap.  1 means delete, then write)
 SCRCacheStashDir = "/dev/shm/$USER$/stash"    # Turns on not unlinking /dev/shm, reusing instead.  Recommended.
 
+# One DAOS container per checkpoint, destroyed (seconds) rather than deleted (~15 min) when it
+# retires.  Switched per job by ABACUS_DAOS_CKPT_CONTAINERS=on in hashrun's environment (or -E),
+# which also keeps the checkpoint root -- SCR's index and the links -- on flare.  The pool is the
+# job's ABACUS_DAOS_POOL.  Abacus appends <pool> <label> to the create options.
+CheckpointContainers = $ABACUS_CHECKPOINT_CONTAINERS$
+CheckpointContainerPool = "$_ABACUS_DAOS_POOL$"
+CheckpointContainerCreateArgs = "--type=POSIX --properties=rd_fac:3,ec_cell_sz:1048576,cksum:crc32,srv_cksum:on --file-oclass=EC_16P3G16 --dir-oclass=RP_4G1"
+
 # CheckpointStepInterval = 100    # This orders us to write out every N steps.  This works for SCR too, but using SCR_Checkpoint_Seconds is better.
 SCR_Checkpoint_Seconds = 2700
 
@@ -127,7 +135,10 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 OutputDirectory = "$ABACUS_OUTPUT_ROOT$/" + @SimName@
 WorkingDirectory = "$ABACUS_WORKING_ROOT$/" + @SimName@
 
-StateDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work"
+# Under the working root rather than the checkpoint root: with one container per checkpoint
+# the checkpoint root is on flare, and a state written here is flagship-sized.  For flare-only
+# runs the two roots are the same, so the path is unchanged.
+StateDirectory = "$ABACUS_WORKING_ROOT$/" + @SimName@ + "/work"
 CheckpointDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/checkpoint"
 InvocationEndStateDest = "state"
 
