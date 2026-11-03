@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_halt_gate.sh — exercise onesim.sh's deadline gate without MPI, DAOS or a built
+# test_halt_gate.sh — exercise onesim.sh's relaunch gates without MPI, DAOS or a built
 # Abacus.  A stub `python` on $PATH stands in for both `python -m abacus.param` (whose
 # empty output onesim already tolerates with a warning) and `python -m abacus.run`,
 # which here just fails immediately so every run lands on the retry path.
@@ -73,6 +73,10 @@ check "unparseable halt time"     1 2 "ABACUS_JOB_HALT_TIME=not-a-number"
 
 # Standalone onesim.sh, outside multisim.pbs: neither signal is set, behavior unchanged.
 check "no halt signals at all"    1 2 "PATH=$PATH"
+
+# The relaunch cap is tunable per job: 0 never relaunches, and a malformed cap runs nothing.
+check "no restarts allowed"       1 1 "ONESIM_MAX_RESTARTS=0"
+check "malformed restart cap"     2 0 "ONESIM_MAX_RESTARTS=three"
 
 if (( fails )); then
     echo "$fails case(s) failed"

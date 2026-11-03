@@ -33,7 +33,7 @@ overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.ru
 
 max_consec_fail=2
 min_healthy_seconds=14400        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
-max_restarts=3                   # hard cap on relaunches of any kind, however healthy they looked
+max_restarts=${ONESIM_MAX_RESTARTS:-3}   # hard cap on relaunches of any kind, however healthy they looked
 
 # A relaunch is pointless once the allocation's agreed halt time has passed, and nearly
 # pointless shortly before it: Abacus tests for the halt only after a COMPLETED timestep
@@ -72,6 +72,10 @@ if [[ ! -r "$par2" ]]; then
 fi
 if [[ ! -r "$hostfile" ]]; then
     echo "onesim: hostfile '$hostfile' not readable" >&2
+    exit 2
+fi
+if [[ ! $max_restarts =~ ^[0-9]+$ ]]; then
+    echo "onesim: ONESIM_MAX_RESTARTS='$max_restarts' is not a whole number" >&2
     exit 2
 fi
 
