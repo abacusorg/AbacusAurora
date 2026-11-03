@@ -22,6 +22,9 @@
 #   --daos       put outputs and checkpoints on DAOS
 #   --force-daos as --daos, but submit without checking the pool: queues a job to run
 #                whenever DAOS comes back up
+# With DAOS, -E ABACUS_DAOS_CKPT_CONTAINERS=on gives each checkpoint its own container
+# (see job/daos.sh).  The pool is $ABACUS_DAOS_POOL in the shell you run this from (e.g.
+# AbacusAurora_run for the flagship); -E cannot change it.
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime/filesystems — those are derived).
 #
@@ -161,6 +164,9 @@ setup_daos() {
     fi
     filesystems=flare:daos_user_fs
     echo "DAOS: pool $DAOS_POOL, containers ${daos_conts[*]}"
+    if (( ABACUS_CHECKPOINT_CONTAINERS )); then
+        echo "DAOS: one container per checkpoint (checkpoint root $ABACUS_CHECKPOINT_ROOT on flare)"
+    fi
 }
 
 # Resolve $code_ref in the code repo ($code_hash) and build it into a hash-keyed
@@ -225,6 +231,7 @@ stage_spec() {
         printf 'output_root=%q\n'      "$ABACUS_OUTPUT_ROOT"
         printf 'checkpoint_root=%q\n'  "$ABACUS_CHECKPOINT_ROOT"
         printf 'resource_root=%q\n' "$ABACUS_RESOURCE_ROOT"
+        printf 'ckpt_containers=%q\n' "$ABACUS_CHECKPOINT_CONTAINERS"
         printf 'daos_conts=('; for o in ${daos_conts[@]+"${daos_conts[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
