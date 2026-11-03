@@ -45,6 +45,38 @@ See `./hashrun.sh --help` for full usage.
 
 The hash of this repo (the production repo) is recorded by the job scripts for provenance. To ensure that the hash actually corresponds to the job content, the job scripts enforce that no dirty content is present in the repo. Content that one expects to be dirty (like par2 file lists) should go in one of the git-ignored directories, usually `job/in/`. `job/out/` is also ignored.
 
+## Environment variables
+
+These are read by the job scripts rather than by Abacus. `hashrun.sh` reads the submit-time ones
+itself, from the shell or from `-E`. The run-time ones must be given with `hashrun.sh -E KEY=VALUE`:
+`qsub` passes the job nothing else from the shell, and `multisim.pbs` sources the `-E` values after
+the Abacus build's `env.sh`, so they win over its defaults. Anything else given with `-E` (MPICH or
+libfabric settings, say) goes to the ranks untouched.
+
+| Variable | Default | When | Effect |
+|---|---|---|---|
+| `ABACUS_REPO` | `~/abacus` | submit (shell only) | the Abacus code repo `hashrun.sh` builds from |
+| `ABACUS_STORE_ROOT` | `~/abacus-store` | submit (shell only) | where the hash-keyed builds are cached |
+| `ABACUS_DAOS` | `off` | submit | put the checkpoints and the working directory on DAOS; `--daos`/`--no-daos` outrank it |
+| `ABACUS_DAOS_OUTPUTS` | `off` | submit | with DAOS on, put the outputs there too |
+| `ABACUS_DAOS_RESOURCES` | `on` | submit | with DAOS on, read the derivatives and wisdom from DAOS |
+| `ABACUS_DAOS_POOL` | `AbacusAurora` | submit | the DAOS pool |
+| `ABACUS_DAOS_CONT_CHECKPOINTS`, `_OUTPUTS`, `_RESOURCES` | `Checkpoints`, `Outputs`, `Resources` | submit | the DAOS container names |
+| `ABACUS_DAOS_PRELOAD` | `on` | run | with DAOS on, `LD_PRELOAD` the DAOS interception library into the ranks |
+| `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
+| `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
+| `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
+| `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
+| `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
+| `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
+
+In turn, the scripts set these for `aurora.def` and Abacus:
+- `ABACUS_WORKING_ROOT`, `ABACUS_OUTPUT_ROOT`, `ABACUS_CHECKPOINT_ROOT` and `ABACUS_RESOURCE_ROOT`:
+  the storage roots (see [DAOS](#daos)).
+- `NNODES` and `ABACUS_MPIRUN_ARGS`: for `mpirun_cmd`.
+- `ABACUS_JOB_HALT_TIME`: when Abacus halts, the walltime less 10 minutes.
+- `ABACUS_JOB_HALT_FILE`: `/flare/Abacus/HALT.<jobid>`; create it to halt every sim in the job.
+
 ## DAOS
 
 Writing to DAOS can be enabled through `hashrun.sh --daos`. `hashrun.sh` requests the `daos_user_fs` PBS resource and
