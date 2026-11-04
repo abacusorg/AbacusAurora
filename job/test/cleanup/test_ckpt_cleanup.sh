@@ -62,6 +62,16 @@ out=$(ABACUS_CKPT_HELPER=$work/missing.sh "$cleanup_sims" "$sim" 2>&1)
 [[ -L $sim/checkpoint/spare ]] && grep -q 'no ckpt-container.sh' <<<"$out" \
     && pass "no helper: keeps the directory" || { fail "missing helper"; echo "$out"; }
 
+# Neither variable set (a login shell without the Abacus env): the build the sim's job ran
+# with, from its provenance, supplies the helper.
+make_sim
+mkdir -p "$sim/provenance" "$work/build/src/Util"
+cp "$work/helper.sh" "$work/build/src/Util/ckpt-container.sh"
+printf 'ABACUS_BUILD=%s/build/\nHOME=/x\n' "$work" > "$sim/provenance/env.txt"
+out=$(env -u ABACUS_CKPT_HELPER -u ABACUS_BUILD "$cleanup_sims" "$sim" 2>&1)
+[[ $(wc -l < "$work/helper.log" 2>/dev/null) -eq 2 && ! -e $sim/checkpoint ]] \
+    && pass "no env: uses the helper from the sim's provenance" || { fail "provenance helper"; echo "$out"; }
+
 if (( fails )); then
     echo "$fails case(s) failed"
     exit 1

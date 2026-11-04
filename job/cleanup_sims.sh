@@ -70,8 +70,20 @@ rm_rf() {
 # then holds only links into the containers, so deleting it would leave the containers --
 # the actual checkpoints -- with nothing pointing at them.  Every container linked from a
 # directory is destroyed before the directory goes, through Abacus's helper, which refuses
-# any label that is not ckpt-*.  Found via $ABACUS_CKPT_HELPER, else $ABACUS_BUILD.
+# any label that is not ckpt-*.  Found via $ABACUS_CKPT_HELPER, else $ABACUS_BUILD, else
+# the ABACUS_BUILD the sim's own job ran with (provenance/env.txt, written by onesim.sh).
 CKPT_HELPER=${ABACUS_CKPT_HELPER:-${ABACUS_BUILD:+${ABACUS_BUILD%/}/src/Util/ckpt-container.sh}}
+
+# The helper for the sim being cleaned ($src): $CKPT_HELPER if set, else its job's build.
+ckpt_helper() {
+    local build
+    if [[ -n $CKPT_HELPER ]]; then
+        echo "$CKPT_HELPER"
+    elif build=$(sed -n 's/^ABACUS_BUILD=//p' "$src/provenance/env.txt" 2>/dev/null | head -1) &&
+         [[ -n $build ]]; then
+        echo "${build%/}/src/Util/ckpt-container.sh"
+    fi
+}
 
 # "<pool> <label>" for every checkpoint container linked from anywhere under <path>.
 container_links() {
@@ -87,15 +99,16 @@ container_links() {
 # Destroy the containers linked from under <path>.  Nonzero if any is left, in which case
 # the caller must not delete <path>: its links are the only record of those containers.
 destroy_containers() {
-    local path=$1 pool label rc=0
+    local path=$1 pool label rc=0 helper
+    helper=$(ckpt_helper)
     while read -r pool label; do
         [[ -n $label ]] || continue
         if (( dryrun )); then
-            echo "  would destroy checkpoint container $pool:$label"
-        elif [[ -z $CKPT_HELPER || ! -f $CKPT_HELPER ]]; then
-            echo "  warning: no ckpt-container.sh to destroy $pool:$label (set ABACUS_BUILD or ABACUS_CKPT_HELPER)" >&2
+            echo "  would destroy checkpoint container $pool:$label${helper:+ (with $helper)}"
+        elif [[ -z $helper || ! -f $helper ]]; then
+            echo "  warning: no ckpt-container.sh${helper:+ at $helper} to destroy $pool:$label (set ABACUS_BUILD or ABACUS_CKPT_HELPER)" >&2
             rc=1
-        elif out=$(bash "$CKPT_HELPER" destroy "$pool" "$label" 2>&1); then
+        elif out=$(bash "$helper" destroy "$pool" "$label" 2>&1); then
             echo "  destroyed checkpoint container $pool:$label"
         else
             echo "  warning: could not destroy $pool:$label: $(tail -1 <<<"$out")" >&2
