@@ -35,6 +35,7 @@ store_root=${ABACUS_STORE_ROOT:-$HOME/abacus-store}
 prod=$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)
 
 source "$prod/job/daos.sh"
+source "$prod/job/nodeprep.sh"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -192,6 +193,8 @@ stage_spec() {
     trap 'rm -rf "$spec"' EXIT
     local p o e a
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
+    # The job runs nodeprep from its staged inputs; built here, a compile error stops the submission.
+    nodeprep_build "$spec/nodeprep" || die "cannot build job/nodeprep.cpp"
 
     # The invocation, re-runnable as a script. Its paths are relative to the
     # invoking directory, so that is recorded too.
