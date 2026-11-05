@@ -40,14 +40,14 @@ STUB
 chmod +x "$work/bin/mpiexec"
 printf 'h1\nh2\n' > "$work/hosts"
 blocks() {  # blocks <host> <node> <phase> <GiB>: a line in nodeprep's format
-    printf '%s node %s %-8s free 500.0, in >= 2 MiB blocks %s, smaller 9.0; file LRU 1.0, SReclaimable 1.0, KReclaimable 25.0\n' "$@"
+    printf "%s node %s %-8s free 500.0, in >= 2 MiB blocks %s, smaller 9.0; file LRU 1.0, SReclaimable 1.0, KReclaimable 25.0, SUnreclaim 2.0, Shmem 0.5, others' anon 1.0\n" "$@"
 }
 {
     blocks h1 0 before: 150.0; blocks h1 0 after: 460.5
     blocks h1 1 before: 100.0; blocks h1 1 after: 300.0
     blocks h2 0 before: 400.0; blocks h2 0 after: 470.0
     blocks h2 1 before: 120.0; blocks h2 1 after: 455.0
-    echo 'h2 node 1 filled:  140.0 huge in 3.0 s (2 MiB blocks running out), 320.0 small in 20.0 s (file LRU drained)'
+    echo 'h2 node 1 filled:  140.0 huge in 3.0 s (region filled), 320.0 small in 20.0 s (file LRU drained)'
 } > "$work/canned.txt"
 
 # check <name> <binary> <wanted text> [VAR=VAL ...]: nodeprep_run, called the way multisim.pbs
