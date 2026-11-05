@@ -22,6 +22,8 @@ AbacusAurora/
 │   ├── multisim.pbs       #   PBS batch job: split the allocation, launch each sim
 │   ├── onesim.sh          #   per-sim monitor + restart-on-failure (not past the halt time)
 │   ├── daos.sh            #   DAOS pool/containers, mount lifecycle, on/off switches
+│   ├── nodeprep.sh        #   before the sims: reclaim leftover page cache on every node
+│   ├── nodeprep.cpp       #   the tool it runs, built by hashrun.sh at submit
 │   ├── test/              #   standalone tests for the job scripts (no MPI/DAOS needed)
 │   ├── in/                #   (git-ignored) scratch for par2-list files fed to hashrun
 │   └── out/<jobid>/       #   (git-ignored) per-job staged inputs, stdout/stderr, hostfiles
@@ -66,6 +68,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
+| `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `off` skips it |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
@@ -76,6 +79,17 @@ In turn, the scripts set these for `aurora.def` and Abacus:
 - `NNODES` and `ABACUS_MPIRUN_ARGS`: for `mpirun_cmd`.
 - `ABACUS_JOB_HALT_TIME`: when Abacus halts, the walltime less 10 minutes.
 - `ABACUS_JOB_HALT_FILE`: `/flare/Abacus/HALT.<jobid>`; create it to halt every sim in the job.
+
+## Node prep
+
+Abacus backs its memory with transparent huge pages, which need whole free 2 MiB blocks. ALCF nodes
+frequently have fragmented memory, left over from previous jobs. So before a job, we fill every
+node's memory as much as we can then free it, triggering page cache reclaim and effectively
+de-fragmenting the node.
+
+Doesn't work with Lustre caches and other non-reclaimable memory, but we also record the amount
+of memory in non-fragmented regions to `out/<jobid>/nodeprep.txt` so we can decide whether to drop
+the node.
 
 ## DAOS
 
