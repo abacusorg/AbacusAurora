@@ -74,7 +74,8 @@ void for_each_line(const std::string &s, F f) {
 }
 
 struct NodeMem {  // bytes
-    double free = 0, free_2m = 0, file = 0, sreclaimable = 0, kreclaimable = 0, low = 0;
+    double free = 0, free_2m = 0, file = 0, sreclaimable = 0, kreclaimable = 0, sunreclaim = 0, shmem = 0, anon = 0,
+           low = 0;
 };
 
 NodeMem read_node(int node) {
@@ -89,6 +90,9 @@ NodeMem read_node(int node) {
         else if (!strcmp(key, "Active(file)") || !strcmp(key, "Inactive(file)")) m.file += kb * 1024;
         else if (!strcmp(key, "SReclaimable")) m.sreclaimable = kb * 1024;
         else if (!strcmp(key, "KReclaimable")) m.kreclaimable = kb * 1024;
+        else if (!strcmp(key, "SUnreclaim")) m.sunreclaim = kb * 1024;
+        else if (!strcmp(key, "Shmem")) m.shmem = kb * 1024;
+        else if (!strcmp(key, "AnonPages")) m.anon = kb * 1024;
     });
     for_each_line(slurp("/proc/buddyinfo"), [&](const std::string &line) {
         int n, off = 0;
@@ -245,14 +249,23 @@ struct Monitor {
     }
 };
 
-std::string describe(const NodeMem &m) {
-    char b[256];
+// `ours`: what this process holds on the node, left out of the anonymous memory reported as others'.
+std::string describe(const NodeMem &m, double ours = 0) {
+    char b[384];
     snprintf(b, sizeof b,
              "free %.1f, in >= 2 MiB blocks %.1f, smaller %.1f; file LRU %.1f, SReclaimable %.1f, "
-             "KReclaimable %.1f",
+             "KReclaimable %.1f, SUnreclaim %.1f, Shmem %.1f, others' anon %.1f",
              m.free / kGiB, m.free_2m / kGiB, (m.free - m.free_2m) / kGiB, m.file / kGiB,
-             m.sreclaimable / kGiB, m.kreclaimable / kGiB);
+             m.sreclaimable / kGiB, m.kreclaimable / kGiB, m.sunreclaim / kGiB, m.shmem / kGiB,
+             std::max(0.0, m.anon - ours) / kGiB);
     return b;
+}
+
+// Why a fill ended: it faulted its whole region, a fault failed, or the monitor stopped it.
+const char *ended(const Region &r, size_t done, int err, const char *monitor) {
+    if (!r.p) return "no region";
+    if (done == r.len) return "region filled";
+    return err ? "fault failed" : monitor;
 }
 
 struct Result {
@@ -283,31 +296,34 @@ void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
             return nullptr;
         });
         res.huge = huge.p ? fill(huge.p, huge.len, 256 * kMiB, nthreads, cpus, stop, res.err_huge) : 0;
-        res.stop_huge = mon.reason;
+        res.stop_huge = ended(huge, res.huge, res.err_huge, mon.reason);
     }
     res.t_huge = now_s() - t0;
 
-    // 4 KiB pages: they take the small free blocks first, then drive the node into reclaim.
+    // 4 KiB pages: they take the small free blocks first, then drive the node into reclaim.  The region
+    // holds all that reclaim could free, kernel caches included, so a stop condition ends the fill.
     const NodeMem mid = read_node(node);
-    Region small = map_bound((size_t) (mid.free + mid.file + mid.sreclaimable), node, MADV_NOHUGEPAGE);
+    Region small = map_bound((size_t) (mid.free + mid.file + mid.kreclaimable), node, MADV_NOHUGEPAGE);
     t0 = now_s();
     {
         std::atomic<bool> stop{false};
-        double last_t = 0, last_file = mid.file;
+        double last_t = 0, last_file = mid.file, last_krec = mid.kreclaimable;
         Monitor mon(stop, node, [&](const NodeMem &m, double t) -> const char * {
             if (m.file <= keep_file) return "file LRU drained";
             if (t > max_s) return "time limit";
-            // At the watermark with the file LRU no longer shrinking: what is left is not reclaimable.
+            // At the watermark with neither the file LRU nor kernel caches shrinking: the rest is not reclaimable.
             if (t - last_t >= 0.5) {
-                const bool stalled = m.free <= m.low + 512.0 * kMiB && last_file - m.file < 64.0 * kMiB;
+                const double freed = (last_file - m.file) + (last_krec - m.kreclaimable);
+                const bool stalled = m.free <= m.low + 512.0 * kMiB && freed < 64.0 * kMiB;
                 last_t = t;
                 last_file = m.file;
+                last_krec = m.kreclaimable;
                 if (stalled) return "reclaim stalled";
             }
             return nullptr;
         });
         res.small = small.p ? fill(small.p, small.len, 32 * kMiB, nthreads, cpus, stop, res.err_small) : 0;
-        res.stop_small = mon.reason;
+        res.stop_small = ended(small, res.small, res.err_small, mon.reason);
     }
     res.t_small = now_s() - t0;
     res.deepest = read_node(node);
@@ -379,8 +395,8 @@ int main(int argc, char **argv) {
                r.node, r.huge / kGiB, r.t_huge, r.stop_huge, r.err_huge ? " errno " : "",
                r.err_huge ? strerror(r.err_huge) : "", r.small / kGiB, r.t_small, r.stop_small,
                r.err_small ? " errno " : "", r.err_small ? strerror(r.err_small) : "");
-        printf("%s node %d deepest: %s; low watermark %.2f\n", host, r.node, describe(r.deepest).c_str(),
-               r.deepest.low / kGiB);
+        printf("%s node %d deepest: %s; low watermark %.2f\n", host, r.node,
+               describe(r.deepest, (double) (r.huge + r.small)).c_str(), r.deepest.low / kGiB);
         printf("%s node %d after:   %s; freed in %.1f s\n", host, r.node, describe(r.after).c_str(), r.t_free);
     }
     return 0;
