@@ -1,0 +1,12 @@
+## Neutrino A_s recalibration (massive-nu cosm211-218; h from first run, A_s calibrated at full precision)
+## Built from util/neutrino_grid.dat by util/neutrino_grid_to_grid.py. Working copy for H0_search → README.txt.
+## Do not confuse with the full emulator_grid / README.md.
+
+| root               | notes                                                                | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur   | N_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | -----                                                                | ------- | --------- | ------ | --------- | ------ | ------- | ------ | ------ | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm211     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.811355      | 0.02237 | 0.1200    | 0.6680 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm212     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.811355      | 0.02237 | 0.1200    | 0.6573 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 
+| abacus_cosm214     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.753159      | 0.02237 | 0.1200    | 0.6680 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm215     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.753159      | 0.02237 | 0.1200    | 0.6573 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 
+| abacus_cosm217     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.869782      | 0.02237 | 0.1200    | 0.6680 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm218     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.869782      | 0.02237 | 0.1200    | 0.6573 | 2.00001e-09 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 

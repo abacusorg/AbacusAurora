@@ -1,0 +1,7 @@
+## DESI secondaries staging table (cosm200/201/210 only)
+## Built from util/desi_secondaries.dat. Working copy for H0_search → README.txt.
+## Do not confuse with the full emulator_grid / README.md.
+
+| root               | notes                                                                | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur   | N_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | -----                                                                | ------- | --------- | ------ | --------- | ------ | ------- | ------ | ------ | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm200     | DESI DR2+CMB w0wa best-fit (Garcia-Quintero)                       | 0.02242 |  0.1198   | TBD   | 2.TBD e-9 | 0.9713 | 0.000   | 2.0328 | 1      | 0.00064420 | -0.824 | -0.641 | 

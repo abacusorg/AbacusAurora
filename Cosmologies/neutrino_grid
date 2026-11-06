@@ -1,0 +1,20 @@
+## Neutrino staging table (cosm202-206 FLAMINGO fixed h/A_s; cosm211-218 theta_s + sigma8_cb matched)
+## Built from util/neutrino_grid.dat by util/neutrino_grid_to_grid.py. Working copy for H0_search → README.txt.
+## Do not confuse with the full emulator_grid / README.md.
+
+| root               | notes                                                                | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur   | N_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | -----                                                                | ------- | --------- | ------ | --------- | ------ | ------- | ------ | ------ | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm202     | FLAMINGO Planck                                                    | 0.022375 | 0.1201    | 0.673  | 2.101e-9  | 0.966  | 0.000   | 2.0328 | 1      | 0.0006442  | -1     | 0.0    | 
+| abacus_cosm203     | FLAMINGO PlanckNu0p12Var                                           | 0.022465 | 0.1194    | 0.673  | 2.113e-9  | 0.966  | 0.000   | 2.0328 | 1      | 0.0012884  | -1     | 0.0    | 
+| abacus_cosm204     | FLAMINGO PlanckNu0p24Fix                                           | 0.022375 | 0.1182    | 0.673  | 2.101e-9  | 0.966  | 0.000   | 2.0328 | 1      | 0.0025768  | -1     | 0.0    | 
+| abacus_cosm205     | FLAMINGO PlanckNu0p48Fix                                           | 0.022375 | 0.1156    | 0.673  | 2.101e-9  | 0.966  | 0.000   | 2.0328 | 1      | 0.0051536  | -1     | 0.0    | 
+| abacus_cosm206     | FLAMINGO PlanckNu0p24Var                                           | 0.022350 | 0.1188    | 0.662  | 2.109e-9  | 0.968  | 0.000   | 2.0328 | 1      | 0.0025768  | -1     | 0.0    | 
+| abacus_cosm207     | FLAMINGO D3A (L1_m10_DMO)                                          | 0.022539 | 0.11873   | 0.681  | 2.099e-9  | 0.967  | 0.000   | 2.0328 | 1      | 0.0006442  | -1     | 0.0    | 
+| abacus_cosm211     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.811355      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm212     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.811355      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 
+| abacus_cosm213     | massless neutrino; theta_s matched, sigma8_cb = 0.753159           | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 3.046  | 0      | 0.0        | -1.000 | 0.000  | 
+| abacus_cosm214     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.753159      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm215     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.753159      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 
+| abacus_cosm216     | massless neutrino; theta_s matched, sigma8_cb = 0.869782           | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 3.046  | 0      | 0.0        | -1.000 | 0.000  | 
+| abacus_cosm217     | 0.12 eV single species; theta_s matched, sigma8_cb = 0.869782      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0012884  | -1.000 | 0.000  | 
+| abacus_cosm218     | 0.24 eV single species; theta_s matched, sigma8_cb = 0.869782      | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 2.0328 | 1      | 0.0025768  | -1.000 | 0.000  | 

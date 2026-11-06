@@ -22,6 +22,9 @@
 #   --daos       put outputs and checkpoints on DAOS
 #   --force-daos as --daos, but submit without checking the pool: queues a job to run
 #                whenever DAOS comes back up
+# With DAOS, -E ABACUS_DAOS_CKPT_CONTAINERS=on gives each checkpoint its own container
+# (see job/daos.sh).  The pool is $ABACUS_DAOS_POOL in the shell you run this from (e.g.
+# AbacusAurora_run for the flagship); -E cannot change it.
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime/filesystems — those are derived).
 #
@@ -35,6 +38,7 @@ store_root=${ABACUS_STORE_ROOT:-$HOME/abacus-store}
 prod=$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)
 
 source "$prod/job/daos.sh"
+source "$prod/job/nodeprep.sh"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -160,6 +164,9 @@ setup_daos() {
     fi
     filesystems=flare:daos_user_fs
     echo "DAOS: pool $DAOS_POOL, containers ${daos_conts[*]}"
+    if (( ABACUS_CHECKPOINT_CONTAINERS )); then
+        echo "DAOS: one container per checkpoint (checkpoint root $ABACUS_CHECKPOINT_ROOT)"
+    fi
 }
 
 # Resolve $code_ref in the code repo ($code_hash) and build it into a hash-keyed
@@ -192,6 +199,8 @@ stage_spec() {
     trap 'rm -rf "$spec"' EXIT
     local p o e a
     cp "$par2list" "$spec/par2list"   # record the exact submitted list (incl. comments)
+    # The job runs nodeprep from its staged inputs; built here, a compile error stops the submission.
+    nodeprep_build "$spec/nodeprep" || die "cannot build job/nodeprep.cpp"
 
     # The invocation, re-runnable as a script. Its paths are relative to the
     # invoking directory, so that is recorded too.
@@ -222,6 +231,7 @@ stage_spec() {
         printf 'output_root=%q\n'      "$ABACUS_OUTPUT_ROOT"
         printf 'checkpoint_root=%q\n'  "$ABACUS_CHECKPOINT_ROOT"
         printf 'resource_root=%q\n' "$ABACUS_RESOURCE_ROOT"
+        printf 'ckpt_containers=%q\n' "$ABACUS_CHECKPOINT_CONTAINERS"
         printf 'daos_conts=('; for o in ${daos_conts[@]+"${daos_conts[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'
         printf 'par2s=(';     for p in "${par2s[@]}";                     do printf ' %q' "$p"; done; printf ' )\n'
         printf 'overrides=('; for o in ${overrides[@]+"${overrides[@]}"}; do printf ' %q' "$o"; done; printf ' )\n'

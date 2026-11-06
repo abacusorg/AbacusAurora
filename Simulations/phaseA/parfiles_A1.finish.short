@@ -1,9 +1,11 @@
+# Finishing A1, part 1: sims within ~7 steps of their FinalRedshift (set in each par2).
 Simulations/phaseA/AbacusAurora_emulmed_c000_ph301.par2
 Simulations/phaseA/AbacusAurora_emulmed_c001_ph302.par2
-Simulations/phaseA/AbacusAurora_emulmed_c002_ph301.par2
 Simulations/phaseA/AbacusAurora_emulmed_c002_ph302.par2
 Simulations/phaseA/AbacusAurora_emulmed_c101_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c102_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c103_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c104_ph300.par2
+Simulations/phaseA/AbacusAurora_emulmed_c105_ph300.par2
+Simulations/phaseA/AbacusAurora_emulmed_c132_ph300.par2
 Simulations/phaseA/AbacusAurora_emulmed_c134_ph300.par2

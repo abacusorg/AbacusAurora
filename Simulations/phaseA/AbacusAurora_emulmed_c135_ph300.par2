@@ -4,3 +4,10 @@ SimName = "AbacusAurora_emulmed_c135_ph300"
 #include "../../Cosmologies/abacus_cosm135/cosm.def"
 
 ZD_Seed = @ZD_Seed@+300-300
+
+# Finishing A1: halt at this redshift, keeping the MAP parameters the run started with
+# (base.def before 31b0e0d) rather than the post-teleportation-fix ones.
+FinalRedshift = 0.45
+Map_bmerge_proper = 0.01518 #Mpc/h
+Map_Aaccrete = 2.44949 #sqrt(6)
+Map_Amerge = 37.75

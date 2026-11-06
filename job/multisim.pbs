@@ -29,8 +29,12 @@ source "$out/jobspec.sh"
 # hashrun's -E overrides live in their own file, sourced here (after env.sh) so they
 # win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
 source "$out/env_overrides.sh"
+# env.sh allows unlimited core dumps, and mpiexec hands the core limit to every rank
+# (PALS_RLIMITS); -E ABACUS_CORE_LIMIT=0 turns them off for runs too big to dump.
+[[ -z ${ABACUS_CORE_LIMIT:-} ]] || ulimit -c "$ABACUS_CORE_LIMIT"
 
 source "$abacus_prod/job/daos.sh"
+source "$abacus_prod/job/nodeprep.sh"
 
 # --- Halt controls -----------------------------------------------------------
 # Besides the per-sim WorkingDirectory/HALT file, Abacus's CheckHaltFile reads two
@@ -43,11 +47,8 @@ source "$abacus_prod/job/daos.sh"
 HALT_DIR=/flare/Abacus/
 export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
-# Same trap tears the dfuse mounts back down.
-daos_mounted=0
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
-    if (( daos_mounted )); then daos_unmount "${daos_conts[@]}"; fi
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -81,7 +82,11 @@ onesim="$abacus_prod/job/onesim.sh"   # not $BASH_SOURCE — PBS executes a spoo
 # Node allocation: unique, sorted list (PBS_NODEFILE repeats a node per rank/chunk).
 # nodes_per_sim comes from the job spec (falls back to the whole allocation if unset).
 : "${PBS_NODEFILE:?not set — run under PBS}"
-sort -u "$PBS_NODEFILE" > nodes.sorted
+# ABACUS_EXCLUDE_NODES (short hostnames, space- or comma-separated; e.g. via hashrun -E) keeps
+# suspect nodes out of every sim.  They still count toward the request, so ask for spares with -n.
+sort -u "$PBS_NODEFILE" | awk -v ex="${ABACUS_EXCLUDE_NODES:-}" '
+    BEGIN { n = split(ex, a, /[ ,]+/); for (i = 1; i <= n; i++) if (a[i] != "") skip[a[i]] = 1 }
+    { h = $0; sub(/\..*/, "", h); if (h in skip) print "Excluding node " h > "/dev/stderr"; else print }' > nodes.sorted
 num_nodes=$(( $(wc -l < nodes.sorted) ))
 nodes_per_sim=${nodes_per_sim:-$num_nodes}
 
@@ -97,6 +102,15 @@ tail -n +"$(( required + 1 ))" nodes.sorted > "$HOSTFILE_EXTRA"
 echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
 echo
 
+# --- Node prep -----------------------------------------------------------------
+# On every node, spares included, before anything else runs there (job/nodeprep.sh).
+if _is_on "${ABACUS_NODEPREP:-on}"; then
+    nodeprep_run "$out/nodeprep" nodes.sorted "$out/nodeprep.txt"
+else
+    echo "nodeprep: off (ABACUS_NODEPREP=$ABACUS_NODEPREP)"
+fi
+echo
+
 # --- Storage -------------------------------------------------------------------
 # Where the storage roots point was decided at submit time (hashrun.sh recorded it in
 # the spec and requested the matching daos_user_fs allocation); we replay it verbatim
@@ -107,11 +121,27 @@ export ABACUS_WORKING_ROOT=$working_root
 export ABACUS_OUTPUT_ROOT=$output_root
 export ABACUS_CHECKPOINT_ROOT=$checkpoint_root
 export ABACUS_RESOURCE_ROOT=$resource_root
+# Read by aurora.def: the pool for per-checkpoint containers, and whether to use them.
+# Specs from before the switch existed carry no ckpt_containers: off.
+export ABACUS_DAOS_POOL=$daos_pool
+export ABACUS_CHECKPOINT_CONTAINERS=${ckpt_containers:-0}
 if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
-    echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"
-    daos_mount "${daos_conts[@]}" || exit 1
-    daos_mounted=1
+    # A lone sim's restart candidates ride this mount, so its first launch mounts nothing more.
+    restart=()
+    if (( ABACUS_CHECKPOINT_CONTAINERS && num_sims == 1 )); then
+        ckptdir=$(daos_ckpt_prefix "${par2s[0]}" ${overrides[@]+"${overrides[@]}"}) || ckptdir=
+        if [[ -n $ckptdir ]] && labels=$(daos_ckpt_restart_labels_unmounted "$ckptdir"); then
+            [[ -z $labels ]] || mapfile -t restart <<<"$labels"
+        else
+            echo "warning: could not read ${par2s[0]}'s checkpoint links here; its restart candidates mount at launch" >&2
+        fi
+    fi
+    echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]}${restart[*]:+ and restart candidate(s) ${restart[*]}} on $num_nodes node(s)"
+    # Left mounted at exit: the PBS epilogue tears dfuse down, and with
+    # --disable-wb-cache there is no write-back to flush first.
+    daos_mount "${daos_conts[@]}" ${restart[@]+"${restart[@]}"} || exit 1
+    export DAOS_CKPT_MOUNTED="${restart[*]}"
     mkdir -p "$ABACUS_WORKING_ROOT" "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
 else
     echo "DAOS: off; all storage on flare"

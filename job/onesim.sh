@@ -33,7 +33,7 @@ overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.ru
 
 max_consec_fail=2
 min_healthy_seconds=14400        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
-max_restarts=3                   # hard cap on relaunches of any kind, however healthy they looked
+max_restarts=${ONESIM_MAX_RESTARTS:-3}   # hard cap on relaunches of any kind, however healthy they looked
 
 # A relaunch is pointless once the allocation's agreed halt time has passed, and nearly
 # pointless shortly before it: Abacus tests for the halt only after a COMPLETED timestep
@@ -74,6 +74,10 @@ if [[ ! -r "$hostfile" ]]; then
     echo "onesim: hostfile '$hostfile' not readable" >&2
     exit 2
 fi
+if [[ ! $max_restarts =~ ^[0-9]+$ ]]; then
+    echo "onesim: ONESIM_MAX_RESTARTS='$max_restarts' is not a whole number" >&2
+    exit 2
+fi
 
 pargs=()
 for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
@@ -93,6 +97,37 @@ else
     echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
 
+# Before every launch, mount the containers this sim can restart from on its nodes, and no other
+# checkpoint container (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs).
+ckptdir=""
+if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
+    source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
+    ckptdir=$(daos_ckpt_prefix "$par2" ${overrides[@]+"${overrides[@]}"}) || ckptdir=""
+    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart candidates" >&2
+fi
+
+# What multisim.pbs's daos_mount mounted, which the first launch takes on trust.
+premounted=${DAOS_CKPT_MOUNTED:-}
+mounted_labels=$premounted mounted_hosts=$(sort -u "$hostfile" | paste -sd, -)
+mount_restart_point() {
+    [[ -n $ckptdir ]] || return 0
+    local labels hosts
+    labels=$(daos_ckpt_restart_labels "$ckptdir" | paste -sd' ' -)
+    [[ -n $labels ]] || return 0
+    hosts=$(sort -u "$hostfile" | paste -sd, -)
+    # $labels unquoted: ckpt-* labels are single words.
+    if [[ $labels == "$mounted_labels" && $hosts == "$mounted_hosts" ]] &&
+       { (( attempt == 1 )) || daos_ckpt_mounted "$hostfile" $labels; }; then
+        return 0
+    fi
+    mounted_labels=""
+    if daos_ckpt_mount "$hostfile" "${ckptdir%/*}" "$premounted" $labels; then
+        mounted_labels=$labels mounted_hosts=$hosts
+    else
+        echo "onesim: warning: restart candidate(s) $labels did not mount on every node of this sim; Abacus names a node without one" >&2
+    fi
+}
+
 attempt=0
 consec_fail=0
 total_fail=0
@@ -111,6 +146,7 @@ while true; do
     export ABACUS_MPIRUN_ARGS="${abacus_mpirun_args_base:+$abacus_mpirun_args_base }--hostfile $hostfile" NNODES="$nnodes"
 
     echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
+    mount_restart_point
     t0=$SECONDS
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
