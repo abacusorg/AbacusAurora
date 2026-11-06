@@ -179,7 +179,7 @@ daos_ckpt_mount() {
     local hostfile=$1 dir=$2 old=$3 hosts label rc=0
     shift 3
     for label in $old; do
-        mountpoint -q "$(daos_mountpoint "$label")" || continue
+        findmnt -rn -o TARGET | grep -qxF -- "$(daos_mountpoint "$label")" || continue
         bash "$(daos_ckpt_helper)" unmount "$DAOS_POOL" "$label" >/dev/null || rc=1
     done
     mapfile -t hosts < <(sort -u "$hostfile")
@@ -195,22 +195,22 @@ daos_ckpt_mount() {
     return $rc
 }
 
-# daos_ckpt_mount's remote half.  Under bash, since the login shell may be zsh (where an
-# unmatched glob is an error); start-dfuse.sh exits 0 even when dfuse fails.
+# daos_ckpt_mount's remote half, under bash whatever the login shell.  Mounts come from the
+# mount table: an import whose owner has unmounted answers no stat (mountpoint) but stays.
 _daos_ckpt_mount_on() {
     local hosts=$1 mode=$2 dir=$3
     shift 3
     local script='helper=$1 pool=$2 mode=$3 dir=$4
 shift 4
 PATH=$PATH:/soft/daos/bin
-for m in /tmp/"$pool"/ckpt-*; do
-    mountpoint -q "$m" || continue
+for m in $(findmnt -rn -o TARGET | grep "^/tmp/$pool/ckpt-"); do
     bash "$helper" unmount "$pool" "${m##*/}" >/dev/null || exit 1
 done
 for label; do
     mnt=/tmp/$pool/$label hfile=$dir/.handles.$label
     mkdir -p "$mnt" || exit 1
     if [[ $mode == --dump-handles ]]; then rm -f "$hfile"; (umask 077 && : > "$hfile") || exit 1; fi
+    # Exits 0 even when dfuse fails; the mount is checked below.
     start-dfuse.sh oneScratch --pool "$pool" --cont "$label" -m "$mnt" "$mode" "$hfile" \
         --disable-caching --disable-wb-cache
     for (( i = 0; i < 300; i++ )); do mountpoint -q "$mnt" && break; sleep 0.2; done

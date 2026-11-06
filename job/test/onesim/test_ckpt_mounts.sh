@@ -6,9 +6,9 @@
 # `-m abacus.run` (optionally writing a checkpoint, flushed or not, or losing a mount first);
 # `clush` runs
 # the remote command here as the first host it names, and onesim itself is host `head`;
-# `mountpoint`, `start-dfuse.sh` and the helper keep each host's fake mounts in its own
-# file.  /tmp/<pool> is a real directory under a test-only pool name, since the remote
-# command globs it.
+# `findmnt`, `mountpoint`, `start-dfuse.sh` and the helper keep each host's fake mounts in its
+# own file.  As with dfuse, when a label's owner (the host that dumped its handles) unmounts
+# it, the other hosts' imports of it die: still in the mount table, but no stat answers.
 #
 # Usage: job/test/onesim/test_ckpt_mounts.sh
 # Exits 0 if all cases pass, 1 otherwise.
@@ -56,7 +56,11 @@ FAKEHOST=\${w%%,*} bash -c "\$*"     # the remote shell's parse of the one-strin
 STUB
 cat > "$work/bin/mountpoint" <<STUB
 #!/bin/bash
-grep -qxF -- "\${!#}" "$work/mounted.\$FAKEHOST" 2>/dev/null
+grep -qxF -- "\${!#}" "$work/mounted.\$FAKEHOST" 2>/dev/null && ! grep -qxF -- "\${!#}" "$work/dead" 2>/dev/null
+STUB
+cat > "$work/bin/findmnt" <<STUB
+#!/bin/bash
+cat "$work/mounted.\$FAKEHOST" 2>/dev/null
 STUB
 cat > "$work/bin/sleep" <<'STUB'
 #!/bin/bash
@@ -72,16 +76,20 @@ echo "\$FAKEHOST start-dfuse \$mode \${hfile#$simdir/}" >> "$work/events"
 if [[ \$mode == --dump-handles ]]; then
     echo "\$FAKEHOST handles mode \$(stat -c %a "\$hfile")" >> "$work/events"
     echo handles > "\$hfile"
+    echo "\$FAKEHOST" > "$work/owner.\${mnt##*/}"
 elif [[ ! -s \$hfile ]]; then
     exit 0
 fi
 echo "\$mnt" >> "$work/mounted.\$FAKEHOST"
+grep -vxF -- "\$mnt" "$work/dead" > "$work/dead.new" 2>/dev/null; mv "$work/dead.new" "$work/dead"
 STUB
 cat > "$work/build/src/Util/ckpt-container.sh" <<STUB
 echo "\$FAKEHOST \$1 \$3" >> "$work/events"
 [[ -n \${HELPER_FAIL:-} ]] && exit 1
 grep -vxF -- "/tmp/\$2/\$3" "$work/mounted.\$FAKEHOST" > "$work/mounted.new"
 mv "$work/mounted.new" "$work/mounted.\$FAKEHOST"
+[[ \$(cat "$work/owner.\$3" 2>/dev/null) == "\$FAKEHOST" ]] && echo "/tmp/\$2/\$3" >> "$work/dead"
+true
 STUB
 chmod +x "$work/bin"/*
 export PATH="$work/bin:$PATH"
@@ -93,7 +101,7 @@ fail() { echo "FAIL  $1"; fails=$((fails+1)); }
 
 # The prefix as Abacus leaves it, and the previous attempt's restart point mounted everywhere.
 reset() {
-    rm -rf "$ckptdir" "/tmp/$pool" "$work"/mounted.* "$work"/{ran,events,clush.log}
+    rm -rf "$ckptdir" "/tmp/$pool" "$work"/mounted.* "$work"/owner.* "$work"/{ran,events,clush.log,dead}
     mkdir -p "$ckptdir/.scr" "$ckptdir/state_0001" "/tmp/$pool/$X" "/tmp/$pool/ckpt-Sim-20261102T000000"
     ln -s "$c-20261103T141502/state_9990" "$ckptdir/state_9990"
     ln -s "$c-20261104T090000/state_10020" "$ckptdir/state_10020"      # numerically newest
@@ -104,6 +112,7 @@ reset() {
     ln -s state_10020 "$ckptdir/flushed"                               # the newest flushed
     echo "/tmp/$pool/$X" > "$work/mounted.$n0"
     echo "/tmp/$pool/$X" > "$work/mounted.$n1"
+    echo "$n0" > "$work/owner.$X"
     printf '%s\n' "$n1" "$n0" "$n0" > "$work/hostfile"
 }
 
@@ -112,6 +121,7 @@ reset_premounted() {
     reset
     mkdir -p "/tmp/$pool/$B"
     for h in "$n0" "$n1" head; do echo "/tmp/$pool/$B" > "$work/mounted.$h"; done
+    echo head > "$work/owner.$B"
 }
 
 run() {
