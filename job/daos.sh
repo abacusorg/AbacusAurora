@@ -130,93 +130,112 @@ daos_mount() {
 }
 
 # --- One container per checkpoint (ABACUS_DAOS_CKPT_CONTAINERS) ---------------------
-# Abacus makes, fills and destroys them itself and needs only its restart point mounted: by
-# daos_mount for a lone sim, else by onesim.sh, which also remounts it for a relaunch.
+# Abacus makes, fills and destroys them itself and needs only its restart candidates mounted:
+# by daos_mount for a lone sim, else by onesim.sh, which also remounts them for a relaunch.
 
 daos_ckpt_helper() { printf '%s/src/Util/ckpt-container.sh\n' "${ABACUS_BUILD%/}"; }
 
-# The container a sim restarts from, as Abacus picks it: the target of the newest
-# state_NNNN link in <prefix> into /tmp/<pool>/ckpt-*.  Empty if there is none.
-daos_ckpt_restart_label() {
-    local link step target
-    for link in "$1"/state_*; do
-        [[ -L $link && ${link##*/} =~ ^state_([0-9]+)$ ]] || continue   # or an unmatched glob
-        step=${BASH_REMATCH[1]}
-        target=$(readlink "$link")
-        if [[ $target =~ ^/tmp/[^/]+/(ckpt-[^/]+)(/|$) ]]; then
-            echo "$step ${BASH_REMATCH[1]}"
-        fi
-    done | sort -k1,1n | tail -1 | cut -d' ' -f2
+# The container a link in <prefix> points into, or nothing.
+_daos_ckpt_label_of() {
+    local target
+    target=$(readlink "$1") || return 0
+    [[ $target =~ ^/tmp/[^/]+/(ckpt-[^/]+)(/|$) ]] && echo "${BASH_REMATCH[1]}"
 }
 
-# daos_ckpt_restart_label before daos_mount: through a mount of <prefix>'s container on this
+# The containers a sim can restart from, one per line: the newest state_NNNN's, which SCR_Init
+# can rebuild from its cache, then the one <prefix>/flushed names, which SCR falls back to.
+daos_ckpt_restart_labels() {
+    local link step label newest flushed=
+    newest=$(for link in "$1"/state_*; do
+                 [[ -L $link && ${link##*/} =~ ^state_([0-9]+)$ ]] || continue   # or an unmatched glob
+                 step=${BASH_REMATCH[1]}
+                 label=$(_daos_ckpt_label_of "$link")
+                 [[ -n $label ]] && echo "$step $label"
+             done | sort -k1,1n | tail -1 | cut -d' ' -f2)
+    link=$(readlink "$1/flushed" 2>/dev/null) && [[ $link == state_* && -L $1/$link ]] &&
+        flushed=$(_daos_ckpt_label_of "$1/$link")
+    [[ -n $newest ]] && echo "$newest"
+    [[ -n $flushed && $flushed != "$newest" ]] && echo "$flushed"
+    return 0
+}
+
+# daos_ckpt_restart_labels before daos_mount: through a mount of <prefix>'s container on this
 # node alone, at the per-user path.
-daos_ckpt_restart_label_unmounted() {
-    local prefix=$1 cont label
+daos_ckpt_restart_labels_unmounted() {
+    local prefix=$1 cont labels
     cont=${prefix#"$(daos_mountpoint '')"}
-    [[ $cont != "$prefix" ]] || { daos_ckpt_restart_label "$prefix"; return; }   # not on DAOS
+    [[ $cont != "$prefix" ]] || { daos_ckpt_restart_labels "$prefix"; return; }   # not on DAOS
     cont=${cont%%/*}
     daos_login_mount "$cont" >/dev/null || return 1
-    label=$(daos_ckpt_restart_label "$(daos_login_path "$prefix")")
+    labels=$(daos_ckpt_restart_labels "$(daos_login_path "$prefix")")
     daos_login_unmount "$cont" >/dev/null || true
-    printf '%s\n' "$label"
+    [[ -z $labels ]] || printf '%s\n' "$labels"
 }
 
-# Remount <label> alone on <hostfile>'s hosts, and drop <old> here, where daos_mount owns it.
-# The first host dumps its handles into <dir> for the rest; they live as long as its dfuse.
+# Remount <label>s alone on <hostfile>'s hosts, and drop the space-separated <old> here, where
+# daos_mount owns them.  The first host dumps its handles into <dir> for the rest to import;
+# they live as long as its dfuse.
 daos_ckpt_mount() {
-    local hostfile=$1 label=$2 dir=$3 old=${4:-} hosts hfile rc=0
-    if [[ -n $old ]] && mountpoint -q "$(daos_mountpoint "$old")"; then
-        bash "$(daos_ckpt_helper)" unmount "$DAOS_POOL" "$old" >/dev/null || rc=1
-    fi
+    local hostfile=$1 dir=$2 old=$3 hosts label rc=0
+    shift 3
+    for label in $old; do
+        mountpoint -q "$(daos_mountpoint "$label")" || continue
+        bash "$(daos_ckpt_helper)" unmount "$DAOS_POOL" "$label" >/dev/null || rc=1
+    done
     mapfile -t hosts < <(sort -u "$hostfile")
-    (( ${#hosts[@]} )) || return 1
-    hfile=$dir/.handles.$label
-    if _daos_ckpt_mount_on "${hosts[0]}" "$label" --dump-handles "$hfile"; then
+    (( ${#hosts[@]} && $# )) || return 1
+    if _daos_ckpt_mount_on "${hosts[0]}" --dump-handles "$dir" "$@"; then
         if (( ${#hosts[@]} > 1 )); then
-            _daos_ckpt_mount_on "$(IFS=,; echo "${hosts[*]:1}")" "$label" --read-handles "$hfile" || rc=1
+            _daos_ckpt_mount_on "$(IFS=,; echo "${hosts[*]:1}")" --read-handles "$dir" "$@" || rc=1
         fi
     else
         rc=1
     fi
-    rm -f "$hfile"
+    for label; do rm -f "$dir/.handles.$label"; done
     return $rc
 }
 
 # daos_ckpt_mount's remote half.  Under bash, since the login shell may be zsh (where an
 # unmatched glob is an error); start-dfuse.sh exits 0 even when dfuse fails.
 _daos_ckpt_mount_on() {
-    local hosts=$1 label=$2 mode=$3 hfile=$4
-    local script='helper=$1 pool=$2 label=$3 mode=$4 hfile=$5
+    local hosts=$1 mode=$2 dir=$3
+    shift 3
+    local script='helper=$1 pool=$2 mode=$3 dir=$4
+shift 4
 PATH=$PATH:/soft/daos/bin
-mnt=/tmp/$pool/$label
 for m in /tmp/"$pool"/ckpt-*; do
     mountpoint -q "$m" || continue
     bash "$helper" unmount "$pool" "${m##*/}" >/dev/null || exit 1
 done
-mkdir -p "$mnt" || exit 1
-if [[ $mode == --dump-handles ]]; then rm -f "$hfile"; (umask 077 && : > "$hfile") || exit 1; fi
-start-dfuse.sh oneScratch --pool "$pool" --cont "$label" -m "$mnt" "$mode" "$hfile" \
-    --disable-caching --disable-wb-cache
-for (( i = 0; i < 300; i++ )); do
-    if mountpoint -q "$mnt"; then
-        [[ $mode != --dump-handles || -s $hfile ]] && exit 0
+for label; do
+    mnt=/tmp/$pool/$label hfile=$dir/.handles.$label
+    mkdir -p "$mnt" || exit 1
+    if [[ $mode == --dump-handles ]]; then rm -f "$hfile"; (umask 077 && : > "$hfile") || exit 1; fi
+    start-dfuse.sh oneScratch --pool "$pool" --cont "$label" -m "$mnt" "$mode" "$hfile" \
+        --disable-caching --disable-wb-cache
+    for (( i = 0; i < 300; i++ )); do mountpoint -q "$mnt" && break; sleep 0.2; done
+    if ! mountpoint -q "$mnt"; then
+        echo "$(hostname -s): $pool:$label did not mount at $mnt" >&2; exit 1
+    fi
+    if [[ $mode == --dump-handles && ! -s $hfile ]]; then
         echo "$(hostname -s): dfuse wrote no handles to $hfile" >&2; exit 1
     fi
-    sleep 0.2
-done
-echo "$(hostname -s): $pool:$label did not mount at $mnt" >&2
-exit 1'
+done'
     clush -S -w "$hosts" -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
           "$(printf '%q ' bash -c "$script" ckpt-mount \
-                   "$(daos_ckpt_helper)" "$DAOS_POOL" "$label" "$mode" "$hfile")"
+                   "$(daos_ckpt_helper)" "$DAOS_POOL" "$mode" "$dir" "$@")"
 }
 
-# 0 if <label> is mounted on every host in <hostfile>.
+# 0 if every <label> is mounted on every host in <hostfile>.
 daos_ckpt_mounted() {
-    clush -S -w "$(sort -u "$1" | paste -sd, -)" -f 208 \
+    local hostfile=$1 label mnts=()
+    shift
+    for label; do mnts+=("$(daos_mountpoint "$label")"); done
+    clush -S -w "$(sort -u "$hostfile" | paste -sd, -)" -f 208 \
           -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
-          "$(printf '%q ' mountpoint -q "$(daos_mountpoint "$2")")" >/dev/null 2>&1
+          "$(printf '%q ' bash -c 'for m; do mountpoint -q "$m" || exit 1; done' ckpt-mounted \
+                   "${mnts[@]}")" \
+          >/dev/null 2>&1
 }
 
 # A sim's CheckpointDirectory, from its par2 (plus any -P overrides), parsed in the job's

@@ -113,18 +113,19 @@ export ABACUS_DAOS_POOL=$daos_pool
 export ABACUS_CHECKPOINT_CONTAINERS=${ckpt_containers:-0}
 if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
-    # A lone sim's restart point rides this mount, so its first launch mounts nothing more.
-    restart=
+    # A lone sim's restart candidates ride this mount, so its first launch mounts nothing more.
+    restart=()
     if (( ABACUS_CHECKPOINT_CONTAINERS && num_sims == 1 )); then
         ckptdir=$(daos_ckpt_prefix "${par2s[0]}" ${overrides[@]+"${overrides[@]}"}) || ckptdir=
-        if [[ -z $ckptdir ]] || ! restart=$(daos_ckpt_restart_label_unmounted "$ckptdir"); then
-            restart=
-            echo "warning: could not read ${par2s[0]}'s checkpoint links here; its restart point mounts at launch" >&2
+        if [[ -n $ckptdir ]] && labels=$(daos_ckpt_restart_labels_unmounted "$ckptdir"); then
+            [[ -z $labels ]] || mapfile -t restart <<<"$labels"
+        else
+            echo "warning: could not read ${par2s[0]}'s checkpoint links here; its restart candidates mount at launch" >&2
         fi
     fi
-    echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]}${restart:+ and restart point $restart} on $num_nodes node(s)"
-    daos_mount "${daos_conts[@]}" ${restart:+"$restart"} || exit 1
-    export DAOS_CKPT_MOUNTED=$restart
+    echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]}${restart[*]:+ and restart candidate(s) ${restart[*]}} on $num_nodes node(s)"
+    daos_mount "${daos_conts[@]}" ${restart[@]+"${restart[@]}"} || exit 1
+    export DAOS_CKPT_MOUNTED="${restart[*]}"
     daos_mounted=1
     mkdir -p "$ABACUS_WORKING_ROOT" "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
 else
