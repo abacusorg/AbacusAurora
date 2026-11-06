@@ -97,33 +97,34 @@ else
     echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
 
-# Before every launch, mount the container this sim restarts from on its nodes, and no other
+# Before every launch, mount the containers this sim can restart from on its nodes, and no other
 # checkpoint container (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs).
 ckptdir=""
 if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
     source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
     ckptdir=$(daos_ckpt_prefix "$par2" ${overrides[@]+"${overrides[@]}"}) || ckptdir=""
-    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart point" >&2
+    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart candidates" >&2
 fi
 
 # What multisim.pbs's daos_mount mounted, which the first launch takes on trust.
 premounted=${DAOS_CKPT_MOUNTED:-}
-mounted_label=$premounted mounted_hosts=$(sort -u "$hostfile" | paste -sd, -)
+mounted_labels=$premounted mounted_hosts=$(sort -u "$hostfile" | paste -sd, -)
 mount_restart_point() {
     [[ -n $ckptdir ]] || return 0
-    local label hosts
-    label=$(daos_ckpt_restart_label "$ckptdir")
-    [[ -n $label ]] || return 0
+    local labels hosts
+    labels=$(daos_ckpt_restart_labels "$ckptdir" | paste -sd' ' -)
+    [[ -n $labels ]] || return 0
     hosts=$(sort -u "$hostfile" | paste -sd, -)
-    if [[ $label == "$mounted_label" && $hosts == "$mounted_hosts" ]] &&
-       { (( attempt == 1 )) || daos_ckpt_mounted "$hostfile" "$label"; }; then
+    # $labels unquoted: ckpt-* labels are single words.
+    if [[ $labels == "$mounted_labels" && $hosts == "$mounted_hosts" ]] &&
+       { (( attempt == 1 )) || daos_ckpt_mounted "$hostfile" $labels; }; then
         return 0
     fi
-    mounted_label=""
-    if daos_ckpt_mount "$hostfile" "$label" "${ckptdir%/*}" "$premounted"; then
-        mounted_label=$label mounted_hosts=$hosts
+    mounted_labels=""
+    if daos_ckpt_mount "$hostfile" "${ckptdir%/*}" "$premounted" $labels; then
+        mounted_labels=$labels mounted_hosts=$hosts
     else
-        echo "onesim: warning: restart point $label did not mount on every node of this sim; Abacus names a node without it" >&2
+        echo "onesim: warning: restart candidate(s) $labels did not mount on every node of this sim; Abacus names a node without one" >&2
     fi
 }
 

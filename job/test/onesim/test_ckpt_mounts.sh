@@ -3,7 +3,8 @@
 # (ABACUS_CHECKPOINT_CONTAINERS=1) without MPI, DAOS or a built Abacus.
 #
 # Stubs on $PATH: `python` answers `-m abacus.param` with a CheckpointDirectory and fails
-# `-m abacus.run` (optionally writing a checkpoint or losing a mount first); `clush` runs
+# `-m abacus.run` (optionally writing a checkpoint, flushed or not, or losing a mount first);
+# `clush` runs
 # the remote command here as the first host it names, and onesim itself is host `head`;
 # `mountpoint`, `start-dfuse.sh` and the helper keep each host's fake mounts in its own
 # file.  /tmp/<pool> is a real directory under a test-only pool name, since the remote
@@ -23,6 +24,7 @@ simdir=$work/daos/Sim
 ckptdir=$simdir/checkpoint
 c=/tmp/$pool/ckpt-Sim
 X=ckpt-Sim-20261103T120000        # the previous attempt's restart point, mounted
+A=ckpt-Sim-20261103T141502        # an older checkpoint's container
 B=ckpt-Sim-20261104T090000        # the newest checkpoint's container
 C=ckpt-Sim-20261104T120000        # the checkpoint the first attempt writes, when asked
 n0=x1000c0s0b0n0.hsn n1=x1000c0s0b0n1.hsn
@@ -37,7 +39,10 @@ if [[ \$* == *abacus.param* ]]; then
 fi
 if [[ ! -e $work/ran ]]; then
     touch "$work/ran"
-    [[ -n \${NEW_CKPT:-} ]] && ln -s "$c-20261104T120000/state_10080" "$ckptdir/state_10080"
+    if [[ -n \${NEW_CKPT:-}\${NEW_UNFLUSHED:-} ]]; then
+        ln -s "$c-20261104T120000/state_10080" "$ckptdir/state_10080"
+        [[ -n \${NEW_CKPT:-} ]] && ln -sfn state_10080 "$ckptdir/flushed"
+    fi
     [[ -n \${DROP_MOUNT:-} ]] && : > "$work/mounted.$n0"
 fi
 exit 1
@@ -96,6 +101,7 @@ reset() {
     ln -s "$c-20261104T110000" "$ckptdir/spare"
     ln -s "$c-20261103T120000" "$ckptdir/$X.destroying"
     ln -s "/tmp/$pool/Checkpoints/state_10100" "$ckptdir/state_10100"  # not a container
+    ln -s state_10020 "$ckptdir/flushed"                               # the newest flushed
     echo "/tmp/$pool/$X" > "$work/mounted.$n0"
     echo "/tmp/$pool/$X" > "$work/mounted.$n1"
     printf '%s\n' "$n1" "$n0" "$n0" > "$work/hostfile"
@@ -145,6 +151,38 @@ $n1 unmount $B
 $n1 start-dfuse --read-handles .handles.$C" ]] \
     && pass "a new restart point replaces the old on relaunch" || fail "events:"$'\n'"$(events)"
 
+# A checkpoint whose flush has not landed: both it and the newest flushed are candidates.
+reset
+ln -sfn state_9990 "$ckptdir/flushed"
+run ABACUS_CHECKPOINT_CONTAINERS=1
+[[ $(events) == "$n0 unmount $X
+$n0 start-dfuse --dump-handles .handles.$B
+$n0 handles mode 600
+$n0 start-dfuse --dump-handles .handles.$A
+$n0 handles mode 600
+$n1 unmount $X
+$n1 start-dfuse --read-handles .handles.$B
+$n1 start-dfuse --read-handles .handles.$A" &&
+   $(mounted "$n1") == "/tmp/$pool/$B /tmp/$pool/$A " &&
+   $(tail -1 "$work/clush.log") == "hosts: $n0,$n1" ]] \
+    && pass "an unflushed newest: both candidates mount, and the relaunch only checks them" \
+    || fail "unflushed newest:"$'\n'"$(events)"$'\n'"$(cat "$work/clush.log")"
+
+# The first attempt wrote a checkpoint that never flushed: the relaunch adds it, keeping B.
+reset
+run ABACUS_CHECKPOINT_CONTAINERS=1 NEW_UNFLUSHED=1
+[[ $(events) == "$want_first
+$n0 unmount $B
+$n0 start-dfuse --dump-handles .handles.$C
+$n0 handles mode 600
+$n0 start-dfuse --dump-handles .handles.$B
+$n0 handles mode 600
+$n1 unmount $B
+$n1 start-dfuse --read-handles .handles.$C
+$n1 start-dfuse --read-handles .handles.$B" ]] \
+    && pass "a relaunch after an unflushed checkpoint mounts it and the newest flushed" \
+    || fail "relaunch after an unflushed checkpoint:"$'\n'"$(events)"
+
 # A mount lost between attempts fails the check and is remounted.
 reset
 run ABACUS_CHECKPOINT_CONTAINERS=1 DROP_MOUNT=1
@@ -181,7 +219,7 @@ for f in FAIL_MOUNT:start-dfuse HELPER_FAIL:unmount; do
     reset
     run ABACUS_CHECKPOINT_CONTAINERS=1 $f=1
     n=$(grep -c "^$n0 $step" "$work/events")
-    [[ $(grep -c "warning: restart point $B did not mount" "$work/onesim.out") == 2 && $n == 2 ]] && \
+    [[ $(grep -c "warning: restart candidate(s) $B did not mount" "$work/onesim.out") == 2 && $n == 2 ]] && \
         [[ $(grep -c '^=== abacus invocation ' "$work/onesim.out") == 2 ]] && ! grep -q "^$n1" "$work/events" \
         && pass "$f: warns, launches, retries, never reaches the other host" \
         || fail "$f:"$'\n'"$(events)"$'\n'"$(grep warning "$work/onesim.out")"
