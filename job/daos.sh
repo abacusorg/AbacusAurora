@@ -124,7 +124,7 @@ daos_require_containers() {
 # every remaining node fails with DER_NONEXIST.
 #
 # With $DAOS_CKPT_MAP set (see daos_ckpt_map), the same ssh per node also mounts that
-# node's sim's checkpoint containers, so they cost no extra sweep.
+# node's sim's restart point, so it costs no extra sweep.
 daos_mount() {
     local specs=() cont map_args=()
     for cont; do specs+=("$DAOS_POOL:$cont"); done
@@ -135,37 +135,57 @@ daos_mount() {
 }
 
 # --- One container per checkpoint (ABACUS_DAOS_CKPT_CONTAINERS) ---------------------
-# Abacus creates, mounts, unmounts and destroys them itself, mid-run.  The job's part is
-# to have each sim's existing containers mounted on that sim's nodes before it starts,
-# in the same sweep as the global containers.  All DAOS commands go through Abacus's
-# helper, src/Util/ckpt-container.sh, which refuses to create or destroy anything that
-# is not a ckpt-* label.
+# Abacus creates and destroys them itself, mid-run, through the DAOS C API, and flushes
+# into them through libdfs.  It needs only the container it restarts from mounted, since
+# it reads that through pil4dfs.  The job mounts each sim's restart point on that sim's
+# nodes, in the same sweep as the global containers and again before every relaunch.
+# Mounts, unmounts and cleanup's destroys go through Abacus's helper,
+# src/Util/ckpt-container.sh, which refuses to destroy anything that is not a ckpt-* label.
 
 daos_ckpt_helper() { printf '%s/src/Util/ckpt-container.sh\n' "${ABACUS_BUILD%/}"; }
 
-# The checkpoint containers a prefix links to, one label per line: the targets of its
-# state_* and spare links that are /tmp/<pool>/ckpt-*.  The prefix is on flare, so this
-# needs no DAOS mount.
-daos_ckpt_labels() {
-    local prefix=$1 link target
-    for link in "$prefix"/state_* "$prefix"/spare; do
-        [[ -L $link ]] || continue   # also skips an unmatched glob
+# The container a sim restarts from, as Abacus picks it: the target of the newest
+# state_NNNN link in <prefix> into /tmp/<pool>/ckpt-*.  Empty if there is none.
+daos_ckpt_restart_label() {
+    local link step target
+    for link in "$1"/state_*; do
+        [[ -L $link && ${link##*/} =~ ^state_([0-9]+)$ ]] || continue   # also skips an unmatched glob
+        step=${BASH_REMATCH[1]}
         target=$(readlink "$link")
         if [[ $target =~ ^/tmp/[^/]+/(ckpt-[^/]+)(/|$) ]]; then
-            echo "${BASH_REMATCH[1]}"
+            echo "$step ${BASH_REMATCH[1]}"
         fi
-    done | sort -u
+    done | sort -k1,1n | tail -1 | cut -d' ' -f2
 }
 
-# Append "<host> <label>..." for every host in <hostfile>, the labels being the
-# containers <prefix> links to.  The helper's `ensure` reads this.
+# Append "<host> <label>" for every host in <hostfile>, <label> being <prefix>'s restart
+# point.  The helper's `ensure` reads this.
 daos_ckpt_map() {
-    local prefix=$1 hostfile=$2 map=$3 labels host
-    labels=$(daos_ckpt_labels "$prefix" | tr '\n' ' ')
-    [[ -n $labels ]] || return 0
+    local prefix=$1 hostfile=$2 map=$3 label host
+    label=$(daos_ckpt_restart_label "$prefix")
+    [[ -n $label ]] || return 0
     while read -r host; do
-        [[ -n $host ]] && printf '%s %s\n' "$host" "$labels"
+        [[ -n $host ]] && printf '%s %s\n' "$host" "$label"
     done < <(sort -u "$hostfile") >> "$map"
+}
+
+# On every host in <hostfile>, unmount each checkpoint container but <label>, then mount
+# <label>: a run cannot destroy a container that is still mounted, and reads its restart
+# point on every node.  Nonzero if any host failed.
+daos_ckpt_remount() {
+    local hostfile=$1 label=$2
+    # Under bash because the remote login shell may be zsh, where an unmatched glob is an
+    # error.  The mountpoint checks spare each no-op the helper's module load.
+    local script='helper=$1 pool=$2 keep=$3 rc=0
+for m in /tmp/"$pool"/ckpt-*; do
+    [[ ${m##*/} != "$keep" ]] && mountpoint -q "$m" || continue
+    bash "$helper" unmount "$pool" "${m##*/}" >/dev/null || rc=1
+done
+mountpoint -q /tmp/"$pool"/"$keep" || bash "$helper" mount "$pool" "$keep" >/dev/null || rc=1
+exit $rc'
+    clush -S -w "$(sort -u "$hostfile" | paste -sd, -)" -f 208 \
+          -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
+          "$(printf '%q ' bash -c "$script" ckpt-remount "$(daos_ckpt_helper)" "$DAOS_POOL" "$label")"
 }
 
 # A sim's CheckpointDirectory, from its par2 (plus any -P overrides), parsed in the job's
