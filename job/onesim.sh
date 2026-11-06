@@ -97,12 +97,8 @@ else
     echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
 
-# One container per checkpoint (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs): before
-# every launch, mount the container this sim restarts from on its nodes, and unmount any
-# other.  The job's first sweep mounted it for the first launch, so that is normally a
-# no-op.  A relaunch may restart from a checkpoint the previous attempt wrote, or onto a
-# node spliced in from hostfile_extra, and Abacus cannot destroy the previous restart
-# point while it is mounted.  Abacus checks at startup and names any node missing it.
+# Before every launch, mount the container this sim restarts from on its nodes, and no other
+# checkpoint container (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs).
 ckptdir=""
 if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
     source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
@@ -110,13 +106,25 @@ if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
     [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart point" >&2
 fi
 
+# What multisim.pbs's daos_mount mounted, which the first launch takes on trust.
+premounted=${DAOS_CKPT_MOUNTED:-}
+mounted_label=$premounted mounted_hosts=$(sort -u "$hostfile" | paste -sd, -)
 mount_restart_point() {
     [[ -n $ckptdir ]] || return 0
-    local label
+    local label hosts
     label=$(daos_ckpt_restart_label "$ckptdir")
     [[ -n $label ]] || return 0
-    daos_ckpt_remount "$hostfile" "$label" \
-        || echo "onesim: warning: restart point $label did not mount on every node, or another checkpoint container would not unmount; Abacus names a node without it" >&2
+    hosts=$(sort -u "$hostfile" | paste -sd, -)
+    if [[ $label == "$mounted_label" && $hosts == "$mounted_hosts" ]] &&
+       { (( attempt == 1 )) || daos_ckpt_mounted "$hostfile" "$label"; }; then
+        return 0
+    fi
+    mounted_label=""
+    if daos_ckpt_mount "$hostfile" "$label" "${ckptdir%/*}" "$premounted"; then
+        mounted_label=$label mounted_hosts=$hosts
+    else
+        echo "onesim: warning: restart point $label did not mount on every node of this sim; Abacus names a node without it" >&2
+    fi
 }
 
 attempt=0
