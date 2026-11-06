@@ -29,6 +29,9 @@ source "$out/jobspec.sh"
 # hashrun's -E overrides live in their own file, sourced here (after env.sh) so they
 # win over its defaults; the exports are inherited by onesim -> abacus.run -> the ranks.
 source "$out/env_overrides.sh"
+# env.sh allows unlimited core dumps, and mpiexec hands the core limit to every rank
+# (PALS_RLIMITS); -E ABACUS_CORE_LIMIT=0 turns them off for runs too big to dump.
+[[ -z ${ABACUS_CORE_LIMIT:-} ]] || ulimit -c "$ABACUS_CORE_LIMIT"
 
 source "$abacus_prod/job/daos.sh"
 
@@ -43,11 +46,8 @@ source "$abacus_prod/job/daos.sh"
 HALT_DIR=/flare/Abacus/
 export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
-# Same trap tears the dfuse mounts back down.
-daos_mounted=0
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
-    if (( daos_mounted )); then daos_unmount "${daos_conts[@]}"; fi
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -81,7 +81,11 @@ onesim="$abacus_prod/job/onesim.sh"   # not $BASH_SOURCE — PBS executes a spoo
 # Node allocation: unique, sorted list (PBS_NODEFILE repeats a node per rank/chunk).
 # nodes_per_sim comes from the job spec (falls back to the whole allocation if unset).
 : "${PBS_NODEFILE:?not set — run under PBS}"
-sort -u "$PBS_NODEFILE" > nodes.sorted
+# ABACUS_EXCLUDE_NODES (short hostnames, space- or comma-separated; e.g. via hashrun -E) keeps
+# suspect nodes out of every sim.  They still count toward the request, so ask for spares with -n.
+sort -u "$PBS_NODEFILE" | awk -v ex="${ABACUS_EXCLUDE_NODES:-}" '
+    BEGIN { n = split(ex, a, /[ ,]+/); for (i = 1; i <= n; i++) if (a[i] != "") skip[a[i]] = 1 }
+    { h = $0; sub(/\..*/, "", h); if (h in skip) print "Excluding node " h > "/dev/stderr"; else print }' > nodes.sorted
 num_nodes=$(( $(wc -l < nodes.sorted) ))
 nodes_per_sim=${nodes_per_sim:-$num_nodes}
 
@@ -124,9 +128,10 @@ if (( ${#daos_conts[@]} )); then
         fi
     fi
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]}${restart[*]:+ and restart candidate(s) ${restart[*]}} on $num_nodes node(s)"
+    # Left mounted at exit: the PBS epilogue tears dfuse down, and with
+    # --disable-wb-cache there is no write-back to flush first.
     daos_mount "${daos_conts[@]}" ${restart[@]+"${restart[@]}"} || exit 1
     export DAOS_CKPT_MOUNTED="${restart[*]}"
-    daos_mounted=1
     mkdir -p "$ABACUS_WORKING_ROOT" "$ABACUS_OUTPUT_ROOT" "$ABACUS_CHECKPOINT_ROOT"
 else
     echo "DAOS: off; all storage on flare"
