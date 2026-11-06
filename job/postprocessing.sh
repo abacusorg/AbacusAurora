@@ -10,8 +10,8 @@
 #   2. the maplog files on disk are the size the checksums say.
 #   3. history.asdf, and
 #   4. log.zip -- both via archive-logs.sh, which already does them.  First, a
-#      checkpoint/container_log.txt (one DAOS container per checkpoint) is copied
-#      into log/, so the archive keeps it.
+#      checkpoint/container_log.txt beside log/ (one DAOS container per checkpoint)
+#      is copied into log/, so the archive keeps it.
 #   5. every other checksummed directory is the size the checksums say.  The list
 #      of directories comes from the checksum records themselves, so timeslices,
 #      group files and anything added later are covered without editing this.
@@ -350,13 +350,12 @@ process_sim() {
         return 1
     fi
     [[ $logroot == "$PWD" ]] || say "  log from $logroot"
-    # With one DAOS container per checkpoint, Abacus keeps the history of creates, mounts
-    # and destroys in checkpoint/container_log.txt.  Copy it into log/ so log.zip keeps it
-    # after cleanup_sims.sh deletes the checkpoint directory.  The checkpoint directory is
-    # <simdir>/checkpoint here as in cleanup_sims.sh: the per-checkpoint-container layout
-    # keeps the checkpoint root on flare, beside the outputs.
-    if [[ -f checkpoint/container_log.txt ]]; then
-        if cp -p -- checkpoint/container_log.txt "$logroot/log/container_log.txt"; then
+    # With one DAOS container per checkpoint, Abacus keeps the history of its creates and
+    # destroys in checkpoint/container_log.txt.  Copy it into log/ so log.zip keeps it after
+    # cleanup_sims.sh deletes the checkpoint directory, which that layout puts in the
+    # working directory, beside log/ (job/daos.sh).
+    if [[ -f $logroot/checkpoint/container_log.txt ]]; then
+        if cp -p -- "$logroot/checkpoint/container_log.txt" "$logroot/log/container_log.txt"; then
             say "  copied checkpoint/container_log.txt into the log"
         else
             say "  could not copy checkpoint/container_log.txt into $logroot/log"
