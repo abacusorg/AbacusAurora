@@ -1,0 +1,8 @@
+SimName = "AbacusAurora_tritoflag_c000_ph421"
+
+#include "../TritoFlag.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+ZD_Seed = @ZD_Seed@+421-420
+
+MapForest = 0.9  # to emulate flagship
