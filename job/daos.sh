@@ -22,9 +22,9 @@
 #   ABACUS_DAOS_CKPT_CONTAINERS=on
 #                               one DAOS container per checkpoint, destroyed when the
 #                               checkpoint retires (Abacus's CheckpointContainers; see
-#                               abacus doc/checkpoints.md).  The checkpoint root then stays
-#                               on flare -- it holds SCR's index and the links into the
-#                               containers -- and `Checkpoints` is not mounted.  Default off.
+#                               abacus doc/checkpoints.md).  The checkpoint root, which
+#                               holds SCR's index and the links into the containers, is
+#                               then on Outputs, and `Checkpoints` is not mounted.  Default off.
 #
 # Also exported for aurora.def: ABACUS_DAOS_POOL (the pool the containers are made in) and
 # ABACUS_CHECKPOINT_CONTAINERS (1 or 0, from the switch above).
@@ -66,11 +66,12 @@ daos_resolve() {
     _is_on "${ABACUS_DAOS:-off}" || return 0   # the DAOS on/off default
 
     # Outputs comes along even when the outputs stay on flare: it hosts the working
-    # directory.  With a container per checkpoint the checkpoint root stays on flare,
+    # directory.  With a container per checkpoint it also hosts the checkpoint root,
     # where Abacus keeps SCR's index and the links into the containers, so `Checkpoints`
     # is not needed at all.
     if _is_on "${ABACUS_DAOS_CKPT_CONTAINERS:-off}"; then   # the per-checkpoint default
         ABACUS_CHECKPOINT_CONTAINERS=1
+        ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     else
         daos_conts+=("$DAOS_CONT_CHECKPOINTS")
         ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
@@ -122,50 +123,100 @@ daos_require_containers() {
 # it (a sort, say) leaves line 1 unmounted, mounts the true head node twice ("Pool
 # specified multiple ways"), and points dbcast at a host with no handles file, so
 # every remaining node fails with DER_NONEXIST.
-#
-# With $DAOS_CKPT_MAP set (see daos_ckpt_map), the same ssh per node also mounts that
-# node's sim's checkpoint containers, so they cost no extra sweep.
 daos_mount() {
-    local specs=() cont map_args=()
+    local specs=() cont
     for cont; do specs+=("$DAOS_POOL:$cont"); done
-    if [[ -n ${DAOS_CKPT_MAP:-} ]]; then
-        map_args=(--ckpt-map "$(daos_ckpt_helper)" "$DAOS_POOL" "$DAOS_CKPT_MAP")
-    fi
-    "$DAOS_LAUNCH_DFUSE" ${map_args[@]+"${map_args[@]}"} "${specs[@]}"
+    "$DAOS_LAUNCH_DFUSE" "${specs[@]}"
 }
 
 # --- One container per checkpoint (ABACUS_DAOS_CKPT_CONTAINERS) ---------------------
-# Abacus creates, mounts, unmounts and destroys them itself, mid-run.  The job's part is
-# to have each sim's existing containers mounted on that sim's nodes before it starts,
-# in the same sweep as the global containers.  All DAOS commands go through Abacus's
-# helper, src/Util/ckpt-container.sh, which refuses to create or destroy anything that
-# is not a ckpt-* label.
+# Abacus makes, fills and destroys them itself and needs only its restart point mounted: by
+# daos_mount for a lone sim, else by onesim.sh, which also remounts it for a relaunch.
 
 daos_ckpt_helper() { printf '%s/src/Util/ckpt-container.sh\n' "${ABACUS_BUILD%/}"; }
 
-# The checkpoint containers a prefix links to, one label per line: the targets of its
-# state_* and spare links that are /tmp/<pool>/ckpt-*.  The prefix is on flare, so this
-# needs no DAOS mount.
-daos_ckpt_labels() {
-    local prefix=$1 link target
-    for link in "$prefix"/state_* "$prefix"/spare; do
-        [[ -L $link ]] || continue   # also skips an unmatched glob
+# The container a sim restarts from, as Abacus picks it: the target of the newest
+# state_NNNN link in <prefix> into /tmp/<pool>/ckpt-*.  Empty if there is none.
+daos_ckpt_restart_label() {
+    local link step target
+    for link in "$1"/state_*; do
+        [[ -L $link && ${link##*/} =~ ^state_([0-9]+)$ ]] || continue   # or an unmatched glob
+        step=${BASH_REMATCH[1]}
         target=$(readlink "$link")
         if [[ $target =~ ^/tmp/[^/]+/(ckpt-[^/]+)(/|$) ]]; then
-            echo "${BASH_REMATCH[1]}"
+            echo "$step ${BASH_REMATCH[1]}"
         fi
-    done | sort -u
+    done | sort -k1,1n | tail -1 | cut -d' ' -f2
 }
 
-# Append "<host> <label>..." for every host in <hostfile>, the labels being the
-# containers <prefix> links to.  The helper's `ensure` reads this.
-daos_ckpt_map() {
-    local prefix=$1 hostfile=$2 map=$3 labels host
-    labels=$(daos_ckpt_labels "$prefix" | tr '\n' ' ')
-    [[ -n $labels ]] || return 0
-    while read -r host; do
-        [[ -n $host ]] && printf '%s %s\n' "$host" "$labels"
-    done < <(sort -u "$hostfile") >> "$map"
+# daos_ckpt_restart_label before daos_mount: through a mount of <prefix>'s container on this
+# node alone, at the per-user path.
+daos_ckpt_restart_label_unmounted() {
+    local prefix=$1 cont label
+    cont=${prefix#"$(daos_mountpoint '')"}
+    [[ $cont != "$prefix" ]] || { daos_ckpt_restart_label "$prefix"; return; }   # not on DAOS
+    cont=${cont%%/*}
+    daos_login_mount "$cont" >/dev/null || return 1
+    label=$(daos_ckpt_restart_label "$(daos_login_path "$prefix")")
+    daos_login_unmount "$cont" >/dev/null || true
+    printf '%s\n' "$label"
+}
+
+# Remount <label> alone on <hostfile>'s hosts, and drop <old> here, where daos_mount owns it.
+# The first host dumps its handles into <dir> for the rest; they live as long as its dfuse.
+daos_ckpt_mount() {
+    local hostfile=$1 label=$2 dir=$3 old=${4:-} hosts hfile rc=0
+    if [[ -n $old ]] && mountpoint -q "$(daos_mountpoint "$old")"; then
+        bash "$(daos_ckpt_helper)" unmount "$DAOS_POOL" "$old" >/dev/null || rc=1
+    fi
+    mapfile -t hosts < <(sort -u "$hostfile")
+    (( ${#hosts[@]} )) || return 1
+    hfile=$dir/.handles.$label
+    if _daos_ckpt_mount_on "${hosts[0]}" "$label" --dump-handles "$hfile"; then
+        if (( ${#hosts[@]} > 1 )); then
+            _daos_ckpt_mount_on "$(IFS=,; echo "${hosts[*]:1}")" "$label" --read-handles "$hfile" || rc=1
+        fi
+    else
+        rc=1
+    fi
+    rm -f "$hfile"
+    return $rc
+}
+
+# daos_ckpt_mount's remote half.  Under bash, since the login shell may be zsh (where an
+# unmatched glob is an error); start-dfuse.sh exits 0 even when dfuse fails.
+_daos_ckpt_mount_on() {
+    local hosts=$1 label=$2 mode=$3 hfile=$4
+    local script='helper=$1 pool=$2 label=$3 mode=$4 hfile=$5
+PATH=$PATH:/soft/daos/bin
+mnt=/tmp/$pool/$label
+for m in /tmp/"$pool"/ckpt-*; do
+    mountpoint -q "$m" || continue
+    bash "$helper" unmount "$pool" "${m##*/}" >/dev/null || exit 1
+done
+mkdir -p "$mnt" || exit 1
+if [[ $mode == --dump-handles ]]; then rm -f "$hfile"; (umask 077 && : > "$hfile") || exit 1; fi
+start-dfuse.sh oneScratch --pool "$pool" --cont "$label" -m "$mnt" "$mode" "$hfile" \
+    --disable-caching --disable-wb-cache
+for (( i = 0; i < 300; i++ )); do
+    if mountpoint -q "$mnt"; then
+        [[ $mode != --dump-handles || -s $hfile ]] && exit 0
+        echo "$(hostname -s): dfuse wrote no handles to $hfile" >&2; exit 1
+    fi
+    sleep 0.2
+done
+echo "$(hostname -s): $pool:$label did not mount at $mnt" >&2
+exit 1'
+    clush -S -w "$hosts" -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
+          "$(printf '%q ' bash -c "$script" ckpt-mount \
+                   "$(daos_ckpt_helper)" "$DAOS_POOL" "$label" "$mode" "$hfile")"
+}
+
+# 0 if <label> is mounted on every host in <hostfile>.
+daos_ckpt_mounted() {
+    clush -S -w "$(sort -u "$1" | paste -sd, -)" -f 208 \
+          -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
+          "$(printf '%q ' mountpoint -q "$(daos_mountpoint "$2")")" >/dev/null 2>&1
 }
 
 # A sim's CheckpointDirectory, from its par2 (plus any -P overrides), parsed in the job's
@@ -180,8 +231,8 @@ daos_ckpt_prefix() {
 
 # Mount the given containers on THIS NODE only, at the per-user login mountpoint.
 # daos_mount() drives launch-dfuse.sh over $PBS_NODEFILE and so needs an allocation;
-# this is the single-node equivalent, for anything that runs on a login node.  Already
-# mounted is success: the mounts are per-user and concurrent readers share them.
+# this is the single-node equivalent, for a login node or one node of a job before daos_mount.
+# Already mounted is success: the mounts are per-user and concurrent readers share them.
 daos_login_mount() {
     local cont mnt i
     daos_preflight || return 1
@@ -238,8 +289,12 @@ daos_login_unmount() {
 daos_localize_path() {
     local p=$1
     if [[ -n ${PBS_NODEFILE:-} ]]; then printf '%s\n' "$p"; return; fi
-    printf '%s\n' "${p/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"
+    daos_login_path "$p"
 }
+
+# A path under a daos_mountpoint() rewritten to the same place under the
+# daos_login_mountpoint(), wherever this runs.  Any other path passes through untouched.
+daos_login_path() { printf '%s\n' "${1/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"; }
 
 # clean-dfuse.sh is global (it SIGKILLs every dfuse on every node), so one call
 # covers all containers.  Best-effort: this runs from an EXIT trap.
@@ -305,7 +360,7 @@ daos_status() {
     printf '  %-14s %s\n' resources   "$ABACUS_RESOURCE_ROOT"
     if (( ABACUS_CHECKPOINT_CONTAINERS )); then
         echo
-        echo "one DAOS container per checkpoint: on (pool $DAOS_POOL; checkpoint root on flare)"
+        echo "one DAOS container per checkpoint: on (pool $DAOS_POOL; checkpoint root on $DAOS_CONT_OUTPUTS)"
     fi
 }
 

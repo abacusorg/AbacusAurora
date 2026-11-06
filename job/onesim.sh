@@ -93,30 +93,34 @@ else
     echo "onesim: warning: could not resolve OutputDirectory; skipping provenance" >&2
 fi
 
-# One container per checkpoint (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs): before
-# every launch, make sure this sim's nodes have its checkpoint containers mounted.  The
-# job's first sweep did that for the first launch, so this is normally a no-op.  It matters
-# for a relaunch onto a node spliced in from hostfile_extra, and for containers the previous
-# attempt created.  Abacus checks again at startup and names any node it finds missing.
+# Before every launch, mount the container this sim restarts from on its nodes, and no other
+# checkpoint container (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs).
 ckptdir=""
 if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
     source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
     ckptdir=$(daos_ckpt_prefix "$par2" ${overrides[@]+"${overrides[@]}"}) || ckptdir=""
-    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not pre-mounting checkpoint containers" >&2
+    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart point" >&2
 fi
 
-ensure_ckpt_mounts() {
-    [[ -n $ckptdir && -n ${HASHRUN_OUT:-} ]] || return 0
-    local map
-    map=$(mktemp "$HASHRUN_OUT/ckpt_mounts.XXXXXX") || return 0   # shared: the nodes read it
-    daos_ckpt_map "$ckptdir" "$hostfile" "$map"
-    if [[ -s $map ]]; then
-        clush -S -w "$(sort -u "$hostfile" | paste -sd, -)" -f 208 \
-              -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
-              "$(printf '%q ' bash "$(daos_ckpt_helper)" ensure "$DAOS_POOL" "$map")" \
-            || echo "onesim: warning: not every checkpoint container mounted on this sim's nodes; Abacus will name the node" >&2
+# What multisim.pbs's daos_mount mounted, which the first launch takes on trust.
+premounted=${DAOS_CKPT_MOUNTED:-}
+mounted_label=$premounted mounted_hosts=$(sort -u "$hostfile" | paste -sd, -)
+mount_restart_point() {
+    [[ -n $ckptdir ]] || return 0
+    local label hosts
+    label=$(daos_ckpt_restart_label "$ckptdir")
+    [[ -n $label ]] || return 0
+    hosts=$(sort -u "$hostfile" | paste -sd, -)
+    if [[ $label == "$mounted_label" && $hosts == "$mounted_hosts" ]] &&
+       { (( attempt == 1 )) || daos_ckpt_mounted "$hostfile" "$label"; }; then
+        return 0
     fi
-    rm -f "$map"
+    mounted_label=""
+    if daos_ckpt_mount "$hostfile" "$label" "${ckptdir%/*}" "$premounted"; then
+        mounted_label=$label mounted_hosts=$hosts
+    else
+        echo "onesim: warning: restart point $label did not mount on every node of this sim; Abacus names a node without it" >&2
+    fi
 }
 
 attempt=0
@@ -137,7 +141,7 @@ while true; do
     export ABACUS_MPIRUN_ARGS="${abacus_mpirun_args_base:+$abacus_mpirun_args_base }--hostfile $hostfile" NNODES="$nnodes"
 
     echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
-    ensure_ckpt_mounts
+    mount_restart_point
     t0=$SECONDS
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
