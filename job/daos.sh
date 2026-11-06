@@ -22,9 +22,9 @@
 #   ABACUS_DAOS_CKPT_CONTAINERS=on
 #                               one DAOS container per checkpoint, destroyed when the
 #                               checkpoint retires (Abacus's CheckpointContainers; see
-#                               abacus doc/checkpoints.md).  The checkpoint root then stays
-#                               on flare -- it holds SCR's index and the links into the
-#                               containers -- and `Checkpoints` is not mounted.  Default off.
+#                               abacus doc/checkpoints.md).  The checkpoint root, which
+#                               holds SCR's index and the links into the containers, is
+#                               then on Outputs, and `Checkpoints` is not mounted.  Default off.
 #
 # Also exported for aurora.def: ABACUS_DAOS_POOL (the pool the containers are made in) and
 # ABACUS_CHECKPOINT_CONTAINERS (1 or 0, from the switch above).
@@ -66,11 +66,12 @@ daos_resolve() {
     _is_on "${ABACUS_DAOS:-off}" || return 0   # the DAOS on/off default
 
     # Outputs comes along even when the outputs stay on flare: it hosts the working
-    # directory.  With a container per checkpoint the checkpoint root stays on flare,
+    # directory.  With a container per checkpoint it also hosts the checkpoint root,
     # where Abacus keeps SCR's index and the links into the containers, so `Checkpoints`
     # is not needed at all.
     if _is_on "${ABACUS_DAOS_CKPT_CONTAINERS:-off}"; then   # the per-checkpoint default
         ABACUS_CHECKPOINT_CONTAINERS=1
+        ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_OUTPUTS")/$USER
     else
         daos_conts+=("$DAOS_CONT_CHECKPOINTS")
         ABACUS_CHECKPOINT_ROOT=$(daos_mountpoint "$DAOS_CONT_CHECKPOINTS")/$USER
@@ -200,8 +201,9 @@ daos_ckpt_prefix() {
 
 # Mount the given containers on THIS NODE only, at the per-user login mountpoint.
 # daos_mount() drives launch-dfuse.sh over $PBS_NODEFILE and so needs an allocation;
-# this is the single-node equivalent, for anything that runs on a login node.  Already
-# mounted is success: the mounts are per-user and concurrent readers share them.
+# this is the single-node equivalent, for anything that runs on a login node (or on one
+# node of a job, before daos_mount).  Already mounted is success: the mounts are per-user
+# and concurrent readers share them.
 daos_login_mount() {
     local cont mnt i
     daos_preflight || return 1
@@ -258,8 +260,12 @@ daos_login_unmount() {
 daos_localize_path() {
     local p=$1
     if [[ -n ${PBS_NODEFILE:-} ]]; then printf '%s\n' "$p"; return; fi
-    printf '%s\n' "${p/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"
+    daos_login_path "$p"
 }
+
+# A path under a daos_mountpoint() rewritten to the same place under the
+# daos_login_mountpoint(), wherever this runs.  Any other path passes through untouched.
+daos_login_path() { printf '%s\n' "${1/#\/tmp\/$DAOS_POOL\//\/tmp\/$USER\/$DAOS_POOL\/}"; }
 
 # clean-dfuse.sh is global (it SIGKILLs every dfuse on every node), so one call
 # covers all containers.  Best-effort: this runs from an EXIT trap.
@@ -325,7 +331,7 @@ daos_status() {
     printf '  %-14s %s\n' resources   "$ABACUS_RESOURCE_ROOT"
     if (( ABACUS_CHECKPOINT_CONTAINERS )); then
         echo
-        echo "one DAOS container per checkpoint: on (pool $DAOS_POOL; checkpoint root on flare)"
+        echo "one DAOS container per checkpoint: on (pool $DAOS_POOL; checkpoint root on $DAOS_CONT_OUTPUTS)"
     fi
 }
 

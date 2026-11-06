@@ -115,20 +115,31 @@ if (( ${#daos_conts[@]} )); then
     DAOS_POOL=$daos_pool
     # One container per checkpoint: each sim's nodes also mount its restart point, in this
     # same sweep.  The map says which node gets which; the slices are the ones the launch
-    # loop below hands out.
+    # loop below hands out.  The links that name the restart points are in the container
+    # that holds the checkpoint root, so this node reads them through a mount of its own,
+    # at the per-user path.  Without that, each sim mounts its restart point before its
+    # first launch instead.
     if (( ABACUS_CHECKPOINT_CONTAINERS )); then
         export DAOS_CKPT_MAP=$out/ckpt_mounts.map
         : > "$DAOS_CKPT_MAP"
-        for i in "${!par2s[@]}"; do
-            ckptdir=$(daos_ckpt_prefix "${par2s[$i]}" ${overrides[@]+"${overrides[@]}"}) || ckptdir=
-            if [[ -z $ckptdir ]]; then
-                echo "warning: could not resolve CheckpointDirectory for ${par2s[$i]}; its restart point mounts at launch instead" >&2
-                continue
-            fi
-            daos_ckpt_map "$ckptdir" \
-                <(sed -n "$(( i * nodes_per_sim + 1 )),$(( (i + 1) * nodes_per_sim ))p" nodes.sorted) \
-                "$DAOS_CKPT_MAP"
-        done
+        ckpt_cont=${checkpoint_root#"$(daos_mountpoint '')"}
+        ckpt_cont=${ckpt_cont%%/*}
+        if daos_login_mount "$ckpt_cont" >/dev/null; then
+            for i in "${!par2s[@]}"; do
+                ckptdir=$(daos_ckpt_prefix "${par2s[$i]}" ${overrides[@]+"${overrides[@]}"}) || ckptdir=
+                if [[ -z $ckptdir ]]; then
+                    echo "warning: could not resolve CheckpointDirectory for ${par2s[$i]}; its restart point mounts at launch instead" >&2
+                    continue
+                fi
+                daos_ckpt_map "$(daos_login_path "$ckptdir")" \
+                    <(sed -n "$(( i * nodes_per_sim + 1 )),$(( (i + 1) * nodes_per_sim ))p" nodes.sorted) \
+                    "$DAOS_CKPT_MAP"
+            done
+            daos_login_unmount "$ckpt_cont" >/dev/null ||
+                echo "warning: could not unmount this node's own mount of $ckpt_cont" >&2
+        else
+            echo "warning: could not mount $ckpt_cont here to read the checkpoint links; restart points mount at launch instead" >&2
+        fi
         echo "DAOS: one container per checkpoint; $(cut -d' ' -f2 "$DAOS_CKPT_MAP" | sort -u | wc -l) restart point(s) to mount, per $DAOS_CKPT_MAP"
     fi
     echo "DAOS: pool $DAOS_POOL, mounting ${daos_conts[*]} on $num_nodes node(s)"

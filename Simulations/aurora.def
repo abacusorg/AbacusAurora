@@ -141,10 +141,7 @@ ConvolutionL1CacheSizeMB = @OMP_NUM_THREADS@ * 0.046875 / 2
 OutputDirectory = "$ABACUS_OUTPUT_ROOT$/" + @SimName@
 WorkingDirectory = "$ABACUS_WORKING_ROOT$/" + @SimName@
 
-# Under the working root rather than the checkpoint root: with one container per checkpoint
-# the checkpoint root is on flare, and a state written here is flagship-sized.  For flare-only
-# runs the two roots are the same, so the path is unchanged.
-StateDirectory = "$ABACUS_WORKING_ROOT$/" + @SimName@ + "/work"
+StateDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/work"
 CheckpointDirectory = "$ABACUS_CHECKPOINT_ROOT$/" + @SimName@ + "/checkpoint"
 InvocationEndStateDest = "state"
 
