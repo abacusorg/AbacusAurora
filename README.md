@@ -62,6 +62,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_DAOS_RESOURCES` | `on` | submit | with DAOS on, read the derivatives and wisdom from DAOS |
 | `ABACUS_DAOS_POOL` | `AbacusAurora` | submit | the DAOS pool |
 | `ABACUS_DAOS_CONT_CHECKPOINTS`, `_OUTPUTS`, `_RESOURCES` | `Checkpoints`, `Outputs`, `Resources` | submit | the DAOS container names |
+| `ABACUS_DAOS_CKPT_CONTAINERS` | `off` | submit | with DAOS on, give each checkpoint its own container (see [DAOS](#daos)) |
 | `ABACUS_DAOS_PRELOAD` | `on` | run | with DAOS on, `LD_PRELOAD` the DAOS interception library into the ranks |
 | `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
@@ -81,8 +82,8 @@ In turn, the scripts set these for `aurora.def` and Abacus:
 
 Writing to DAOS can be enabled through `hashrun.sh --daos`. `hashrun.sh` requests the `daos_user_fs` PBS resource and
 checks the containers are present; `multisim.pbs` mounts them on every node and points
-Abacus's storage roots at them. Containers are created and destroyed by hand — the job
-scripts never do it. Which directories go where:
+Abacus's storage roots at them. These containers are created and destroyed by hand — the
+job scripts never do it. Which directories go where:
 
 | | root | container | with `--daos` |
 |---|---|---|---|
@@ -97,6 +98,13 @@ root, shared between users as they are on flare.
 
 The `Outputs` container is mounted whenever DAOS is on, even with the outputs themselves
 on flare, because it holds the working directory.
+
+With `ABACUS_DAOS_CKPT_CONTAINERS=on`, each checkpoint goes in a container of its own,
+`ckpt-<SimName>-<UTC time>`, which Abacus creates, fills and destroys as checkpoints retire
+(see Abacus's `doc/checkpoints.md`). The checkpoint root, holding SCR's index and the links
+into those containers, moves to `Outputs`, and `Checkpoints` is not mounted. Only a sim's
+restart candidates are mounted: by `multisim.pbs` for a lone sim, else by `onesim.sh` before
+its first launch, and again before each relaunch.
 
 One consequence of the working root moving: with `--daos` the per-sim logs are inside the
 container, so reading them from a login node needs `./scripts/daos-mount-login.sh`. The
