@@ -165,7 +165,7 @@ setup_daos() {
     filesystems=flare:daos_user_fs
     echo "DAOS: pool $DAOS_POOL, containers ${daos_conts[*]}"
     if (( ABACUS_CHECKPOINT_CONTAINERS )); then
-        echo "DAOS: one container per checkpoint (checkpoint root $ABACUS_CHECKPOINT_ROOT on flare)"
+        echo "DAOS: one container per checkpoint (checkpoint root $ABACUS_CHECKPOINT_ROOT)"
     fi
 }
 
