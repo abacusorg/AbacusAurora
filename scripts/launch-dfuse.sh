@@ -15,13 +15,13 @@
 #
 # Usage: launch-dfuse.sh [--ckpt-map <helper> <pool> <map>] <pool>:<container> [...]
 #
-# --ckpt-map: also mount each node's per-checkpoint containers (one DAOS container per
-# checkpoint; abacus's CheckpointContainers).  <map> lines are "<host> <label> ...", one per
+# --ckpt-map: also mount each node's sim's restart point (one DAOS container per
+# checkpoint; abacus's CheckpointContainers).  <map> lines are "<host> <label>", one per
 # node, and differ from node to node: in a multi-sim job each node mounts only its own
 # sim's.  They ride the same ssh as the global mounts, as <helper>'s `ensure`, which skips
 # what is already mounted and fails if a label will not mount.  Those containers are
 # mounted with a plain dfuse each, without the handle broadcast: each is opened only by one
-# sim's few nodes, and broadcasting would cost an mpiexec per container.
+# sim's nodes, and broadcasting would cost an mpiexec per container.
 #
 # Run on the head node of an allocation, by hand or from a job; job/daos.sh calls it
 # from daos_mount.
