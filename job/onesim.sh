@@ -98,29 +98,25 @@ else
 fi
 
 # One container per checkpoint (ABACUS_CHECKPOINT_CONTAINERS, from multisim.pbs): before
-# every launch, make sure this sim's nodes have its checkpoint containers mounted.  The
-# job's first sweep did that for the first launch, so this is normally a no-op.  It matters
-# for a relaunch onto a node spliced in from hostfile_extra, and for containers the previous
-# attempt created.  Abacus checks again at startup and names any node it finds missing.
+# every launch, mount the container this sim restarts from on its nodes, and unmount any
+# other.  The job's first sweep mounted it for the first launch, so that is normally a
+# no-op.  A relaunch may restart from a checkpoint the previous attempt wrote, or onto a
+# node spliced in from hostfile_extra, and Abacus cannot destroy the previous restart
+# point while it is mounted.  Abacus checks at startup and names any node missing it.
 ckptdir=""
 if (( ${ABACUS_CHECKPOINT_CONTAINERS:-0} )); then
     source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
     ckptdir=$(daos_ckpt_prefix "$par2" ${overrides[@]+"${overrides[@]}"}) || ckptdir=""
-    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not pre-mounting checkpoint containers" >&2
+    [[ -n $ckptdir ]] || echo "onesim: warning: could not resolve CheckpointDirectory; not mounting its restart point" >&2
 fi
 
-ensure_ckpt_mounts() {
-    [[ -n $ckptdir && -n ${HASHRUN_OUT:-} ]] || return 0
-    local map
-    map=$(mktemp "$HASHRUN_OUT/ckpt_mounts.XXXXXX") || return 0   # shared: the nodes read it
-    daos_ckpt_map "$ckptdir" "$hostfile" "$map"
-    if [[ -s $map ]]; then
-        clush -S -w "$(sort -u "$hostfile" | paste -sd, -)" -f 208 \
-              -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
-              "$(printf '%q ' bash "$(daos_ckpt_helper)" ensure "$DAOS_POOL" "$map")" \
-            || echo "onesim: warning: not every checkpoint container mounted on this sim's nodes; Abacus will name the node" >&2
-    fi
-    rm -f "$map"
+mount_restart_point() {
+    [[ -n $ckptdir ]] || return 0
+    local label
+    label=$(daos_ckpt_restart_label "$ckptdir")
+    [[ -n $label ]] || return 0
+    daos_ckpt_remount "$hostfile" "$label" \
+        || echo "onesim: warning: restart point $label did not mount on every node, or another checkpoint container would not unmount; Abacus names a node without it" >&2
 }
 
 attempt=0
@@ -141,7 +137,7 @@ while true; do
     export ABACUS_MPIRUN_ARGS="${abacus_mpirun_args_base:+$abacus_mpirun_args_base }--hostfile $hostfile" NNODES="$nnodes"
 
     echo "=== abacus invocation $attempt on $nnodes nodes: $(date) ==="
-    ensure_ckpt_mounts
+    mount_restart_point
     t0=$SECONDS
 
     # Capture rc explicitly. (Do NOT put this in `if python ...; then`: a
