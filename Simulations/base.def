@@ -59,7 +59,7 @@ Map_MinMultiplicity=20
 Map_GroupDiameter = -1
 Map_GroupEligibilityThreshold=100
 Map_LagrangianFormationLimit=1
-
+Map_AccretionLookahead=0
 
 # Group finding parameters, believed vestigial
 AllowGroupFinding = 0

@@ -6,6 +6,9 @@
 #include "base.def"
 
 MapForestSize = 0.8
+#ACJ: PNG needs different parameters because of the time-step differences and because we're using the 
+#accretion lookahead option
+Map_AccretionLookahead=1
 
 BoxSize = 8000.
 NP = 12000**3
