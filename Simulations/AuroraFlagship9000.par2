@@ -19,6 +19,8 @@ ZD_Seed = 5843    # This will be the most common phase
 
 MapForestSize = 0.9   # We ran a little big in DemiFlag
 
+StepTimeout = 1200
+
 ExitAfterCheckpoint = 1   # Runs on DAOS appear to crash on the non-Checkpoint final write, so don't do them.
 
 SCR_Checkpoint_Seconds = 1800

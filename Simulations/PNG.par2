@@ -1,0 +1,9 @@
+ZD_white_noise_layout = "xfast"            # x is the fastest in the array
+ZD_CornerModes = 0
+
+# Just set defaults that will need to get overwritten
+ZD_f_NL = 0
+
+ZD_f_NL_local = 0
+ZD_f_NL_equil = 0
+ZD_f_NL_orthoCMB = 0
