@@ -1,0 +1,14 @@
+SimName = "AbacusAurora_flag_c000_ph430_pngorthoCMB_m75"
+
+#include "../Large.par2"
+#include "../PNG.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+ZD_Seed = @ZD_Seed@+430-430
+
+# Important: If one ever changes the phase seed, don't forget to change this path!!
+ZD_WhiteNoiseDirectory = "/tmp/AbacusAurora_run/Resources/PNGNoise/Large_L8000_N12000_seed3943/"
+
+ZD_f_NL = 75
+ZD_f_NL_pngorthoCMB = 1
+
