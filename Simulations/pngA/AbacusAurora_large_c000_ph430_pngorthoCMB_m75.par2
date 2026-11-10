@@ -1,4 +1,4 @@
-SimName = "AbacusAurora_flag_c000_ph430_pngorthoCMB_m75"
+SimName = "AbacusAurora_large_c000_ph430_pngorthoCMB_m75"
 
 #include "../Large.par2"
 #include "../PNG.par2"
@@ -6,9 +6,11 @@ SimName = "AbacusAurora_flag_c000_ph430_pngorthoCMB_m75"
 
 ZD_Seed = @ZD_Seed@+430-430
 
-# Important: If one ever changes the phase seed, don't forget to change this path!!
-ZD_WhiteNoiseDirectory = "/tmp/AbacusAurora_run/Resources/PNGNoise/Large_L8000_N12000_seed3943/"
+# White noise made for this box, grid and seed (built from BoxSize, NP and ZD_Seed, so it always
+# matches the seed in the header). Using ZD_Seed = 3943 so this is
+# /tmp/AbacusAurora_run/Resources/PNGNoise/Large_L8000_N12000_seed3943
+ZD_WhiteNoiseDirectory = "$ABACUS_RESOURCE_ROOT$/PNGNoise/Large_L" + str(int(@BoxSize@)) + "_N" + str(round(@NP@**(1/3.))) + "_seed" + str(@ZD_Seed@)
 
 ZD_f_NL = -75
-ZD_f_NL_pngorthoCMB = 1
+ZD_f_NL_orthoCMB = 1
 

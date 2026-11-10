@@ -6,6 +6,12 @@
 #include "base.def"
 
 MapForestSize = 0.8
+#ACJ: PNG needs different parameters because of the time-step differences and because we're using the
+Map_Aaccrete=0.8198
+Map_Amerge=50
+Map_bmerge_proper=0.0384 
+#accretion lookahead option
+Map_AccretionLookahead=1
 
 BoxSize = 8000.
 NP = 12000**3
@@ -13,6 +19,20 @@ CPD = 2625    # PPC = 96
 NumZRanks = 10
 # We plan to invoke on 375 nodes to make 75*10 ranks.  That gives 35 slabs per rank.  And 262.5 cells in each Z column.
 # This is 2.3G particles/socket
+
+# However, we are also considering running on 1800 nodes, using 75 x 48 ranks.  54.6875 cells per Z column.
+# This would be overloading NumZRanks=48 at runtime.
+# This would allow us to run 5 simulations in a 9000-node job, in under an hour.
+
+# Another option is 1500 nodes, using 75 x 40 ranks.  65.625 cells per Z column.
+# This would be overloading NumZRanks=40 at runtime.
+
+# Another option is running on 1125 nodes, using 75 x 30 ranks.  87.5 cells per Z column.
+# This would be overloading NumZRanks=30 at runtime.  8 sims at a time should still fit in our DAOS repository.
+
+# Fewer nodes will be longer run times, but more global efficiency.  That said, we're limited by the block of time we'll have.
+
+
 
 # We are using a coarser softening, even as a function of the interparticle spacing, because coarser scales go non-linear at a lower redshift.
 SofteningLength = @BoxSize@/@NP@**(1/3)/30  # Plummer-equivalent

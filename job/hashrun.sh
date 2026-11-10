@@ -25,6 +25,9 @@
 # With DAOS, -E ABACUS_DAOS_CKPT_CONTAINERS=on gives each checkpoint its own container
 # (see job/daos.sh).  The pool is $ABACUS_DAOS_POOL in the shell you run this from (e.g.
 # AbacusAurora_run for the flagship); -E cannot change it.
+# -E ABACUS_NODE_ORDER=block -E ABACUS_NODE_BLOCK=5x4 places each sim's ranks in shuffled
+# blocks of 5 X rows x 4 Z ranks on consecutive nodes instead of in sorted node order
+# (see job/nodeorder.sh).
 # The two bare args are <code-ref> and <par2-list>; other flags pass through to
 # qsub (but not select/walltime/filesystems — those are derived).
 #
