@@ -12,15 +12,21 @@
 # it is left completely alone -- the logs may be the only remaining record of
 # what went wrong.
 #
-# Note that these four live under WorkingDirectory, which aurora.def points at
-# $ABACUS_WORKING_ROOT$/<SimName> while the SimDirectory is
-# $ABACUS_OUTPUT_ROOT$/<SimName>.  When those two roots are the same, as they are
-# for the runs this is written for, they are right here in the SimDirectory.
-# When they are not, this reports each target as already gone and deletes
-# nothing, which is the safe way to be wrong.
+# Where they are comes from the sim's parameter file: aurora.def puts checkpoint/ and
+# work/ (CheckpointDirectory, StateDirectory) under $ABACUS_CHECKPOINT_ROOT$/<SimName>
+# and log/ under WorkingDirectory, $ABACUS_WORKING_ROOT$/<SimName>, while the
+# SimDirectory is $ABACUS_OUTPUT_ROOT$/<SimName>.  With everything on flare those are
+# all the SimDirectory.  With DAOS on they are on a DAOS container, and --daos mounts
+# it and cleans them there; without --daos such a sim is skipped, with a warning.
+# A *.par that cannot be read (no abacus env) means the SimDirectory, as before.
 #
-# Usage: cleanup_sims.sh [-n] <simdir> [simdir ...]
-#   -n   say what would be done, and touch nothing
+# Usage: cleanup_sims.sh [-n] [--daos] <simdir> [simdir ...]
+#   -n       say what would be done, and touch nothing
+#   --daos   clean the working files where the parameter file put them on DAOS,
+#            mounting their containers first (across the allocation inside PBS,
+#            per-user on a login node, left mounted as postprocessing.sh leaves it).
+#            A sim on a pool other than $ABACUS_DAOS_POOL (default AbacusAurora) is
+#            skipped: set that variable to clean it.
 #
 # Exits nonzero if any named sim was skipped, so that a sweep over many sims
 # does not quietly leave some behind.
@@ -28,21 +34,30 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: cleanup_sims.sh [-n] <simdir> [simdir ...]" >&2
+    echo "usage: cleanup_sims.sh [-n] [--daos] <simdir> [simdir ...]" >&2
     exit 2
 }
 
 dryrun=0
-while getopts ':n' opt; do
-    case $opt in
-        n) dryrun=1 ;;
-        *) usage ;;
+daos=0
+simdirs=()
+while (( $# )); do
+    case $1 in
+        -n)         dryrun=1; shift ;;
+        --daos)     daos=1; shift ;;
+        -h|--help)  usage ;;
+        --)         shift; simdirs+=("$@"); break ;;
+        -*)         echo "error: unknown option '$1'" >&2; usage ;;
+        *)          simdirs+=("$1"); shift ;;
     esac
 done
-shift $((OPTIND - 1))
-(( $# )) || usage
+(( ${#simdirs[@]} )) || usage
+set -- "${simdirs[@]}"
 
 KEY=postprocess.done
+
+# For daos_mount, daos_login_mount and daos_localize_path.  Sourcing only defines them.
+source "$(dirname "${BASH_SOURCE[0]}")/daos.sh"
 
 # Use scripts/daosrm for DAOS, which uses the intercept preload and runs in parallel
 DAOSRM=$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)/daosrm
@@ -149,9 +164,106 @@ remove() {
     return 0
 }
 
+# SimName, WorkingDirectory, CheckpointDirectory, StateDirectory and LogDirectory, one per
+# line, via Abacus's own parameter parser, as postprocessing.sh's sim_logdir() does.
+# Nonzero unless there is exactly one *.par (or the abacus env is not loaded).
+sim_dirs() {
+    python3 - "$1" <<'ENDPY'
+import sys
+from pathlib import Path
+from abacus.param import InputFile
+
+pars = sorted(Path(sys.argv[1]).glob('*.par'))
+if len(pars) != 1:
+    sys.exit(1)
+p = dict(InputFile(str(pars[0])))
+for k in ('SimName', 'WorkingDirectory', 'CheckpointDirectory', 'StateDirectory', 'LogDirectory'):
+    print(p.get(k, ''))
+ENDPY
+}
+
+# Mount <cont> here once: across the allocation inside PBS, else per-user on this node.
+declare -A daos_mounted=()
+daos_ensure_mounted() {
+    local cont=$1
+    [[ -n ${daos_mounted[$cont]:-} ]] && return 0
+    if [[ -n ${PBS_NODEFILE:-} ]]; then
+        daos_mount "$cont" || return 1
+    else
+        daos_login_mount "$cont" || return 1
+    fi
+    daos_mounted[$cont]=1
+}
+
+# Set workdir, ckptdir, statedir and logdir for the sim in $src: the SimDirectory's own
+# checkpoint/, work/ and log/ when everything is there, else (--daos) where its parameter
+# file put them, mounted and localized.  Returns nonzero with the reason in $target_reason.
+# Results by assignment, as a $(...) subshell would lose them.
+resolve_targets() {
+    local out dirs=() simname d pool cont
+    workdir=$src ckptdir=$src/checkpoint statedir=$src/work logdir=$src/log
+    target_reason=
+    if ! out=$(sim_dirs "$src" 2>/dev/null); then
+        (( daos )) || return 0
+        target_reason="cannot read the paths from a *.par here (exactly one *.par, and the abacus env sourced?)"
+        return 1
+    fi
+    mapfile -t dirs <<<"$out"
+    simname=${dirs[0]:-}
+    local w=${dirs[1]:-} c=${dirs[2]:-} s=${dirs[3]:-} l=${dirs[4]:-}
+
+    if (( ! daos )); then
+        # Unchanged unless the working directory is on DAOS, where nothing here can reach it.
+        if [[ $w == /tmp/* && ! $w -ef $src ]]; then
+            target_reason="its working files are under $w, on DAOS; rerun with --daos"
+            return 1
+        fi
+        return 0
+    fi
+
+    # Only paths shaped the way aurora.def makes them, so a hand-edited or foreign
+    # parameter file cannot point the deletes somewhere else.
+    if [[ -z $simname || $w != */"$simname" || $c != */"$simname"/checkpoint ||
+          $s != */"$simname"/work || $l != "$w"/log ]]; then
+        target_reason="the *.par's directories are not <root>/$simname{,/checkpoint,/work,/log}"
+        return 1
+    fi
+    for d in "$w" "$c" "$s"; do
+        [[ $d =~ ^/tmp/([^/]+)/([^/]+)/ ]] || continue   # not on DAOS: flare, used as is
+        pool=${BASH_REMATCH[1]} cont=${BASH_REMATCH[2]}
+        if [[ $pool != "$DAOS_POOL" ]]; then
+            target_reason="$d is on pool $pool; set ABACUS_DAOS_POOL=$pool to clean it"
+            return 1
+        fi
+        if ! daos_ensure_mounted "$cont"; then
+            target_reason="could not mount $pool:$cont"
+            return 1
+        fi
+    done
+    workdir=$(daos_localize_path "$w")
+    ckptdir=$(daos_localize_path "$c")
+    statedir=$(daos_localize_path "$s")
+    logdir=$(daos_localize_path "$l")
+}
+
+# Remove <dir> if it is now empty and is not the SimDirectory: the per-sim directory on a
+# root other than the outputs'.  Anything still in it is named and left.
+remove_if_empty() {
+    local dir=$1 left
+    [[ -d $dir && ! $dir -ef $src ]] || return 0
+    if (( dryrun )); then
+        echo "  would remove $dir, if nothing else is left in it"
+    elif rmdir -- "$dir" 2>/dev/null; then
+        echo "  removed $dir"
+    else
+        left=$(ls -A -- "$dir" | head -5 | paste -sd' ' -)
+        echo "  note: leaving $dir, which still holds: $left"
+    fi
+}
+
 ncleaned=0 nskipped=0 nwarned=0
 rc=0
-nsim=0 ntotal=$#     # $# is the sim count: getopts was shifted off, and the loop never shifts
+nsim=0 ntotal=$#     # $# is the sim count: the options are gone, and the loop never shifts
 
 for src; do
     src=${src%/}
@@ -169,10 +281,18 @@ for src; do
         continue
     fi
 
+    if ! resolve_targets; then
+        echo "  warning: $target_reason; deleting nothing" >&2
+        nskipped=$((nskipped + 1)); rc=1
+        continue
+    fi
+    [[ $workdir -ef $src ]] || echo "  working files under $workdir"
+    [[ $(dirname "$ckptdir") == "$workdir" ]] || echo "  checkpoints under $(dirname "$ckptdir")"
+
     failed=0
-    remove "$src/checkpoint" dir || failed=1
-    remove "$src/log" dir || failed=1
-    remove "$src/work" dir || failed=1
+    remove "$ckptdir" dir || failed=1
+    remove "$logdir" dir || failed=1
+    remove "$statedir" dir || failed=1
 
     # fftw_<cpd>.wisdom, and any siblings from a run at another cpd.
     shopt -s nullglob
@@ -186,9 +306,13 @@ for src; do
         done
     fi
 
-    # Prior failed attempts of this sim
+    # Prior failed attempts of this sim.  Abacus archives each root a directory hangs off
+    # as <dir>.old.N, so on DAOS there are working ones too, and on a separate checkpoint
+    # root a checkpoint.old.N and work.old.N; a checkpoint among them is links, whose
+    # containers remove() destroys first.  sort -u: on one root the globs coincide.
     shopt -s nullglob
-    attempts=("$src".old.[0-9]*)
+    mapfile -t attempts < <(printf '%s\n' "$src".old.[0-9]* "$workdir".old.[0-9]* \
+                                          "$ckptdir".old.[0-9]* "$statedir".old.[0-9]* | sed '/^$/d' | sort -u)
     shopt -u nullglob
     if (( ${#attempts[@]} == 0 )); then
         echo "  *.old.N: already gone"
@@ -196,6 +320,11 @@ for src; do
         for a in "${attempts[@]}"; do
             remove "$a" dir || failed=1
         done
+    fi
+
+    if (( ! failed )); then
+        [[ $(dirname "$ckptdir") == "$workdir" ]] || remove_if_empty "$(dirname "$ckptdir")"
+        remove_if_empty "$workdir"
     fi
 
     # products/ is where anything derived from this sim goes from here on: it is
