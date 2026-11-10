@@ -72,6 +72,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `check` only measures each node, for the short-node check; `off` skips both |
 | `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep (as found, with `check`); a node short of it runs only if the spares run out. `0` turns the check off |
 | `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
+| `ABACUS_NODEPREP_FAIL_SHORT` | `off` | run | `on` ends the job before the sims when a short node would have to run for want of spares, or nodeprep measured nothing |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
@@ -94,7 +95,9 @@ Doesn't work with non-reclaimable memory, so we also record the amount of memory
 regions to `out/<jobid>/nodeprep.txt`. A DDR socket that comes out short of
 `ABACUS_NODEPREP_NEED_DDR_GIB` gets a second pass that also shrinks the kernel's reclaimable caches.
 A node still short after that, on a DDR socket or an HBM node (`ABACUS_NODEPREP_NEED_HBM_GIB`), is
-moved behind the spares: ask for spares with `-n`, or it runs anyway.
+moved behind the spares: ask for spares with `-n`, or it runs anyway, unless
+`ABACUS_NODEPREP_FAIL_SHORT=on` ends the job first. The spares go to nodes short of HBM before
+those short only of DDR.
 
 `ABACUS_NODEPREP=check` fills and frees nothing: it measures every node as it arrived and moves the
 short ones behind the spares the same way. Page cache that a check finds counts against a node,

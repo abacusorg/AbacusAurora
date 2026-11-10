@@ -105,10 +105,11 @@ echo
 # On every node, spares included, before anything else runs there (job/nodeprep.sh; under
 # ABACUS_NODEPREP=check it only measures).  Short nodes go to the end of nodes.sorted, with the spares.
 : > nodes.sorted.short
-prep_mode=$(nodeprep_mode) || exit 1
-if [[ $prep_mode != off ]]; then
+nodeprep_check_settings || exit 1
+if [[ $(nodeprep_mode) != off ]]; then
     nodeprep_run "$out/nodeprep" nodes.sorted "$out/nodeprep.txt"
-    nodeprep_demote nodes.sorted "$out/nodeprep.txt" "$required"
+    # Fails only under ABACUS_NODEPREP_FAIL_SHORT=on: here, before the DAOS mount and the sims.
+    nodeprep_demote nodes.sorted "$out/nodeprep.txt" "$required" || exit 1
 else
     echo "nodeprep: off (ABACUS_NODEPREP=$ABACUS_NODEPREP)"
 fi

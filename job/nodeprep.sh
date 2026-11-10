@@ -19,6 +19,25 @@ nodeprep_mode() {
     esac
 }
 
+# 1 if ABACUS_NODEPREP_FAIL_SHORT asks nodeprep_demote to fail rather than run a short node, else 0.
+nodeprep_fail_short() {
+    case ${ABACUS_NODEPREP_FAIL_SHORT:-off} in
+        [Oo][Nn]|1|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]) echo 1 ;;
+        [Oo][Ff][Ff]|0|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]) echo 0 ;;
+        *) echo "ERROR: ABACUS_NODEPREP_FAIL_SHORT='$ABACUS_NODEPREP_FAIL_SHORT' (want on or off)" >&2; return 1 ;;
+    esac
+}
+
+# The ABACUS_NODEPREP* switches, checked together: prints what is wrong and returns 1.
+nodeprep_check_settings() {
+    local mode fail
+    mode=$(nodeprep_mode) && fail=$(nodeprep_fail_short) || return 1
+    if [[ $mode == off ]] && (( fail )); then
+        echo "ERROR: ABACUS_NODEPREP_FAIL_SHORT=on needs nodeprep's numbers, and ABACUS_NODEPREP is off" >&2
+        return 1
+    fi
+}
+
 # The system compiler: the binary then needs only the node image's libstdc++, whatever modules
 # are loaded when it is built or run.
 nodeprep_build() {  # <binary>
@@ -93,13 +112,21 @@ nodeprep_report() {  # <log>
     (( found )) || echo "WARNING: nodeprep: no per-node results in $1" >&2
 }
 
-# Moves the hosts of <hostfile> that ended the pass, or a check, short of whole 2 MiB blocks
-# (nodeprep_need_*), or with no result in <log>, behind the rest, the least short first: the sims then
-# take them only when the spares past <required> run out.  Names each; lists them in <hostfile>.short.
+# Moves the hosts of <hostfile> short of whole 2 MiB blocks after the pass or a check (nodeprep_need_*),
+# or with no result in <log>, behind the rest, listed in <hostfile>.short; the sims take them only when
+# the spares past <required> run out.  Those short of HBM go last: in job 9048965 such a node stalled
+# 20-205 s a step.  Returns 1 when one must run and nodeprep_fail_short says to fail.
 nodeprep_demote() {  # <hostfile> <log> <required>
-    local hostfile=$1 log=$2 required=$3 good short nshort nspare nrun
+    local hostfile=$1 log=$2 required=$3 good short nshort nspare nrun fail
     : > "$hostfile.short"
-    grep -q -E ' (mem)?node [0-9]+(:| after:) ' "$log" 2>/dev/null || return 0
+    fail=$(nodeprep_fail_short) || fail=1
+    if ! grep -q -E ' (mem)?node [0-9]+(:| after:) ' "$log" 2>/dev/null; then
+        if (( fail )); then
+            echo "ERROR: nodeprep: no per-node results in $log, and ABACUS_NODEPREP_FAIL_SHORT=on" >&2
+            return 1
+        fi
+        return 0
+    fi
     good=$(mktemp) && short=$(mktemp) || return 0
     awk -v need_ddr="$(nodeprep_need_ddr)" -v need_hbm="$(nodeprep_need_hbm)" -v good="$good" '
         FNR == NR {
@@ -118,25 +145,32 @@ nodeprep_demote() {  # <hostfile> <log> <required>
                 need = f[2] == "memnode" ? need_hbm : need_ddr
                 if (after[k] >= need) continue
                 if (!(f[1] in ratio) || after[k] / need < ratio[f[1]]) ratio[f[1]] = after[k] / need
+                if (f[2] == "memnode") hbm[f[1]] = 1
                 why[f[1]] = why[f[1]] sprintf(", %s %s has %.1f GiB and needs %g", f[2], f[3], after[k], need)
             }
         }
         {
             h = $0
             sub(/\..*/, "", h)
-            if (h in ratio) printf "%.6f\t%d\t%s\t%s\n", ratio[h], FNR, $0, substr(why[h], 3)
-            else if (!(h in seen)) printf "1\t%d\t%s\tno nodeprep result\n", FNR, $0
+            if (h in ratio) printf "%d\t%.6f\t%d\t%s\t%s\n", (h in hbm) ? 2 : 1, ratio[h], FNR, $0, substr(why[h], 3)
+            else if (!(h in seen)) printf "0\t1\t%d\t%s\tno nodeprep result\n", FNR, $0
             else print > good
-        }' "$log" "$hostfile" | sort -t $'\t' -k1,1gr -k2,2n > "$short" || : > "$short"
+        }' "$log" "$hostfile" | sort -t $'\t' -k1,1n -k2,2gr -k3,3n > "$short" || : > "$short"
     nshort=$(( $(wc -l < "$short") ))
+    nrun=0
     if (( nshort > 0 )); then
-        cut -f3 "$short" > "$hostfile.short"
+        cut -f4 "$short" > "$hostfile.short"
         cat "$good" "$hostfile.short" > "$hostfile"
         nspare=$(( $(wc -l < "$hostfile") - required ))
         nrun=$(( nshort > nspare ? nshort - nspare : 0 ))
         echo "nodeprep: $nshort node(s) are short of whole 2 MiB blocks; with $nspare spare(s), $nrun of them run:"
-        awk -F '\t' -v nrun="$nrun" '{ h = $3; sub(/\..*/, "", h); printf "  %s: %s%s\n", h, $4, NR <= nrun ? " (runs)" : "" }' "$short"
-        (( nrun == 0 )) || echo "WARNING: nodeprep: $nrun node(s) short of whole 2 MiB blocks run for want of spares" >&2
+        awk -F '\t' -v nrun="$nrun" '{ h = $4; sub(/\..*/, "", h); printf "  %s: %s%s\n", h, $5, NR <= nrun ? " (runs)" : "" }' "$short"
+        if (( nrun > 0 && fail )); then
+            echo "ERROR: nodeprep: $nrun node(s) short of whole 2 MiB blocks would run for want of spares, and ABACUS_NODEPREP_FAIL_SHORT=on" >&2
+        elif (( nrun > 0 )); then
+            echo "WARNING: nodeprep: $nrun node(s) short of whole 2 MiB blocks run for want of spares" >&2
+        fi
     fi
     rm -f "$good" "$short"
+    (( nrun == 0 || ! fail ))
 }

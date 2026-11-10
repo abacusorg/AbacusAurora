@@ -42,6 +42,13 @@ for pair in "unset reclaim" "on reclaim" "1 reclaim" "check check" "CHECK check"
 done
 got=$(ABACUS_NODEPREP=chek nodeprep_mode 2>&1)
 result "a misspelt ABACUS_NODEPREP is an error" "$(( $? != 0 ))" "got '$got'"
+for pair in "check on 0" "on yes 0" "off off 0" "off on 1" "on maybe 1"; do
+    set -- $pair
+    got=$(ABACUS_NODEPREP=$1 ABACUS_NODEPREP_FAIL_SHORT=$2 nodeprep_check_settings 2>&1)
+    rc=$?
+    result "ABACUS_NODEPREP=$1 with ABACUS_NODEPREP_FAIL_SHORT=$2 $( (( $3 )) && echo 'is refused' || echo 'is accepted')" \
+           "$(( (rc != 0) == $3 ))" "rc=$rc, '$got'"
+done
 
 mkdir -p "$work/bin"
 cat > "$work/bin/mpiexec" <<'STUB'
@@ -151,7 +158,7 @@ demote() {
     out=$(env "$@" bash -c 'set -euo pipefail; source "$1/nodeprep.sh"; nodeprep_demote "$2" "$3" "$4"' \
               demote "$job" "$work/hosts5" "${demote_log:-$work/canned2.txt}" "$required" 2>&1) || rc=$?
     got=$(tr '\n' ' ' < "$work/hosts5")
-    [[ $rc == 0 && $got == "$order " && $out == *"$want"* ]] && ok=1
+    [[ $rc == "${demote_rc:-0}" && $got == "$order " && $out == *"$want"* ]] && ok=1
     result "$name" "$ok" "rc=$rc, order: $got, output:"$'\n'"$out"
 }
 demote "short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
@@ -177,6 +184,28 @@ demote "a check's short nodes go last, the least short first" "h1.net h5.net h4.
        $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 58' 2
 demote "a check names the short HBM node" "h1.net h5.net h4.net h3.net h2.net" \
        $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 40.5 GiB and needs 58\n' 4
+
+# h1 is far short of DDR, h2 a little short of HBM: the spare goes to h2.
+{
+    found h1 node 0 150.0; found h1 memnode 2 63.9
+    found h2 node 0 470.0; found h2 memnode 2 57.0
+    found h3 node 0 470.0; found h5 node 0 470.0
+} > "$work/canned5.txt"
+demote_log=$work/canned5.txt
+demote "a node short of HBM is kept out before one short only of DDR" "h3.net h5.net h4.net h1.net h2.net" \
+       $'  h4: no nodeprep result (runs)\n  h1: node 0 has 150.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 57.0 GiB and needs 58\n' 4
+demote_log=$work/canned2.txt
+demote "fail-short passes when the spares cover the short nodes" "h1.net h5.net h4.net h3.net h2.net" \
+       'with 3 spare(s), 0 of them run' 2 ABACUS_NODEPREP_FAIL_SHORT=on
+demote_rc=1
+demote "fail-short fails when a short node would run" "h1.net h5.net h4.net h3.net h2.net" \
+       'ERROR: nodeprep: 2 node(s) short of whole 2 MiB blocks would run' 4 ABACUS_NODEPREP_FAIL_SHORT=on
+: > "$work/empty.txt"
+demote_log=$work/empty.txt
+demote "fail-short fails when nodeprep measured nothing" "h1.net h2.net h3.net h4.net h5.net" \
+       'ERROR: nodeprep: no per-node results' 2 ABACUS_NODEPREP_FAIL_SHORT=on
+unset demote_rc
+demote "without fail-short, no results leave the hostfile as it was" "h1.net h2.net h3.net h4.net h5.net" '' 2
 unset demote_log
 
 if (( fails )); then
