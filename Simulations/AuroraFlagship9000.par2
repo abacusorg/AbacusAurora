@@ -21,7 +21,7 @@ MapForestSize = 0.9   # We ran a little big in DemiFlag
 
 StepTimeout = 1200
 
-MemPerGPUBufferGB = 1.5  # Overriding the default, in order to give some more space in HBM
+#MemPerGPUBufferGB = 1.5  # Overriding the default, in order to give some more space in HBM
 
 
 ExitAfterCheckpoint = 1   # Runs on DAOS appear to crash on the non-Checkpoint final write, so don't do them.
