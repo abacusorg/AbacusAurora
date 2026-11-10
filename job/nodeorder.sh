@@ -45,7 +45,7 @@ nodeorder_apply() {
 
     for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
     nz=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout |
-         awk -F'=' '/^NumZRanks[[:space:]]*=/ {print $2 + 0; exit}')
+         awk -F'=' '/^NumZRanks[[:space:]]*=/ && !seen {print $2 + 0; seen = 1}')
     nnodes=$(( $(wc -l < "$hf") ))
     if [[ ! $nz =~ ^[1-9][0-9]*$ ]] || (( nodeorder_ppn * nnodes % nz )); then
         echo "ERROR: $nnodes nodes x $nodeorder_ppn ranks don't divide into NumZRanks='$nz' ($par2)" >&2
