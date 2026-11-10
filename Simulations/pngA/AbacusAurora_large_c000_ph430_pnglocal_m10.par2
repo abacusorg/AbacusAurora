@@ -1,4 +1,4 @@
-SimName = "AbacusAurora_flag_c000_ph430_pnglocal_m10"
+SimName = "AbacusAurora_large_c000_ph430_pnglocal_m10"
 
 #include "../Large.par2"
 #include "../PNG.par2"
