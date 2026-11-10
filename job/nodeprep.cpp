@@ -10,22 +10,26 @@
 // frees it all.  Pages freed by reclaim merge with their free neighbours.  Unreclaimable kernel
 // memory and other processes' anonymous or pinned pages stay where they are.
 //
-// A node with CPUs has kernel caches that reclaim keeps shrinking while the fill presses on.  A
-// memory-only node (HBM) has only its page cache, and a fill that outruns reclaim there is killed
-// at once.  So its last GiB goes 2 MiB at a time, down to the midpoint of the min and low
-// watermarks, and from there huge-page faults under MADV_HUGEPAGE do the reclaiming: with no free
-// 2 MiB block left, such a fault reclaims on its own thread and settles for a 4 KiB page if that
-// frees nothing.  A 4 KiB fault would wait on kswapd, which stops answering for a node it has
-// failed on.
+// On a node with CPUs the 4 KiB fill runs at full speed: its page cache is large, and reclaim
+// keeps up until the file LRU is nearly empty.  Where little is reclaimable, a fill that outruns
+// reclaim is killed at once, so the careful fill (squeeze()) takes half of the room above a floor
+// at a time -- the midpoint of the zone's min and low watermarks -- and at the floor takes
+// huge-page faults under MADV_HUGEPAGE.  With no free 2 MiB block left, such a fault reclaims on
+// its own thread, kernel caches included, and settles for a 4 KiB page if that frees nothing.
+// A 4 KiB fault would wait on kswapd, which stops answering for a node it has failed on.
+// A memory-only node (HBM), which has only its page cache, is filled that way.  So is a node with
+// CPUs that ends its pass with less than --need-gib in whole 2 MiB blocks, on a second pass: it
+// shrinks the kernel's reclaimable caches (KReclaimable), which can hold a socket's free memory
+// in fragments, and which the first pass leaves once the file LRU is drained.
 //
 // Each node's pass is a child process with oom_score_adj 1000: an overshoot kills that pass and
 // nothing else, and the parent reports the node as the kernel left it.  Nodes with CPUs go first;
 // the memory-only nodes' page tables come from them.  --reclaim refuses to run outside a PBS job.
 // Without it, nodeprep only reports.
 //
-// Usage: nodeprep [--reclaim] [--threads N] [--keep-file-mib M] [--max-seconds S]
+// Usage: nodeprep [--reclaim] [--threads N] [--keep-file-mib M] [--need-gib G] [--max-seconds S]
 // Prints one line per node per phase, prefixed with the host name; a memory-only node's lines say
-// "memnode".  Sizes are GiB.  --keep-file-mib applies to nodes with CPUs.
+// "memnode".  Sizes are GiB.  --keep-file-mib and --need-gib apply to nodes with CPUs.
 // hashrun.sh builds it and multisim.pbs runs it on every node, both through job/nodeprep.sh.
 #include <pthread.h>
 #include <sched.h>
@@ -138,6 +142,45 @@ NodeMem read_node(int node, bool counters_only = false) {
     return m;
 }
 
+struct ZoneMem {  // bytes
+    double free = 0, min = 0, low = 0;
+};
+
+// The node's largest zone, the one user pages come from: on a DDR node, free memory in the small
+// DMA zones is reserved against them and never falls.
+ZoneMem read_zone(int node) {
+    ZoneMem z, best;
+    double managed = -1, best_managed = -1;
+    bool mine = false;
+    const auto close_zone = [&] {
+        if (mine && managed > best_managed) {
+            best = z;
+            best_managed = managed;
+        }
+    };
+    for_each_line(slurp("/proc/zoneinfo"), [&](const std::string &line) {
+        int n;
+        char zone[32], word[32];
+        double v;
+        if (sscanf(line.c_str(), "Node %d, zone %31s", &n, zone) == 2) {
+            close_zone();
+            mine = n == node;
+            z = ZoneMem();
+            managed = -1;
+        } else if (!mine) {
+            return;
+        } else if (sscanf(line.c_str(), " pages free %lf", &v) == 1) {
+            z.free = v * kPage;
+        } else if (sscanf(line.c_str(), " %31s %lf", word, &v) == 2) {
+            if (!strcmp(word, "min")) z.min = v * kPage;
+            else if (!strcmp(word, "low")) z.low = v * kPage;
+            else if (!strcmp(word, "managed")) managed = v;
+        }
+    });
+    close_zone();
+    return best;
+}
+
 std::vector<int> node_cpus(int node) {
     char path[96];
     snprintf(path, sizeof path, "/sys/devices/system/node/node%d/cpulist", node);
@@ -245,36 +288,37 @@ size_t fill(char *p, size_t len, size_t chunk, int nthreads, const std::vector<i
     return done;
 }
 
-// A memory-only node's last stretch (see the header): [p, p + len) down to the floor, then one touch per
-// 2 MiB of `poke`.  Ends once the file LRU has not shrunk for 0.5 s or the touches used half the floor.
-size_t squeeze(char *p, size_t len, const Region &poke, int node, double max_s, const char *&why, int &err) {
-    const NodeMem start = read_node(node);
-    const double floor = (start.min + start.low) / 2, t0 = now_s();
-    double least_file = start.file, progress_t = t0;
+// The careful fill (see the header) of `r`, with `poke` for the touches at the floor.  Ends once the
+// file LRU and kernel caches have not shrunk for 0.5 s, or the touches have used half the floor.
+size_t squeeze(const Region &r, const Region &poke, int node, int nthreads, const std::vector<int> &cpus,
+               double max_s, const char *&why, int &err) {
+    const double t0 = now_s();
+    double least = 1e300, progress_t = t0;
     size_t done = 0, poked = 0;
-    bool at_floor = false;
+    std::atomic<bool> stop{false};
     for (;;) {
+        const ZoneMem z = read_zone(node);
         const NodeMem m = read_node(node, true);
-        const double t = now_s();
-        if (m.file < least_file - 256.0 * 1024) {
-            least_file = m.file;
+        const double t = now_s(), floor = (z.min + z.low) / 2, caches = m.file + m.kreclaimable;
+        if (caches < least - (double) kMiB) {
+            least = caches;
             progress_t = t;
         }
-        why = m.file < (double) kMiB ? "file LRU drained" : "reclaim stalled";
+        why = caches < 64.0 * kMiB ? "caches drained" : "reclaim stalled";
         if (t - t0 > max_s) return why = "time limit", done;
-        if (!at_floor && m.free - (double) kHuge > floor) {
-            if (done >= len) return why = "region filled", done;
-            const size_t n = std::min(kHuge, len - done);
-            if (madvise(p + done, n, MADV_POPULATE_WRITE) != 0) return err = errno, why = "fault failed", done;
-            done += n;
-            progress_t = t;
-            continue;
-        }
-        at_floor = true;
-        if (t - progress_t > 0.5 || poked >= poke.len || m.file < (double) kMiB || m.free < (start.min + floor) / 2)
+        const size_t step = z.free > floor ? (size_t) ((z.free - floor) / 2) & ~(kHuge - 1) : 0;
+        if (step > 0) {
+            if (done >= r.len) return why = "region filled", done;
+            const size_t want = std::min(step, r.len - done), got = fill(r.p + done, want, 32 * kMiB, nthreads, cpus, stop, err);
+            done += got;
+            if (got < want) return why = "fault failed", done;
+            progress_t = now_s();
+        } else if (t - progress_t > 0.5 || poked >= poke.len || caches < (double) kMiB || z.free < (z.min + floor) / 2) {
             return done;
-        poke.p[poked] = 1;
-        poked += kHuge;
+        } else {
+            poke.p[poked] = 1;
+            poked += kHuge;
+        }
     }
 }
 
@@ -348,9 +392,10 @@ struct Result {
     int err_huge = 0, err_small = 0;
 };
 
-void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
+// `press`: the careful fill on a node with CPUs; a memory-only node always gets it.
+void reclaim_node(Result &res, int nthreads, double keep_file, bool press, double max_s) {
     const int node = res.node;
-    const bool memory_only = node_cpus(node).empty();
+    const bool careful = press || node_cpus(node).empty();
     const std::vector<int> cpus = cpus_near(node);
     res.before = read_node(node);
 
@@ -375,22 +420,14 @@ void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
     // 4 KiB pages: they take the small free blocks first, then drive the node into reclaim.  The region
     // holds all that reclaim could free, kernel caches included, so a stop condition ends the fill.
     const NodeMem mid = read_node(node);
-    // On a memory-only node this fill may take huge pages: it then uses up the free 2 MiB blocks, and
-    // what squeeze() holds back is all fragments.
-    Region small = map_bound((size_t) (mid.free + mid.file + mid.kreclaimable), node, memory_only ? -1 : MADV_NOHUGEPAGE);
+    // The careful fill may take huge pages: it then uses up the free 2 MiB blocks, and what it holds
+    // back at the floor is all fragments.
+    Region small = map_bound((size_t) (mid.free + mid.file + mid.kreclaimable), node, careful ? -1 : MADV_NOHUGEPAGE);
     t0 = now_s();
-    if (memory_only && small.p) {
-        // All but the last GiB of free memory at full speed; reclaim starts only inside squeeze().
-        const size_t bulk = mid.free > kGiB ? std::min(small.len, (size_t) (mid.free - kGiB)) : 0;
-        std::atomic<bool> stop{false};
-        res.small = fill(small.p, bulk, 32 * kMiB, nthreads, cpus, stop, res.err_small);
-        res.stop_small = "fault failed";
-        if (res.small == bulk) {
-            pin(cpus, 0);
-            const Region poke = map_bound(256 * kGiBz, node, MADV_HUGEPAGE);
-            res.small += squeeze(small.p + bulk, small.len - bulk, poke, node, max_s, res.stop_small, res.err_small);
-            if (poke.base) munmap(poke.base, poke.maplen);
-        }
+    if (careful && small.p) {
+        const Region poke = map_bound(256 * kGiBz, node, MADV_HUGEPAGE);
+        res.small = squeeze(small, poke, node, nthreads, cpus, max_s, res.stop_small, res.err_small);
+        if (poke.base) munmap(poke.base, poke.maplen);
     } else {
         std::atomic<bool> stop{false};
         double last_t = 0, last_file = mid.file, last_krec = mid.kreclaimable;
@@ -441,14 +478,16 @@ void print_result(const char *host, const Result &r) {
 int main(int argc, char **argv) {
     bool reclaim = false;
     int nthreads = 16;
-    double keep_file = 1024.0 * kMiB, max_s = 120;
+    double keep_file = 1024.0 * kMiB, need = 0, max_s = 120;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--reclaim")) reclaim = true;
         else if (!strcmp(argv[i], "--threads") && i + 1 < argc) nthreads = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--keep-file-mib") && i + 1 < argc) keep_file = atof(argv[++i]) * kMiB;
+        else if (!strcmp(argv[i], "--need-gib") && i + 1 < argc) need = atof(argv[++i]) * kGiB;
         else if (!strcmp(argv[i], "--max-seconds") && i + 1 < argc) max_s = atof(argv[++i]);
         else {
-            fprintf(stderr, "usage: %s [--reclaim] [--threads N] [--keep-file-mib M] [--max-seconds S]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--reclaim] [--threads N] [--keep-file-mib M] [--need-gib G] [--max-seconds S]\n",
+                    argv[0]);
             return 2;
         }
     }
@@ -491,8 +530,17 @@ int main(int argc, char **argv) {
                 }
                 Result r;
                 r.node = n;
-                reclaim_node(r, nthreads, keep_file, max_s);
+                reclaim_node(r, nthreads, keep_file, false, max_s);
                 print_result(host, r);
+                if (with_cpus && r.after.free_2m < need) {
+                    printf("%s %s %d short:   %.1f in >= 2 MiB blocks, %.1f needed; a second pass presses on kernel caches\n",
+                           host, kind(n), n, r.after.free_2m / kGiB, need / kGiB);
+                    fflush(stdout);
+                    r = Result();
+                    r.node = n;
+                    reclaim_node(r, nthreads, keep_file, true, max_s);
+                    print_result(host, r);
+                }
                 fflush(stdout);
                 _exit(0);
             }

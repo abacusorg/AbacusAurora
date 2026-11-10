@@ -85,6 +85,43 @@ check "a failed launch warns and carries on" "$work/nodeprep" \
 check "a missing binary warns and carries on" "$work/missing" \
       'is missing'
 
+# nodeprep_demote: h1's socket 1 recovers on its second pass, h2 has a short HBM node, h3 a short
+# socket, h4 no result, h5 nothing wrong.
+{
+    blocks h1 node 0 before: 150.0; blocks h1 node 0 after: 460.5
+    blocks h1 node 1 before: 100.0; blocks h1 node 1 after: 300.0
+    echo 'h1 node 1 short:   300.0 in >= 2 MiB blocks, 330.0 needed; a second pass presses on kernel caches'
+    blocks h1 node 1 before: 300.0; blocks h1 node 1 after: 345.0
+    blocks h1 memnode 2 before: 12.0; blocks h1 memnode 2 after: 63.5
+    blocks h2 node 0 before: 400.0; blocks h2 node 0 after: 470.0
+    blocks h2 memnode 2 before: 40.0; echo 'h2 memnode 2 failed:  pass killed by signal 9'; blocks h2 memnode 2 after: 40.5
+    blocks h3 node 0 before: 200.0; blocks h3 node 0 after: 310.0
+    blocks h3 memnode 3 before: 63.0; blocks h3 memnode 3 after: 63.9
+    blocks h5 node 0 before: 400.0; blocks h5 node 0 after: 470.0
+} > "$work/canned2.txt"
+# demote <name> <wanted order> <wanted text> <required> [VAR=VAL ...]
+demote() {
+    local name=$1 order=$2 want=$3 required=$4
+    shift 4
+    printf 'h1.net\nh2.net\nh3.net\nh4.net\nh5.net\n' > "$work/hosts5"
+    local out rc=0 got ok=0
+    out=$(env "$@" bash -c 'set -euo pipefail; source "$1/nodeprep.sh"; nodeprep_demote "$2" "$3" "$4"' \
+              demote "$job" "$work/hosts5" "$work/canned2.txt" "$required" 2>&1) || rc=$?
+    got=$(tr '\n' ' ' < "$work/hosts5")
+    [[ $rc == 0 && $got == "$order " && $out == *"$want"* ]] && ok=1
+    result "$name" "$ok" "rc=$rc, order: $got, output:"$'\n'"$out"
+}
+demote "short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
+       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 58' 2
+demote "with too few spares the least short run, and it warns" "h1.net h5.net h4.net h3.net h2.net" \
+       $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n' 4
+demote "a second pass that recovers the socket counts" "h1.net h5.net h4.net h3.net h2.net" \
+       'WARNING: nodeprep: 2 node(s) short' 4
+demote "the checks can be turned off" "h1.net h2.net h3.net h5.net h4.net" \
+       'h4: no nodeprep result' 2 ABACUS_NODEPREP_NEED_DDR_GIB=0 ABACUS_NODEPREP_NEED_HBM_GIB=0
+[[ $(cat "$work/hosts5.short") == h4.net ]]
+result "the short list names the demoted hosts" "$(( $? == 0 ))"
+
 if (( fails )); then
     echo "$fails case(s) failed"
     exit 1

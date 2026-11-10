@@ -70,6 +70,8 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
 | `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `off` skips it |
+| `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep; a node short of it runs only if the spares run out. `0` turns the check off |
+| `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
@@ -88,9 +90,11 @@ frequently have fragmented memory, left over from previous jobs. So before a job
 node's memory as much as we can then free it, triggering page cache reclaim and effectively
 de-fragmenting the node.
 
-Doesn't work with Lustre caches and other non-reclaimable memory, but we also record the amount
-of memory in non-fragmented regions to `out/<jobid>/nodeprep.txt` so we can decide whether to drop
-the node.
+Doesn't work with non-reclaimable memory, so we also record the amount of memory in non-fragmented
+regions to `out/<jobid>/nodeprep.txt`. A DDR socket that comes out short of
+`ABACUS_NODEPREP_NEED_DDR_GIB` gets a second pass that also shrinks the kernel's reclaimable caches.
+A node still short after that, on a DDR socket or an HBM node (`ABACUS_NODEPREP_NEED_HBM_GIB`), is
+moved behind the spares: ask for spares with `-n`, or it runs anyway.
 
 ## DAOS
 
