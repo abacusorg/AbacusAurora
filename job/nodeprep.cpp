@@ -17,6 +17,8 @@
 // huge-page faults under MADV_HUGEPAGE.  With no free 2 MiB block left, such a fault reclaims on
 // its own thread, kernel caches included, and settles for a 4 KiB page if that frees nothing.
 // A 4 KiB fault would wait on kswapd, which stops answering for a node it has failed on.
+// When such a fault does get a 2 MiB block, the fill frees every other page of 4 MiB of its own
+// 4 KiB pages in exchange, so the memory left free turns into fragments.
 // A memory-only node (HBM), which has only its page cache, is filled that way.  So is a node with
 // CPUs that ends its pass with less than --need-gib in whole 2 MiB blocks, on a second pass: it
 // shrinks the kernel's reclaimable caches (KReclaimable), which can hold a socket's free memory
@@ -294,8 +296,25 @@ size_t squeeze(const Region &r, const Region &poke, int node, int nthreads, cons
                double max_s, const char *&why, int &err) {
     const double t0 = now_s();
     double least = 1e300, progress_t = t0;
-    size_t done = 0, poked = 0;
+    size_t done = 0, poked = 0, punched = 0;
     std::atomic<bool> stop{false};
+
+    // 4 KiB pages to trade for the 2 MiB blocks the touches get: four floors' worth, half of it to free.
+    const ZoneMem z0 = read_zone(node);
+    Region ballast;
+    if (z0.free > 8 * (z0.min + z0.low)) {
+        ballast = map_bound(((size_t) (2 * (z0.min + z0.low)) | (2 * kHuge - 1)) + 1, node, MADV_NOHUGEPAGE);
+        int ignored = 0;
+        if (ballast.p && fill(ballast.p, ballast.len, 32 * kMiB, nthreads, cpus, stop, ignored) != ballast.len) {
+            munmap(ballast.base, ballast.maplen);
+            ballast = Region{};
+        }
+    }
+    const auto finish = [&](const char *reason) {
+        if (reason) why = reason;
+        if (ballast.base) munmap(ballast.base, ballast.maplen);
+        return done;
+    };
     for (;;) {
         const ZoneMem z = read_zone(node);
         const NodeMem m = read_node(node, true);
@@ -305,16 +324,21 @@ size_t squeeze(const Region &r, const Region &poke, int node, int nthreads, cons
             progress_t = t;
         }
         why = caches < 64.0 * kMiB ? "caches drained" : "reclaim stalled";
-        if (t - t0 > max_s) return why = "time limit", done;
+        if (t - t0 > max_s) return finish("time limit");
         const size_t step = z.free > floor ? (size_t) ((z.free - floor) / 2) & ~(kHuge - 1) : 0;
         if (step > 0) {
-            if (done >= r.len) return why = "region filled", done;
+            if (done >= r.len) return finish("region filled");
             const size_t want = std::min(step, r.len - done), got = fill(r.p + done, want, 32 * kMiB, nthreads, cpus, stop, err);
             done += got;
-            if (got < want) return why = "fault failed", done;
+            if (got < want) return finish("fault failed");
             progress_t = now_s();
+        } else if (z.free < floor - (double) kMiB && punched + 2 * kHuge <= ballast.len) {
+            for (size_t off = kPage; off < 2 * kHuge; off += 2 * kPage)
+                madvise(ballast.p + punched + off, kPage, MADV_DONTNEED);
+            punched += 2 * kHuge;
+            progress_t = t;
         } else if (t - progress_t > 0.5 || poked >= poke.len || caches < (double) kMiB || z.free < (z.min + floor) / 2) {
-            return done;
+            return finish(nullptr);
         } else {
             poke.p[poked] = 1;
             poked += kHuge;
