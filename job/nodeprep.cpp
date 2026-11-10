@@ -4,22 +4,34 @@
 // Compaction can only migrate such pages, and Lustre's page cache never migrates (the client's
 // migrate_folio returns -EIO); reclaim drops clean page cache outright.  A process can trigger
 // reclaim on a NUMA node only by allocating there until the node's free memory reaches its low
-// watermark.  So for each node with CPUs, --reclaim fills free memory -- with huge pages while
+// watermark.  So for each node, --reclaim fills free memory -- with huge pages while
 // free 2 MiB blocks last, then with 4 KiB pages, which take the small blocks and then force
 // reclaim -- until the node's file LRU is nearly empty or reclaim stops making progress, then
 // frees it all.  Pages freed by reclaim merge with their free neighbours.  Unreclaimable kernel
 // memory and other processes' anonymous or pinned pages stay where they are.
 //
-// --reclaim raises oom_score_adj to 1000 first, so an overshoot kills this process and nothing
-// else, and it refuses to run outside a PBS job.  Without it, nodeprep only reports.
+// A node with CPUs has kernel caches that reclaim keeps shrinking while the fill presses on.  A
+// memory-only node (HBM) has only its page cache, and a fill that outruns reclaim there is killed
+// at once.  So its last GiB goes 2 MiB at a time, down to the midpoint of the min and low
+// watermarks, and from there huge-page faults under MADV_HUGEPAGE do the reclaiming: with no free
+// 2 MiB block left, such a fault reclaims on its own thread and settles for a 4 KiB page if that
+// frees nothing.  A 4 KiB fault would wait on kswapd, which stops answering for a node it has
+// failed on.
+//
+// Each node's pass is a child process with oom_score_adj 1000: an overshoot kills that pass and
+// nothing else, and the parent reports the node as the kernel left it.  Nodes with CPUs go first;
+// the memory-only nodes' page tables come from them.  --reclaim refuses to run outside a PBS job.
+// Without it, nodeprep only reports.
 //
 // Usage: nodeprep [--reclaim] [--threads N] [--keep-file-mib M] [--max-seconds S]
-// Prints one line per node per phase, prefixed with the host name.  Sizes are GiB.
+// Prints one line per node per phase, prefixed with the host name; a memory-only node's lines say
+// "memnode".  Sizes are GiB.  --keep-file-mib applies to nodes with CPUs.
 // hashrun.sh builds it and multisim.pbs runs it on every node, both through job/nodeprep.sh.
 #include <pthread.h>
 #include <sched.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -75,10 +87,11 @@ void for_each_line(const std::string &s, F f) {
 
 struct NodeMem {  // bytes
     double free = 0, free_2m = 0, file = 0, sreclaimable = 0, kreclaimable = 0, sunreclaim = 0, shmem = 0, anon = 0,
-           low = 0;
+           min = 0, low = 0;
 };
 
-NodeMem read_node(int node) {
+// `counters_only` skips the free-block and watermark fields, which cost over a millisecond to read.
+NodeMem read_node(int node, bool counters_only = false) {
     NodeMem m;
     char path[96];
     snprintf(path, sizeof path, "/sys/devices/system/node/node%d/meminfo", node);
@@ -94,6 +107,7 @@ NodeMem read_node(int node) {
         else if (!strcmp(key, "Shmem")) m.shmem = kb * 1024;
         else if (!strcmp(key, "AnonPages")) m.anon = kb * 1024;
     });
+    if (counters_only) return m;
     for_each_line(slurp("/proc/buddyinfo"), [&](const std::string &line) {
         int n, off = 0;
         char zone[32];
@@ -117,8 +131,9 @@ NodeMem read_node(int node) {
             cur = n;
             return;
         }
-        if (cur == node && sscanf(line.c_str(), " %31s %lf", word, &v) == 2 && !strcmp(word, "low"))
-            m.low += v * kPage;
+        if (cur != node || sscanf(line.c_str(), " %31s %lf", word, &v) != 2) return;
+        if (!strcmp(word, "min")) m.min += v * kPage;
+        else if (!strcmp(word, "low")) m.low += v * kPage;
     });
     return m;
 }
@@ -141,6 +156,29 @@ std::vector<int> node_cpus(int node) {
         }
         for (long c = a; c <= b; c++) cpus.push_back((int) c);
         if (*p == ',') p++;
+    }
+    return cpus;
+}
+
+// The node's CPUs, or for a memory-only node those of the nearest node that has any.
+std::vector<int> cpus_near(int node) {
+    std::vector<int> cpus = node_cpus(node);
+    if (!cpus.empty()) return cpus;
+    char path[96];
+    snprintf(path, sizeof path, "/sys/devices/system/node/node%d/distance", node);
+    const std::string s = slurp(path);
+    const char *p = s.c_str();
+    long best = -1;
+    for (int n = 0;; n++) {
+        char *end;
+        const long d = strtol(p, &end, 10);
+        if (end == p) break;
+        p = end;
+        std::vector<int> c = node_cpus(n);
+        if (!c.empty() && (best < 0 || d < best)) {
+            best = d;
+            cpus = std::move(c);
+        }
     }
     return cpus;
 }
@@ -205,6 +243,39 @@ size_t fill(char *p, size_t len, size_t chunk, int nthreads, const std::vector<i
     for (auto &x : th) x.join();
     err = first_err;
     return done;
+}
+
+// A memory-only node's last stretch (see the header): [p, p + len) down to the floor, then one touch per
+// 2 MiB of `poke`.  Ends once the file LRU has not shrunk for 0.5 s or the touches used half the floor.
+size_t squeeze(char *p, size_t len, const Region &poke, int node, double max_s, const char *&why, int &err) {
+    const NodeMem start = read_node(node);
+    const double floor = (start.min + start.low) / 2, t0 = now_s();
+    double least_file = start.file, progress_t = t0;
+    size_t done = 0, poked = 0;
+    bool at_floor = false;
+    for (;;) {
+        const NodeMem m = read_node(node, true);
+        const double t = now_s();
+        if (m.file < least_file - 256.0 * 1024) {
+            least_file = m.file;
+            progress_t = t;
+        }
+        why = m.file < (double) kMiB ? "file LRU drained" : "reclaim stalled";
+        if (t - t0 > max_s) return why = "time limit", done;
+        if (!at_floor && m.free - (double) kHuge > floor) {
+            if (done >= len) return why = "region filled", done;
+            const size_t n = std::min(kHuge, len - done);
+            if (madvise(p + done, n, MADV_POPULATE_WRITE) != 0) return err = errno, why = "fault failed", done;
+            done += n;
+            progress_t = t;
+            continue;
+        }
+        at_floor = true;
+        if (t - progress_t > 0.5 || poked >= poke.len || m.file < (double) kMiB || m.free < (start.min + floor) / 2)
+            return done;
+        poke.p[poked] = 1;
+        poked += kHuge;
+    }
 }
 
 void release(const Region &r, int nthreads, const std::vector<int> &cpus) {
@@ -279,7 +350,8 @@ struct Result {
 
 void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
     const int node = res.node;
-    const std::vector<int> cpus = node_cpus(node);
+    const bool memory_only = node_cpus(node).empty();
+    const std::vector<int> cpus = cpus_near(node);
     res.before = read_node(node);
 
     // Huge pages, stopping short of the free 2 MiB blocks: past them a fault would compact.
@@ -303,9 +375,23 @@ void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
     // 4 KiB pages: they take the small free blocks first, then drive the node into reclaim.  The region
     // holds all that reclaim could free, kernel caches included, so a stop condition ends the fill.
     const NodeMem mid = read_node(node);
-    Region small = map_bound((size_t) (mid.free + mid.file + mid.kreclaimable), node, MADV_NOHUGEPAGE);
+    // On a memory-only node this fill may take huge pages: it then uses up the free 2 MiB blocks, and
+    // what squeeze() holds back is all fragments.
+    Region small = map_bound((size_t) (mid.free + mid.file + mid.kreclaimable), node, memory_only ? -1 : MADV_NOHUGEPAGE);
     t0 = now_s();
-    {
+    if (memory_only && small.p) {
+        // All but the last GiB of free memory at full speed; reclaim starts only inside squeeze().
+        const size_t bulk = mid.free > kGiB ? std::min(small.len, (size_t) (mid.free - kGiB)) : 0;
+        std::atomic<bool> stop{false};
+        res.small = fill(small.p, bulk, 32 * kMiB, nthreads, cpus, stop, res.err_small);
+        res.stop_small = "fault failed";
+        if (res.small == bulk) {
+            pin(cpus, 0);
+            const Region poke = map_bound(256 * kGiBz, node, MADV_HUGEPAGE);
+            res.small += squeeze(small.p + bulk, small.len - bulk, poke, node, max_s, res.stop_small, res.err_small);
+            if (poke.base) munmap(poke.base, poke.maplen);
+        }
+    } else {
         std::atomic<bool> stop{false};
         double last_t = 0, last_file = mid.file, last_krec = mid.kreclaimable;
         Monitor mon(stop, node, [&](const NodeMem &m, double t) -> const char * {
@@ -333,6 +419,21 @@ void reclaim_node(Result &res, int nthreads, double keep_file, double max_s) {
     release(huge, nthreads, cpus);
     res.t_free = now_s() - t0;
     res.after = read_node(node);
+}
+
+// The word a node's lines carry: "memnode" for a node without CPUs.
+const char *kind(int node) { return node_cpus(node).empty() ? "memnode" : "node"; }
+
+void print_result(const char *host, const Result &r) {
+    const char *k = kind(r.node);
+    printf("%s %s %d before:  %s\n", host, k, r.node, describe(r.before).c_str());
+    printf("%s %s %d filled:  %.1f huge in %.1f s (%s%s%s), %.1f small in %.1f s (%s%s%s)\n", host, k,
+           r.node, r.huge / kGiB, r.t_huge, r.stop_huge, r.err_huge ? " errno " : "",
+           r.err_huge ? strerror(r.err_huge) : "", r.small / kGiB, r.t_small, r.stop_small,
+           r.err_small ? " errno " : "", r.err_small ? strerror(r.err_small) : "");
+    printf("%s %s %d deepest: %s; low watermark %.2f\n", host, k, r.node,
+           describe(r.deepest, (double) (r.huge + r.small)).c_str(), r.deepest.low / kGiB);
+    printf("%s %s %d after:   %s; freed in %.1f s\n", host, k, r.node, describe(r.after).c_str(), r.t_free);
 }
 
 }  // namespace
@@ -363,8 +464,7 @@ int main(int argc, char **argv) {
     if (!reclaim) {
         for (int n : nodes) {
             const NodeMem m = read_node(n);
-            printf("%s node %d%s: %s; low watermark %.2f\n", host, n, node_cpus(n).empty() ? " (no cpus)" : "",
-                   describe(m).c_str(), m.low / kGiB);
+            printf("%s %s %d: %s; low watermark %.2f\n", host, kind(n), n, describe(m).c_str(), m.low / kGiB);
         }
         return 0;
     }
@@ -372,32 +472,45 @@ int main(int argc, char **argv) {
         fprintf(stderr, "%s: --reclaim fills every node's memory; refusing to run outside a PBS job\n", argv[0]);
         return 2;
     }
-    if (FILE *f = fopen("/proc/self/oom_score_adj", "w")) {
-        fputs("1000", f);
-        fclose(f);
-    }
-
-    std::vector<Result> res;
-    for (int n : nodes)
-        if (!node_cpus(n).empty()) {
-            res.emplace_back();
-            res.back().node = n;
+    struct Pass {
+        int node;
+        NodeMem before;
+        pid_t pid;
+    };
+    for (const bool with_cpus : {true, false}) {
+        std::vector<Pass> passes;
+        for (int n : nodes) {
+            if (node_cpus(n).empty() == with_cpus) continue;
+            const NodeMem before = read_node(n);
+            fflush(stdout);
+            const pid_t pid = fork();
+            if (pid == 0) {
+                if (FILE *f = fopen("/proc/self/oom_score_adj", "w")) {
+                    fputs("1000", f);
+                    fclose(f);
+                }
+                Result r;
+                r.node = n;
+                reclaim_node(r, nthreads, keep_file, max_s);
+                print_result(host, r);
+                fflush(stdout);
+                _exit(0);
+            }
+            passes.push_back({n, before, pid});
         }
-    std::vector<std::thread> workers;
-    for (auto &r : res) workers.emplace_back([&r, nthreads, keep_file, max_s] {
-        reclaim_node(r, nthreads, keep_file, max_s);
-    });
-    for (auto &w : workers) w.join();
-
-    for (const auto &r : res) {
-        printf("%s node %d before:  %s\n", host, r.node, describe(r.before).c_str());
-        printf("%s node %d filled:  %.1f huge in %.1f s (%s%s%s), %.1f small in %.1f s (%s%s%s)\n", host,
-               r.node, r.huge / kGiB, r.t_huge, r.stop_huge, r.err_huge ? " errno " : "",
-               r.err_huge ? strerror(r.err_huge) : "", r.small / kGiB, r.t_small, r.stop_small,
-               r.err_small ? " errno " : "", r.err_small ? strerror(r.err_small) : "");
-        printf("%s node %d deepest: %s; low watermark %.2f\n", host, r.node,
-               describe(r.deepest, (double) (r.huge + r.small)).c_str(), r.deepest.low / kGiB);
-        printf("%s node %d after:   %s; freed in %.1f s\n", host, r.node, describe(r.after).c_str(), r.t_free);
+        for (const Pass &p : passes) {
+            int status = 0;
+            if (p.pid > 0)
+                while (waitpid(p.pid, &status, 0) < 0 && errno == EINTR) {}
+            if (p.pid > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0) continue;
+            printf("%s %s %d before:  %s\n", host, kind(p.node), p.node, describe(p.before).c_str());
+            if (p.pid < 0) printf("%s %s %d failed:  could not fork\n", host, kind(p.node), p.node);
+            else if (WIFSIGNALED(status))
+                printf("%s %s %d failed:  pass killed by signal %d\n", host, kind(p.node), p.node, WTERMSIG(status));
+            else printf("%s %s %d failed:  pass exited with status %d\n", host, kind(p.node), p.node, WEXITSTATUS(status));
+            printf("%s %s %d after:   %s\n", host, kind(p.node), p.node, describe(read_node(p.node)).c_str());
+        }
     }
+    fflush(stdout);
     return 0;
 }
