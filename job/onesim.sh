@@ -86,7 +86,7 @@ for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
 # data; abacus.run cleans only on --clean, which we never pass). $ABACUS_MPIRUN_ARGS/$NNODES default
 # in env.sh, so the par2 parses here. The parse is throwaway -- abacus.run re-parses with
 # each attempt's --hostfile -- but needs $pargs: OutputDirectory derives from SimName.
-outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
+outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/ && !seen {print $2; seen = 1}')
 if [[ -n $outdir ]]; then
     prov="$outdir/provenance"
     mkdir -p "$prov"

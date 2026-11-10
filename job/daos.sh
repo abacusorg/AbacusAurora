@@ -245,7 +245,7 @@ daos_ckpt_prefix() {
     local pargs=() o
     for o; do pargs+=(-P "$o"); done
     python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null \
-        | awk -F'"' '/^CheckpointDirectory[[:space:]]*=/{print $2; exit}'
+        | awk -F'"' '/^CheckpointDirectory[[:space:]]*=/ && !seen {print $2; seen = 1}'
 }
 
 # Mount the given containers on THIS NODE only, at the per-user login mountpoint.
