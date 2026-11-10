@@ -74,6 +74,8 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
 | `ABACUS_NODEPREP_FAIL_SHORT` | `off` | run | `on` ends the job before the sims when a short node would have to run for want of spares, or nodeprep measured nothing |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
+| `ONESIM_MAX_SLOW_RESTARTS` | `1` | run | relaunches allowed after failures that were not rapid; such a sim usually needs a parameter change. Rapid failures are capped at 2 in a row |
+| `ONESIM_MIN_HEALTHY_SECONDS` | `14400` | run | an attempt that fails sooner than this is a rapid failure |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
 
