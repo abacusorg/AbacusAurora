@@ -87,6 +87,15 @@ cmp -s "$work/hf" "$work/hf.seed1" && fail "  ...same order as seed 1" || pass "
 # Default 4x4 geometry also works (and leaves a short leftover group: 18 rows of 10).
 apply_case "block default 4x4" 0 10 ABACUS_NODE_ORDER=block
 
+# Incommensurate geometries.  12 x 15 with 4x4 blocks: 4 doesn't divide 15, so the blocks
+# shear, but 4 x 15 is even and it works.  With 5x4 blocks, 5 x 15 = 75 ranks would end a
+# group of rows partway through a node, so it is refused, naming the block height.
+apply_case "sheared 4x4 on 12 x 15" 0 15 ABACUS_NODE_ORDER=block
+cmp -s <(sort "$work/hf") <(sort "$work/nodes") && pass "  ...same node set" || fail "  ...node set differs"
+apply_case "odd block height x nz" 1 15 ABACUS_NODE_ORDER=block ABACUS_NODE_BLOCK=5x4
+grep -q 'block height x nz = 5 x 15 = 75 ranks' "$work/log" \
+    && pass "  ...error names the block height" || { fail "  ...wrong error"; sed 's/^/      /' "$work/log"; }
+
 # Bad settings and inconsistent NumZRanks fail.
 apply_case "unknown order" 1 20 ABACUS_NODE_ORDER=shuffle
 apply_case "malformed block" 1 20 ABACUS_NODE_ORDER=block ABACUS_NODE_BLOCK=5by4

@@ -80,11 +80,21 @@ def rank_blocks(nx, nz, rows, chunk):
 
 def slot_blocks(nx, nz, ppn, rows, chunk):
     """Block id of each node slot (ranks ppn*k .. ppn*k+ppn-1)."""
+    # Blocks end at every chunk boundary and at the end of every group of rows, so each
+    # of those must fall on a node boundary.
+    if nx * nz % ppn:
+        raise ValueError(f'nx x nz = {nx} x {nz} = {nx * nz} ranks is not a multiple of {ppn} ranks per node')
+    if chunk % ppn:
+        raise ValueError(f'block width {chunk} Z ranks is not a multiple of {ppn} ranks per node')
+    for g in sorted({min(rows, nx - x0) for x0 in range(0, nx, rows)}, reverse=True):
+        if g * nz % ppn:
+            what = 'block height' if g == rows else f'leftover group of {g} X rows (nx % {rows})'
+            raise ValueError(f'{what} x nz = {g} x {nz} = {g * nz} ranks is not a multiple of '
+                             f'{ppn} ranks per node, so a node would straddle two blocks')
     nnodes = -(-nx * nz // ppn)
     block = rank_blocks(nx, nz, rows, chunk)
     slot_block = block[::ppn][:nnodes]
-    if not all((block[k * ppn:(k + 1) * ppn] == slot_block[k]).all() for k in range(nnodes)):
-        raise ValueError('a node would straddle two blocks; need ppn to divide the block width')
+    assert all((block[k * ppn:(k + 1) * ppn] == slot_block[k]).all() for k in range(nnodes))
     return slot_block
 
 
