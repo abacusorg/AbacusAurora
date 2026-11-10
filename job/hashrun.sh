@@ -292,6 +292,7 @@ parse_args "$@"
 read_par2_list
 check_prod
 setup_daos
+nodeprep_mode > /dev/null || exit 1   # after setup_daos, which exports the -E settings
 build_code
 stage_spec
 submit
