@@ -184,9 +184,9 @@ daos_ckpt_mount() {
     done
     mapfile -t hosts < <(sort -u "$hostfile")
     (( ${#hosts[@]} && $# )) || return 1
-    if _daos_ckpt_mount_on "${hosts[0]}" --dump-handles "$dir" "$@"; then
+    if _daos_ckpt_mount_on -w "${hosts[0]}" -- --dump-handles "$dir" "$@"; then
         if (( ${#hosts[@]} > 1 )); then
-            _daos_ckpt_mount_on "$(IFS=,; echo "${hosts[*]:1}")" --read-handles "$dir" "$@" || rc=1
+            _daos_ckpt_mount_on --hostfile="$hostfile" -x "${hosts[0]}" -- --read-handles "$dir" "$@" || rc=1
         fi
     else
         rc=1
@@ -198,8 +198,11 @@ daos_ckpt_mount() {
 # daos_ckpt_mount's remote half, under bash whatever the login shell.  Mounts come from the
 # mount table: an import whose owner has unmounted answers no stat (mountpoint) but stays.
 _daos_ckpt_mount_on() {
-    local hosts=$1 mode=$2 dir=$3
-    shift 3
+    local sel=() mode dir
+    while (( $# )) && [[ $1 != -- ]]; do sel+=("$1"); shift; done
+    shift
+    mode=$1 dir=$2
+    shift 2
     local script='helper=$1 pool=$2 mode=$3 dir=$4
 shift 4
 PATH=$PATH:/soft/daos/bin
@@ -221,17 +224,18 @@ for label; do
         echo "$(hostname -s): dfuse wrote no handles to $hfile" >&2; exit 1
     fi
 done'
-    clush -S -w "$hosts" -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
+    clush -S "${sel[@]}" -f 208 -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
           "$(printf '%q ' bash -c "$script" ckpt-mount \
                    "$(daos_ckpt_helper)" "$DAOS_POOL" "$mode" "$dir" "$@")"
 }
 
-# 0 if every <label> is mounted on every host in <hostfile>.
+# 0 if every <label> is mounted on every host in <hostfile>.  clush gets node sets as --hostfile,
+# never as one -w list: 9,000 names exceed the kernel's 128 KiB limit on a single argument.
 daos_ckpt_mounted() {
     local hostfile=$1 label mnts=()
     shift
     for label; do mnts+=("$(daos_mountpoint "$label")"); done
-    clush -S -w "$(sort -u "$hostfile" | paste -sd, -)" -f 208 \
+    clush -S --hostfile="$hostfile" -f 208 \
           -o "-o LogLevel=QUIET -o StrictHostKeyChecking=no" \
           "$(printf '%q ' bash -c 'for m; do mountpoint -q "$m" || exit 1; done' ckpt-mounted \
                    "${mnts[@]}")" \
