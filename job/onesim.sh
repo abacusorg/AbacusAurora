@@ -2,8 +2,8 @@
 # onesim.sh — run ONE Abacus simulation on a given hostfile, monitoring it and
 # restarting up to a few times if it dies.  Four gates bound the retrying: the
 # allocation's agreed halt time, which overrides the caps; max_consec_fail rapid
-# failures in a row; max_slow_restarts relaunches after failures that were not rapid;
-# and max_restarts relaunches in total.  See halt_reason() and the loop at the bottom.
+# failures in a row; max_slow_restarts relaunches after failures that were not rapid,
+# if set; and max_restarts relaunches in total.  See halt_reason() and the loop at the bottom.
 #
 # Kept deliberately separate from the multi-sim outer loop (multisim.pbs) so that:
 #   - its retry/backoff state stays private to this one sim, and
@@ -34,8 +34,9 @@ overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.ru
 max_consec_fail=2
 min_healthy_seconds=${ONESIM_MIN_HEALTHY_SECONDS:-14400}   # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
 max_restarts=${ONESIM_MAX_RESTARTS:-3}   # hard cap on relaunches of any kind, however healthy they looked
-# A sim that dies after a healthy run usually needs a parameter change, not a retry.
-max_slow_restarts=${ONESIM_MAX_SLOW_RESTARTS:-1}
+# A sim that dies after a healthy run often needs a parameter change, not a retry.  Unset, only
+# max_restarts bounds those relaunches.
+max_slow_restarts=${ONESIM_MAX_SLOW_RESTARTS:-}
 
 # A relaunch is pointless once the allocation's agreed halt time has passed, and nearly
 # pointless shortly before it: Abacus tests for the halt only after a COMPLETED timestep
@@ -80,7 +81,7 @@ if [[ ! $max_restarts =~ ^[0-9]+$ ]]; then
     echo "onesim: ONESIM_MAX_RESTARTS='$max_restarts' is not a whole number" >&2
     exit 2
 fi
-if [[ ! $max_slow_restarts =~ ^[0-9]+$ ]]; then
+if [[ -n $max_slow_restarts && ! $max_slow_restarts =~ ^[0-9]+$ ]]; then
     echo "onesim: ONESIM_MAX_SLOW_RESTARTS='$max_slow_restarts' is not a whole number" >&2
     exit 2
 fi
@@ -193,11 +194,11 @@ while true; do
     #   consec_fail catches a sim that dies QUICKLY over and over -- the cheap, obvious
     #   loop, cut off after max_consec_fail rapid failures in a row.
     #
-    #   slow_fail counts failures after an attempt that outlived min_healthy_seconds, which
-    #   reset consec_fail, so without this cap a sim that fails SLOWLY but repeatedly would
-    #   relaunch for as long as the job's walltime allowed.
+    #   total_fail bounds any mix of failures at max_restarts.  A sim that fails SLOWLY but
+    #   repeatedly resets consec_fail every time, so without this cap it would relaunch for
+    #   as long as the job's walltime allowed.
     #
-    #   total_fail is the backstop for any mix of the two, bounded at max_restarts.
+    #   slow_fail, if max_slow_restarts is set, cuts those slow failures off sooner.
     total_fail=$((total_fail+1))
 
     if (( dt < min_healthy_seconds )); then
@@ -209,7 +210,7 @@ while true; do
     else
         consec_fail=0
         slow_fail=$((slow_fail+1))
-        if (( slow_fail > max_slow_restarts )); then
+        if [[ -n $max_slow_restarts ]] && (( slow_fail > max_slow_restarts )); then
             echo "=== $slow_fail failure(s) after attempts that ran over ${min_healthy_seconds}s, only $max_slow_restarts relaunch(es) allowed after one; giving up ===" >&2
             exit 1
         fi
