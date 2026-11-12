@@ -68,6 +68,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_DAOS_PRELOAD` | `on` | run | with DAOS on, `LD_PRELOAD` the DAOS interception library into the ranks |
 | `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
+| `ABACUS_BAD_NODES` | `on` | run | leave the nodes listed in `job/bad_nodes.txt` out of the job, as many as the spares cover (see [Bad nodes](#bad-nodes)); `off` uses them like any other |
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
 | `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `check` only measures each node, for the short-node check; `off` skips both |
 | `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep (as found, with `check`); a node short of it runs only if the spares run out. `0` turns the check off |
@@ -87,6 +88,16 @@ In turn, the scripts set these for `aurora.def` and Abacus:
 - `NNODES` and `ABACUS_MPIRUN_ARGS`: for `mpirun_cmd`.
 - `ABACUS_JOB_HALT_TIME`: when Abacus halts, the walltime less 10 minutes.
 - `ABACUS_JOB_HALT_FILE`: `/flare/Abacus/HALT.<jobid>`; create it to halt every sim in the job.
+
+## Bad nodes
+
+`job/bad_nodes.txt` lists the nodes that have misbehaved in our runs: suspected wrong data, or sockets
+that were persistently slow across jobs. One short host name per line, with the reason and the job that
+showed it after a `#`. When it sets up the allocation, before node prep, `multisim.pbs` leaves the listed
+nodes out of the job as `ABACUS_EXCLUDE_NODES` would, but only as many as the spares cover, earlier
+lines first; any left over run, and it names them. So a job with no spares (the emulators ask for exactly
+the nodes they use) is never failed by the list. Ask for spares with `-n` for both the listed nodes (about
+85% of the list lands in a 9,000-node allocation) and those node prep finds short.
 
 ## Node prep
 

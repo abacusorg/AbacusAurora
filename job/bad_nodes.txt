@@ -1,0 +1,31 @@
+# Nodes that misbehaved in our runs.  multisim.pbs leaves those it is given out of the job, as many as the
+# spares cover, earlier lines first (job/badnodes.sh).  One short host name per line, then why and where seen.
+
+# Suspect hardware: wrong data.
+x4703c5s7b0n0   # 9066352 rank 16659: env-record bytes as 20 particles' z-acceleration at step 62; its GPU page
+                #   fault was the crash's first error
+x4516c6s0b0n0   # step-182 gather (8947769, 8948252): an Igather's int64 lost bit 23 twice; sender on this node
+x4610c3s1b0n0   # step-182 gather: the root, on the same path twice; it passed once these four were off it (8948658)
+x4514c2s3b0n0   # step-182 gather: an intermediate; one of these four is suspect, which one is unknown
+x4509c4s1b0n0   # step-182 gather: an intermediate
+
+# Slow sockets, persistent across jobs: ranked by GPU-buffer-thread span above load in Flagship 9069711
+# (score in s, worst socket), cross-checked against the 9057599 lattice.  Three are slow despite a high clock.
+x4517c6s2b0n0   # s0 +2.0 s at 1962 MHz; the pacing socket since October (9048965, 9057599, 9069711)
+x4000c7s4b0n0   # s1 +1.8 s at 2025 MHz
+x4300c0s5b0n0   # s0 +1.7 s at 1448 MHz
+x4400c5s7b0n0   # s0 +1.7 s at 1421 MHz; paced DemiFlag 8995686 at 1229 MHz
+x4103c3s2b0n0   # s0 +1.7 s at 1834 MHz; +2.5 s of work beyond its clock in DemiFlag 8995686
+x4614c3s0b0n0   # s0 +1.6 s at 1411 MHz; also slow in every DemiFlag sweep order
+x4711c3s2b0n0   # s0 +1.5 s at 1519 MHz
+x4518c3s5b0n0   # s0 +1.5 s at 1472 MHz
+x4014c2s6b0n0   # s0 +1.4 s at 1541 MHz
+x4717c5s3b0n0   # s0 +1.4 s at 1556 MHz
+x4501c7s7b0n0   # s0 +1.3 s at 1560 MHz
+x4205c0s1b0n0   # s0 +1.3 s at 1479 MHz
+x4619c5s2b0n0   # s0 +1.3 s at 1529 MHz
+x4007c1s6b0n0   # s0 +1.3 s at 1505 MHz
+x4610c5s6b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4311c6s1b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4307c2s5b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4710c0s6b0n0   # top 10 in lattice 9057599 (not in 9069711)
