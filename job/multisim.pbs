@@ -35,6 +35,7 @@ source "$out/env_overrides.sh"
 
 source "$abacus_prod/job/daos.sh"
 source "$abacus_prod/job/nodeprep.sh"
+source "$abacus_prod/job/gemmwarm.sh"
 source "$abacus_prod/job/nodeorder.sh"
 
 # --- Halt controls -----------------------------------------------------------
@@ -50,6 +51,8 @@ export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
+    # Set once nodeprep or the sims may have emptied the nodes' page cache (job/gemmwarm.sh).
+    [[ -z ${gemmwarm_hostfile:-} ]] || gemmwarm_run "$gemmwarm_hostfile" "$out/gemmwarm.txt" || true
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -106,6 +109,8 @@ echo
 # ABACUS_NODEPREP=check it only measures).  Short nodes go to the end of nodes.sorted, with the spares.
 : > nodes.sorted.short
 nodeprep_check_settings || exit 1
+gemmwarm_check_settings || exit 1
+gemmwarm_hostfile=$out/nodes.sorted
 if [[ $(nodeprep_mode) != off ]]; then
     nodeprep_run "$out/nodeprep" nodes.sorted "$out/nodeprep.txt"
     # Fails only under ABACUS_NODEPREP_FAIL_SHORT=on: here, before the DAOS mount and the sims.
