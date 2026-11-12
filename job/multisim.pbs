@@ -36,6 +36,7 @@ source "$out/env_overrides.sh"
 source "$abacus_prod/job/daos.sh"
 source "$abacus_prod/job/nodeprep.sh"
 source "$abacus_prod/job/gemmwarm.sh"
+source "$abacus_prod/job/badnodes.sh"
 source "$abacus_prod/job/nodeorder.sh"
 
 # --- Halt controls -----------------------------------------------------------
@@ -99,6 +100,10 @@ if (( required > num_nodes )); then
     echo "ERROR: nodes_per_sim($nodes_per_sim) x sims($num_sims) = $required nodes, only $num_nodes available" >&2
     exit 1
 fi
+# The nodes in job/bad_nodes.txt are left out too, as many as the spares cover (job/badnodes.sh).
+badnodes_check_settings || exit 1
+badnodes_leave_out nodes.sorted "$required"
+num_nodes=$(( $(wc -l < nodes.sorted) ))
 
 nodeorder_check   # here, before the DAOS mount is paid for
 echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
