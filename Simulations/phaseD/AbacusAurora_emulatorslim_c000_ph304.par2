@@ -1,0 +1,15 @@
+SimName = "AbacusAurora_emulatorslim_c000_ph304"
+
+#include "../EmulatorSlim.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+# This sim uses the usual CPD = 1125.  Test for maplog, but it is a full output set, matched to a phaseA phase.
+
+ZD_Seed = @ZD_Seed@+304-300
+
+# We're going to run this in a rank geometry more similar to Flagship, and with the intention of getting the sim to run in an hour.
+# Using a 28x 15 decomposition on 210 nodes will be 40.17 slabs/rank and 75 cells in Z.
+# This is 5.8x more nodes than normal, and a similar emulator on 36 nodes took 4.5 hrs.  (but this sim will be less efficient, so fingers crossed)
+NumZRanks = 15
+
+SCR_Checkpoint_Seconds = 7000  # Turning off checkpoints, because I need this to not quit as it gets to the end of the job.
