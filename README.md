@@ -73,6 +73,8 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep (as found, with `check`); a node short of it runs only if the spares run out. `0` turns the check off |
 | `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
 | `ABACUS_NODEPREP_FAIL_SHORT` | `off` | run | `on` ends the job before the sims when a short node would have to run for want of spares, or nodeprep measured nothing |
+| `ABACUS_GEMM_WARMUP` | `on` | run | at the end of the job, read the files the next job's PBS prologue test loads (see [Prologue warm-up](#prologue-warm-up)); `off` skips it |
+| `ABACUS_GEMM_WARMUP_STAGGER` | `2` | run | whole seconds between the warm-ups of two of our nodes in one rack |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
 | `ONESIM_MAX_SLOW_RESTARTS` | none | run | relaunches allowed after failures that were not rapid, within `ONESIM_MAX_RESTARTS`; unset, only that bounds them. Such a sim often needs a parameter change, so the flagship runs with `1`. Rapid failures are capped at 2 in a row |
 | `ONESIM_MIN_HEALTHY_SECONDS` | `14400` | run | an attempt that fails sooner than this is a rapid failure |
@@ -104,6 +106,12 @@ those short only of DDR.
 `ABACUS_NODEPREP=check` fills and frees nothing: it measures every node as it arrived and moves the
 short ones behind the spares the same way. Page cache that a check finds counts against a node,
 since only a fill would reclaim it.
+
+## Prologue warm-up
+
+We observe that big jobs following Abacus jobs tend to fail their prologues. Our theory is that we're exerting enough memory pressure to evict kernel page cache, which causes the executables used in the prologue to be slow to load. In particular, there's a fat 800 MB `gemm.exe` executable that's served over NFS. If thousands of nodes are all asking for that file with a cold cache, could be trouble.
+
+So to ameliorate this, we try to re-warm the `gemm.exe` cache at the end of our job in a staggered fasion (`ABACUS_GEMM_WARMUP`; `ABACUS_GEMM_WARMUP_STAGGER`).
 
 ## DAOS
 
