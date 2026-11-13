@@ -35,6 +35,8 @@ source "$out/env_overrides.sh"
 
 source "$abacus_prod/job/daos.sh"
 source "$abacus_prod/job/nodeprep.sh"
+source "$abacus_prod/job/gemmwarm.sh"
+source "$abacus_prod/job/badnodes.sh"
 source "$abacus_prod/job/nodeorder.sh"
 
 # --- Halt controls -----------------------------------------------------------
@@ -50,6 +52,8 @@ export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
+    # Set once nodeprep or the sims may have emptied the nodes' page cache (job/gemmwarm.sh).
+    [[ -z ${gemmwarm_hostfile:-} ]] || gemmwarm_run "$gemmwarm_hostfile" "$out/gemmwarm.txt" || true
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -96,18 +100,26 @@ if (( required > num_nodes )); then
     echo "ERROR: nodes_per_sim($nodes_per_sim) x sims($num_sims) = $required nodes, only $num_nodes available" >&2
     exit 1
 fi
+# The nodes in job/bad_nodes.txt are left out too, as many as the spares cover (job/badnodes.sh).
+badnodes_check_settings || exit 1
+badnodes_leave_out nodes.sorted "$required"
+num_nodes=$(( $(wc -l < nodes.sorted) ))
 
 nodeorder_check   # here, before the DAOS mount is paid for
 echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
 echo
 
 # --- Node prep -----------------------------------------------------------------
-# On every node, spares included, before anything else runs there (job/nodeprep.sh).  Nodes it
-# leaves short of whole 2 MiB blocks go to the end of nodes.sorted, where the spares are.
+# On every node, spares included, before anything else runs there (job/nodeprep.sh; under
+# ABACUS_NODEPREP=check it only measures).  Short nodes go to the end of nodes.sorted, with the spares.
 : > nodes.sorted.short
-if _is_on "${ABACUS_NODEPREP:-on}"; then
+nodeprep_check_settings || exit 1
+gemmwarm_check_settings || exit 1
+gemmwarm_hostfile=$out/nodes.sorted
+if [[ $(nodeprep_mode) != off ]]; then
     nodeprep_run "$out/nodeprep" nodes.sorted "$out/nodeprep.txt"
-    nodeprep_demote nodes.sorted "$out/nodeprep.txt" "$required"
+    # Fails only under ABACUS_NODEPREP_FAIL_SHORT=on: here, before the DAOS mount and the sims.
+    nodeprep_demote nodes.sorted "$out/nodeprep.txt" "$required" || exit 1
 else
     echo "nodeprep: off (ABACUS_NODEPREP=$ABACUS_NODEPREP)"
 fi

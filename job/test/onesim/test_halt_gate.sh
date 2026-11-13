@@ -78,6 +78,17 @@ check "no halt signals at all"    1 2 "PATH=$PATH"
 check "no restarts allowed"       1 1 "ONESIM_MAX_RESTARTS=0"
 check "malformed restart cap"     2 0 "ONESIM_MAX_RESTARTS=three"
 
+# With no failure rapid, the slow-failure cap decides when set, under max_restarts; unset, only
+# max_restarts (3) does.
+check "slow failures, default"    1 4 "ONESIM_MIN_HEALTHY_SECONDS=0"
+check "slow failures, cap 1"      1 2 "ONESIM_MIN_HEALTHY_SECONDS=0" "ONESIM_MAX_SLOW_RESTARTS=1"
+check "slow failures, cap 2"      1 3 "ONESIM_MIN_HEALTHY_SECONDS=0" "ONESIM_MAX_SLOW_RESTARTS=2"
+check "slow cap under total cap"  1 2 "ONESIM_MIN_HEALTHY_SECONDS=0" "ONESIM_MAX_SLOW_RESTARTS=5" \
+                                      "ONESIM_MAX_RESTARTS=1"
+check "no slow restarts allowed"  1 1 "ONESIM_MIN_HEALTHY_SECONDS=0" "ONESIM_MAX_SLOW_RESTARTS=0"
+check "malformed slow cap"        2 0 "ONESIM_MAX_SLOW_RESTARTS=one"
+check "malformed healthy time"    2 0 "ONESIM_MIN_HEALTHY_SECONDS=4h"
+
 if (( fails )); then
     echo "$fails case(s) failed"
     exit 1

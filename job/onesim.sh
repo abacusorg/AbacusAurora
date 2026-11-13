@@ -1,9 +1,9 @@
 #!/bin/bash
 # onesim.sh — run ONE Abacus simulation on a given hostfile, monitoring it and
-# restarting up to a few times if it dies.  Three gates bound the retrying: the
-# allocation's agreed halt time, which overrides both of the caps; max_consec_fail
-# rapid failures in a row; and max_restarts relaunches in total however healthy each
-# attempt looked.  See halt_reason() and the loop at the bottom.
+# restarting up to a few times if it dies.  Four gates bound the retrying: the
+# allocation's agreed halt time, which overrides the caps; max_consec_fail rapid
+# failures in a row; max_slow_restarts relaunches after failures that were not rapid,
+# if set; and max_restarts relaunches in total.  See halt_reason() and the loop at the bottom.
 #
 # Kept deliberately separate from the multi-sim outer loop (multisim.pbs) so that:
 #   - its retry/backoff state stays private to this one sim, and
@@ -32,8 +32,11 @@ shift 2
 overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.run
 
 max_consec_fail=2
-min_healthy_seconds=14400        # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
+min_healthy_seconds=${ONESIM_MIN_HEALTHY_SECONDS:-14400}   # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
 max_restarts=${ONESIM_MAX_RESTARTS:-3}   # hard cap on relaunches of any kind, however healthy they looked
+# A sim that dies after a healthy run often needs a parameter change, not a retry.  Unset, only
+# max_restarts bounds those relaunches.
+max_slow_restarts=${ONESIM_MAX_SLOW_RESTARTS:-}
 
 # A relaunch is pointless once the allocation's agreed halt time has passed, and nearly
 # pointless shortly before it: Abacus tests for the halt only after a COMPLETED timestep
@@ -46,7 +49,7 @@ min_relaunch_seconds=${ONESIM_MIN_RELAUNCH_SECONDS:-900}
 # Why a relaunch must be refused right now, or nothing at all if it is allowed.  Both
 # signals are read fresh on each call, and both come from multisim.pbs's environment;
 # they are simply absent when onesim.sh is run standalone, in which case this is a no-op
-# and the two caps above remain the only bound on retrying.
+# and the caps above remain the only bound on retrying.
 halt_reason() {
     # Someone asked for every sim in the allocation to stop.  Abacus deliberately does not
     # consume this file (multisim.pbs owns its lifecycle), so it is still here to be seen.
@@ -78,6 +81,14 @@ if [[ ! $max_restarts =~ ^[0-9]+$ ]]; then
     echo "onesim: ONESIM_MAX_RESTARTS='$max_restarts' is not a whole number" >&2
     exit 2
 fi
+if [[ -n $max_slow_restarts && ! $max_slow_restarts =~ ^[0-9]+$ ]]; then
+    echo "onesim: ONESIM_MAX_SLOW_RESTARTS='$max_slow_restarts' is not a whole number" >&2
+    exit 2
+fi
+if [[ ! $min_healthy_seconds =~ ^[0-9]+$ ]]; then
+    echo "onesim: ONESIM_MIN_HEALTHY_SECONDS='$min_healthy_seconds' is not a whole number" >&2
+    exit 2
+fi
 
 pargs=()
 for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
@@ -86,7 +97,7 @@ for o in ${overrides[@]+"${overrides[@]}"}; do pargs+=(-P "$o"); done
 # data; abacus.run cleans only on --clean, which we never pass). $ABACUS_MPIRUN_ARGS/$NNODES default
 # in env.sh, so the par2 parses here. The parse is throwaway -- abacus.run re-parses with
 # each attempt's --hostfile -- but needs $pargs: OutputDirectory derives from SimName.
-outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/{print $2; exit}')
+outdir=$(python -m abacus.param "$par2" ${pargs[@]+"${pargs[@]}"} -o /dev/stdout 2>/dev/null | awk -F\" '/^OutputDirectory[[:space:]]*=/ && !seen {print $2; seen = 1}')
 if [[ -n $outdir ]]; then
     prov="$outdir/provenance"
     mkdir -p "$prov"
@@ -130,6 +141,7 @@ mount_restart_point() {
 
 attempt=0
 consec_fail=0
+slow_fail=0
 total_fail=0
 
 # Capture so that the loop doesn't keep appending
@@ -164,7 +176,7 @@ while true; do
     # been evaluated, so claiming it on this line would be a lie every time we give up.
     echo "=== invocation $attempt FAILED (rc=$rc after ${dt}s) ===" >&2
 
-    # The deadline gate outranks both caps, and is checked before total_fail is charged:
+    # The deadline gate outranks the caps, and is checked before any of them is charged:
     # this invocation did not fail because the sim is sick, it failed because the
     # allocation is ending (typically the final state write to DAOS hanging until
     # StepTimeout kills it), so it should not count against the retry budget either.
@@ -177,17 +189,16 @@ while true; do
         exit 3
     fi
 
-    # Two independent caps, both needed:
+    # Three independent caps:
     #
     #   consec_fail catches a sim that dies QUICKLY over and over -- the cheap, obvious
     #   loop, cut off after max_consec_fail rapid failures in a row.
     #
-    #   total_fail is the backstop for a sim that fails SLOWLY but repeatedly.  If each
-    #   attempt survives longer than min_healthy_seconds, every one of them looks healthy
-    #   on its own and consec_fail resets each time, so nothing above would ever stop it:
-    #   the sim would keep relaunching for as long as the job's walltime allowed, which is
-    #   how a single sick sim can burn an allocation.  Counting every failure regardless of
-    #   how long it lasted bounds the damage at max_restarts relaunches.
+    #   total_fail bounds any mix of failures at max_restarts.  A sim that fails SLOWLY but
+    #   repeatedly resets consec_fail every time, so without this cap it would relaunch for
+    #   as long as the job's walltime allowed.
+    #
+    #   slow_fail, if max_slow_restarts is set, cuts those slow failures off sooner.
     total_fail=$((total_fail+1))
 
     if (( dt < min_healthy_seconds )); then
@@ -198,6 +209,11 @@ while true; do
         fi
     else
         consec_fail=0
+        slow_fail=$((slow_fail+1))
+        if [[ -n $max_slow_restarts ]] && (( slow_fail > max_slow_restarts )); then
+            echo "=== $slow_fail failure(s) after attempts that ran over ${min_healthy_seconds}s, only $max_slow_restarts relaunch(es) allowed after one; giving up ===" >&2
+            exit 1
+        fi
     fi
 
     # Checked after the rapid-failure logic so it applies on both paths: each failure so far
@@ -207,7 +223,7 @@ while true; do
         exit 1
     fi
 
-    # Past all three gates, so a relaunch is now certain: say so, and say what is left of the
+    # Past all the gates, so a relaunch is now certain: say so, and say what is left of the
     # budget.  Reached only when neither exit above fired, so this can never contradict a
     # give-up message.
     echo "=== relaunching after $total_fail failure(s); $((max_restarts - total_fail)) restart(s) still allowed ===" >&2
