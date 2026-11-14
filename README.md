@@ -72,7 +72,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
 | `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `check` only measures each node, for the short-node check; `off` skips both |
 | `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep (as found, with `check`); a node short of it runs only if the spares run out. `0` turns the check off |
-| `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
+| `ABACUS_NODEPREP_NEED_HBM_GIB` | `60` | run | the same for an HBM node |
 | `ABACUS_NODEPREP_FAIL_SHORT` | `off` | run | `on` ends the job before the sims when a short node would have to run for want of spares, or nodeprep measured nothing |
 | `ABACUS_GEMM_WARMUP` | `on` | run | at the end of the job, read the files the next job's PBS prologue test loads (see [Prologue warm-up](#prologue-warm-up)); `off` skips it |
 | `ABACUS_GEMM_WARMUP_STAGGER` | `2` | run | whole seconds between the warm-ups of two of our nodes in one rack |

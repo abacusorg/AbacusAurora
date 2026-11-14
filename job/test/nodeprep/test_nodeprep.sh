@@ -162,7 +162,7 @@ demote() {
     result "$name" "$ok" "rc=$rc, order: $got, output:"$'\n'"$out"
 }
 demote "short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
-       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 58' 2
+       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 60' 2
 demote "with too few spares the least short run, and it warns" "h1.net h5.net h4.net h3.net h2.net" \
        $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n' 4
 demote "a second pass that recovers the socket counts" "h1.net h5.net h4.net h3.net h2.net" \
@@ -181,9 +181,9 @@ result "the short list names the demoted hosts" "$(( $? == 0 ))"
 } > "$work/canned4.txt"
 demote_log=$work/canned4.txt
 demote "a check's short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
-       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 58' 2
+       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 60' 2
 demote "a check names the short HBM node" "h1.net h5.net h4.net h3.net h2.net" \
-       $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 40.5 GiB and needs 58\n' 4
+       $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 40.5 GiB and needs 60\n' 4
 
 # h1 is far short of DDR, h2 a little short of HBM: the spare goes to h2.
 {
@@ -193,7 +193,7 @@ demote "a check names the short HBM node" "h1.net h5.net h4.net h3.net h2.net" \
 } > "$work/canned5.txt"
 demote_log=$work/canned5.txt
 demote "a node short of HBM is kept out before one short only of DDR" "h3.net h5.net h4.net h1.net h2.net" \
-       $'  h4: no nodeprep result (runs)\n  h1: node 0 has 150.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 57.0 GiB and needs 58\n' 4
+       $'  h4: no nodeprep result (runs)\n  h1: node 0 has 150.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 57.0 GiB and needs 60\n' 4
 demote_log=$work/canned2.txt
 demote "fail-short passes when the spares cover the short nodes" "h1.net h5.net h4.net h3.net h2.net" \
        'with 3 spare(s), 0 of them run' 2 ABACUS_NODEPREP_FAIL_SHORT=on

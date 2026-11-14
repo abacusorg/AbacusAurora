@@ -5,9 +5,9 @@
 NODEPREP_SRC=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/nodeprep.cpp
 
 # What a DDR socket and an HBM node must have in whole 2 MiB blocks after the pass (or as found, under
-# ABACUS_NODEPREP=check), in GiB: in job 9048965 a rank took about 300 and 55.  0 turns a check off.
+# ABACUS_NODEPREP=check), in GiB: a rank took ~300 of DDR (job 9048965), and HBM fills to 64 less HBMReserveGB.  0 turns a check off.
 nodeprep_need_ddr() { echo "${ABACUS_NODEPREP_NEED_DDR_GIB:-330}"; }
-nodeprep_need_hbm() { echo "${ABACUS_NODEPREP_NEED_HBM_GIB:-58}"; }
+nodeprep_need_hbm() { echo "${ABACUS_NODEPREP_NEED_HBM_GIB:-60}"; }
 
 # ABACUS_NODEPREP as reclaim (on, the default), check (measure each node, change nothing) or off.
 nodeprep_mode() {
