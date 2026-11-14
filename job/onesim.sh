@@ -32,7 +32,7 @@ shift 2
 overrides=("$@")               # extra -P KEY=VAL params, forwarded to abacus.run
 
 max_consec_fail=2
-min_healthy_seconds=${ONESIM_MIN_HEALTHY_SECONDS:-14400}   # failures faster than this count as "rapid".  We set this longer than a typical checkpoint.
+min_healthy_seconds=${ONESIM_MIN_HEALTHY_SECONDS:-2400}   # failures faster than this count as "rapid".  About when an attempt writes its first checkpoint.
 max_restarts=${ONESIM_MAX_RESTARTS:-3}   # hard cap on relaunches of any kind, however healthy they looked
 # A sim that dies after a healthy run often needs a parameter change, not a retry.  Unset, only
 # max_restarts bounds those relaunches.

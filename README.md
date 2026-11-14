@@ -78,7 +78,7 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_GEMM_WARMUP_STAGGER` | `2` | run | whole seconds between the warm-ups of two of our nodes in one rack |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
 | `ONESIM_MAX_SLOW_RESTARTS` | none | run | relaunches allowed after failures that were not rapid, within `ONESIM_MAX_RESTARTS`; unset, only that bounds them. Such a sim often needs a parameter change, so the flagship runs with `1`. Rapid failures are capped at 2 in a row |
-| `ONESIM_MIN_HEALTHY_SECONDS` | `14400` | run | an attempt that fails sooner than this is a rapid failure |
+| `ONESIM_MIN_HEALTHY_SECONDS` | `2400` | run | an attempt that fails sooner than this is a rapid failure |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
 
