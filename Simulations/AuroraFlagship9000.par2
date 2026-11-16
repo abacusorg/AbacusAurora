@@ -17,7 +17,8 @@ NumZRanks = 80
 
 ZD_Seed = 5843    # This will be the most common phase
 
-MapForestSize = 0.9   # We ran a little big in DemiFlag
+MapForestSize = 0.5   # Scaled based on DemiFlag and the new code, was 0.9
+GhostDiameterForestPlanning = 12
 
 StepTimeout = 1200
 
