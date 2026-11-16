@@ -27,7 +27,7 @@ export PATH="$work/bin:$PATH"
 : > "$work/sim.par2"
 echo "node0001" > "$work/hostfile"
 
-# min_healthy_seconds is 14400, so the stub's instant failures are all "rapid" and
+# min_healthy_seconds is 2400, so the stub's instant failures are all "rapid" and
 # max_consec_fail=2 ends an ungated run after exactly 2 invocations.
 fails=0
 check() {  # check <name> <want_rc> <want_invocations> [VAR=VAL ...]
