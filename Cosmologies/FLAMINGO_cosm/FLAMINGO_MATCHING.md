@@ -16,7 +16,7 @@ This reproduces FLAMINGO's production CLASS P_cb(z = 1) to 1.5e-7 (D3A, tested; 
 | --- | --- | --- |
 | Boltzmann code | `~/class_public` (abacusorg/class_public @ 6cf8e384, CLASS v2.9.0, the AbacusAurora standard) | FLAMINGO's monofonIC (3FA_nu_panph @ 0ba5b9d, 2021-11-06) used ohahn/class_public@master, which from 2020-09 to 2023-03 was **CLASS v2.9.4** (7552778f). For P_cb, v2.9.0 and v2.9.4 are identical (2e-8). |
 | Settings file | `flamingo_prod.pre` | The production plugin's precision block, verbatim; YHe 0.245421, reio_none, Λ (Omega_fld = 0), T_cmb 2.7255; Abacus-style outputs. |
-| Recombination | Do **not** set it (v2.9 default = RECFAST, as in production) | `abacus_base.pre`'s `recombination = HyRec` (2011 HyRec) is the main cause of the 0.5% BAO excess (§4). |
+| Recombination | RECFAST, the CLASS v2.9 default production used; set explicitly in `flamingo_prod.pre` (since 2026-11-17) so each `<root>.parameters.ini` records it (outputs byte-identical to leaving it unset) | `abacus_base.pre`'s `recombination = HyRec` (2011 HyRec) is the main cause of the 0.5% BAO excess (§4). |
 | N_ur / neutrinos | Exactly as in each box's SWIFT yml (§3). D3A, Planck, LS8: N_ur = 2.0308 with 1 × 0.06 eV. PlanckNu*: N_ur = 0.00441 with **3 degenerate** species of Σm_ν/3. | N_eff = 3.044 in all FLAMINGO boxes. |
 | Cosmological parameters | h, Ω_cdm, Ω_b from the yml (full precision); A_s, n_s from Schaye et al. 2023, Table 4 | §3 |
 | Input redshift | z = 1 P_cb, `ZD_Pk_file_redshift = 1` (AbacusAurora convention) | Abacus's growth has no radiation and smooth neutrinos, so the input is exact only at its own redshift. A z = 1 input is exact at late times and about −0.35% (P) at z = 12. FLAMINGO's z = 31 input is exact at z = 31 and +1% by z = 1. |

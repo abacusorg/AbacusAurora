@@ -1,12 +1,13 @@
 # FLAMINGO production CLASS settings. Use INSTEAD of ../abacus_base.pre for FLAMINGO-matched inputs:
 #   ~/class_public/class <name>.ini flamingo_prod.pre        (AbacusAurora's CLASS, v2.9.0; reproduces production P_cb to 2e-8)
 # Settings = what monofonIC 3FA_nu_panph@0ba5b9d (src/plugins/transfer_3FA_CLASS.cc) passed to CLASS v2.9.4 (ohahn/class_public@7552778f)
-# for the FLAMINGO production ICs, plus Abacus-style outputs. recombination is deliberately NOT set: the v2.9 default (RECFAST) is what
-# production used. Do not add abacus_base.pre's "recombination = HyRec" (2011 HyRec): it raises the BAO amplitude by 0.33%.
+# for the FLAMINGO production ICs, plus Abacus-style outputs. recombination = RECFAST is the v2.9 default that production used (the plugin
+# does not set it); it is set explicitly here (2026-11-17) so CLASS records it. Do not add abacus_base.pre's "recombination = HyRec" (2011 HyRec): it raises the BAO amplitude by 0.33%.
 # The CLASS.ini supplies the cosmology: h, omega_b, omega_cdm, A_s, n_s, alpha_s, N_ur, N_ncdm, omega_ncdm (+ deg_ncdm), w0_fld, wa_fld.
 # See FLAMINGO_MATCHING.md.
 
 # fixed physics choices (as production)
+recombination = RECFAST       # = CLASS v2.9 default, which production used; set explicitly so it is recorded in <root>.parameters.ini
 Omega_k = 0
 Omega_fld = 0
 Omega_scf = 0
