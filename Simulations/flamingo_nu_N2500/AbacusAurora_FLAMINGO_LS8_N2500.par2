@@ -1,0 +1,10 @@
+SimName = "AbacusAurora_FLAMINGO_LS8_N2500"
+
+#include "../FLAMINGO.par2"
+#include "../../Cosmologies/FLAMINGO_cosm/flamingo_LS8/cosm.def"
+
+# FLAMINGO LS8 cosmology, FLAMINGO-matched linear input (CLASS v2.9 + flamingo_prod.pre, z = 1 P_cb; FLAMINGO_MATCHING.md).
+# Run with neutrino_validation/production/pbs_flamingo.sh (sets ZD_EXTERNAL_NOISE_DIR to the N0 = 4096 FLAMINGO noise).
+
+# Pin SCR to the PTHREAD flush settings the 9575f04 build was run with (aurora.def switched to SCR_FLUSH_TYPE=DFS on 2026-11-10).
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_COPY_METADATA=0", "SCR_ASSIGN_OWNERSHIP=NONE"]
