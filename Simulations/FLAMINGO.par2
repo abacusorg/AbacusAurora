@@ -18,8 +18,10 @@ BoxSize = 10*@H0@  # FLAMINGO L = 1000 Mpc, expressed in Mpc/h
 
 # Custom parameters
 NP = 2500**3       # AuroraFlagship mass resolution in FLAMINGO's 1 Gpc box
-CPD = 625          # PPC = 64.0 (5^4); derivatives already exist in /flare/Abacus/Derivatives (deriv*_625_8_2_8). AuroraFlagship PPC 74.1, old 1800^3 68.6
-NumZRanks = 4      # 16 nodes x 2 ranks = 8 x 4 domain: 78 slabs per x-rank, 156 cells per z-column (cf. LargeTest 7 x 4 on 14 nodes)
+CPD = 567          # PPC = 85.7 (567 = 3^4*7), as advised (D. Eisenstein 2026-11-17): not 625, which divides NP^(1/3) = 2500 evenly and could let
+                   # small far-field errors add coherently into certain Fourier modes. Derivatives deriv*_567_8_2_8 exist on /flare;
+                   # stage them to DAOS (scripts/daos-stage-resources.sh 567) for runs with ABACUS_DAOS_RESOURCES=on. (8x version, 5000^3: CPD 1215, PPC 70.)
+NumZRanks = 4      # 16 nodes x 2 ranks = 8 x 4 domain: ~71 slabs per x-rank, ~142 cells per z-column (cf. LargeTest 7 x 4 on 14 nodes)
 LogVerbosity = -1
 
 ZD_Seed = 0                 # unused with LOAD_EXTERNAL_NOISE (required by the parameter parser)
