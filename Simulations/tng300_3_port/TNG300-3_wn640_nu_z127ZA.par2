@@ -1,0 +1,10 @@
+# Run B_nu: as A_nu, but with TNG's IC recipe: z_init = 127, Zel'dovich only, no PLT. ICs are generated
+# here from the white noise (Ralf's IC files are for the massless cosmology).
+SimName = "TNG300-3_wn640_nu_z127ZA"
+
+#include "./TNG300-3_wn640_nu_z99PLT.par2"
+
+SimName = "TNG300-3_wn640_nu_z127ZA"
+InitialRedshift = 127
+LagrangianPTOrder = 1
+ZD_qPLT = 0

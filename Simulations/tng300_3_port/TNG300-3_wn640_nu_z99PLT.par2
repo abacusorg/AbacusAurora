@@ -1,0 +1,15 @@
+# Run A_nu: Ralf's reconstructed TNG cosmology with one 0.06 eV neutrino (Cosmologies/tng_planck2015_nu),
+# Abacus standard ICs from the same 640^3 white noise as runs A/B: z_init = 99, PLT, 2LPT (base.def).
+# Neutrinos are a smooth component (Omega_Smooth); ICs use the z = 1 CDM+baryon CLASS spectrum.
+SimName = "TNG300-3_wn640_nu_z99PLT"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015_nu/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+
+ZD_Seed = 0      # required by the parser; unused with ZD_WhiteNoiseDirectory
+ZD_WhiteNoiseDirectory = "/flare/Abacus/helenshao/ICs/tng300_3_wn640/wn"
+ZD_white_noise_layout = "xfast"
+ZD_white_noise_name = "wn"
+ZD_CornerModes = 1   # the noise is already cut to |k| <= k_Ny (boundary kept, as in N-GenIC); keep it as is
