@@ -1,0 +1,8 @@
+# Gate run for run A: same ICs, stop at z = 20.05 (TNG snapshot 0) for the orientation check.
+SimName = "TNG300-3_wn640_z99PLT_toz20"
+
+#include "./TNG300-3_wn640_z99PLT.par2"
+
+SimName = "TNG300-3_wn640_z99PLT_toz20"
+TimeSliceRedshifts_Subsample = [20.046490988807516]
+FinalRedshift = 20.046490988807516

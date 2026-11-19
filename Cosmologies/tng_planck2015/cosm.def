@@ -1,0 +1,22 @@
+# Abacus cosmology parameters for IllustrisTNG (Planck 2015), written by hand.
+# No CLASS run: the spectrum is TNG's CAMB table (TNG_power), not a CLASS_power,
+# so make_cosm_def.py does not apply.
+
+w0 = -1.0
+wa = 0.0
+
+H0 = 67.74
+Omega_M = 0.3089        # Omega_b + Omega_cdm = 0.0486 + 0.2603
+Omega_Smooth = 0.0      # no massive neutrinos
+Omega_K = 0.0
+Omega_DE = 1.0-@Omega_M@   # 0.6911
+
+n_s = 0.9667
+omega_b = 0.02230       # 0.0486 * h^2 (informational)
+omega_cdm = 0.11944     # 0.2603 * h^2 (informational)
+
+# Spectrum: TNG's CAMB table rescaled to sigma_8 = 0.8159 and then to z = 1 (make_z1_table.py),
+# following the usual Abacus convention of a z = 1 spectrum. abacus.py sets
+# ZD_Pk_sigma_ratio = D(InitialRedshift)/D(1). Do NOT also set sigma_8.
+ZD_Pk_filename = "$PAR2_DIR$/TNG_power_z1"
+ZD_Pk_file_redshift = 1.0

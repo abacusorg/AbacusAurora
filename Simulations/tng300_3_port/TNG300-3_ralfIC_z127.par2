@@ -1,0 +1,17 @@
+# Run B: Abacus on Ralf's IC files (zeldovich_mpi from the same white noise; z_init = 127, no PLT,
+# TNG P(k) at sigma_8 = 0.8159, ZD_CornerModes = 1). Zel'dovich only, as TNG did.
+SimName = "TNG300-3_ralfIC_z127"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+
+ExternalICs = 1
+ICFormat = "RVZel_2D"     # reads ic_0000..ic_0152 (zero-padded names) with NumZRanks = 1
+InitialConditionsDirectory = "/flare/Abacus/helenshao/ICs/tng300_3_wn640/ralf_ic_z127"
+ICVelocity2Displacement = 1.0
+InitialRedshift = 127
+LagrangianPTOrder = 1     # Zel'dovich only (TNG's recipe); set 2 to add Abacus's 2LPT step
+ZD_qPLT = 0               # informational: PLT is fixed when the ICs are made
+ZD_Seed = 0

@@ -1,0 +1,30 @@
+# Shared settings for the TNG300-3 640^3 port: Ralf Konietzka's white noise (and ICs made from it),
+# TNG cosmology and P(k), compared against TNG300-3-Dark.
+# Include order in each par2: site file, cosm.def, base.def, then this file.
+
+BoxSize = 205
+NP = 640**3
+CPD = 153        # PPC = (640/153)^3 = 73; odd, does not divide 640. Fixed by Ralf's IC files (ic_0000..ic_0152).
+NumZRanks = 1    # Ralf's flat ic_NNNN files need a 1D decomposition; kept for both runs.
+LogVerbosity = -1
+
+# Full particle slices (all particles, with PIDs) at the TNG300 snapshot redshifts:
+# snap 0 (z=20.05, orientation check), snap 17 (z~5), snap 25 (z~3), snap 99 (z=0).
+# TODO: confirm 4.9959... and 3.0081... against the TNG300-3-Dark snapshot headers.
+TimeSliceRedshifts_Subsample = [20.046490988807516, 4.995933468164624, 3.008131071630377, 0.0]
+TimeSliceRedshifts_Samplers = [ "all" ]
+MapLogRedshifts = None
+
+LCOrigins = None   # No light cones
+LCIsOctant = None
+LCZMax1 = None
+LCZMax2 = None
+LCBoxRepeats = 0
+LCSamplerInner = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+
+FinalRedshift = 0.0
+
+# Softening: base.def ell/40 = 205/640/40 = 8.0 kpc/h, same as TNG300-3 SofteningComovingType1.
