@@ -1,0 +1,12 @@
+# Test #5: CAMB table, z_init = 127, PLT, 2LPT. vs run A (#1): effect of z_init = 127 vs 99 (Abacus recipe otherwise).
+SimName = "TNG300-3_wn640_camb_z127_PLT_2LPT"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 127
+ZD_qPLT = 1
+LagrangianPTOrder = 2

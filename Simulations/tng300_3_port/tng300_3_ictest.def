@@ -1,0 +1,13 @@
+# Shared settings for the IC-recipe tests: ICs generated in Abacus (embedded zeldovich_mpi) from Ralf's 640^3
+# TNG300-3 white noise, kept on flare for IC-level comparisons. Include after tng300_3_wn640.def; SimName must
+# be set before the includes (InitialConditionsDirectory is built from it).
+
+ZD_Seed = 0      # required by the parser; unused with ZD_WhiteNoiseDirectory
+ZD_WhiteNoiseDirectory = "/flare/Abacus/helenshao/ICs/tng300_3_wn640/wn"
+ZD_white_noise_layout = "xfast"
+ZD_white_noise_name = "wn"
+ZD_CornerModes = 1   # the noise is already cut to |k| <= k_Ny (boundary kept, as in N-GenIC); keep it as is
+
+# Keep the generated ICs (default "Auto" deletes them after the IC step): ic_0000..ic_0152, RVZel_2D, 8.4 GB.
+InitialConditionsDirectory = "/flare/Abacus/helenshao/ICs/tng300_3_wn640/ic_" + @SimName@
+ICCleanupMode = "Never"

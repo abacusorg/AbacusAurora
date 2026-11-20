@@ -1,0 +1,12 @@
+# Test #16: CLASS (TNG's published cosmology, massless nu), z_init = 127, no PLT, Zel'dovich. vs #8: effect of the P(k) source with TNG's recipe.
+SimName = "TNG300-3_wn640_class_z127_noPLT_ZA"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015_class/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 127
+ZD_qPLT = 0
+LagrangianPTOrder = 1

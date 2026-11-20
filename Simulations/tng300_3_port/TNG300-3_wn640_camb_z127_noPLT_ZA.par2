@@ -1,0 +1,12 @@
+# Test #8: CAMB table, z_init = 127, no PLT, Zel'dovich (TNG's recipe). ICs vs Ralf's files: reproduction check; run vs run B: should be identical.
+SimName = "TNG300-3_wn640_camb_z127_noPLT_ZA"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 127
+ZD_qPLT = 0
+LagrangianPTOrder = 1

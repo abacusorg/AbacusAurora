@@ -1,0 +1,12 @@
+# Test #3: CAMB table, z_init = 99, no PLT, 2LPT. vs run A (#1): effect of PLT at z = 99.
+SimName = "TNG300-3_wn640_camb_z99_noPLT_2LPT"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 99
+ZD_qPLT = 0
+LagrangianPTOrder = 2
