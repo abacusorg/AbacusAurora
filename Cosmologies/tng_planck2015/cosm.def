@@ -15,8 +15,13 @@ n_s = 0.9667
 omega_b = 0.02230       # 0.0486 * h^2 (informational)
 omega_cdm = 0.11944     # 0.2603 * h^2 (informational)
 
-# Spectrum: TNG's CAMB table rescaled to sigma_8 = 0.8159 and then to z = 1 (make_z1_table.py),
-# following the usual Abacus convention of a z = 1 spectrum. abacus.py sets
-# ZD_Pk_sigma_ratio = D(InitialRedshift)/D(1). Do NOT also set sigma_8.
+# Spectrum: ZD_Pk_file_redshift = 1 is valid only because TNG_power_z1 is NOT TNG's raw table. TNG's
+# CAMB table (TNG_power_z0) is a z = 0 shape with an unphysical amplitude (sigma_8 = 0.6766). Before
+# Abacus reads anything, make_z1_table.py rescaled it by hand to a true z = 1 spectrum:
+#     P_z1(k) = P_z0(k) * (0.8159 / 0.6766)^2 * (D(1)/D(0))^2,   D(1)/D(0) = 0.6087749 (abacus.cosmo,
+# this cosmology). abacus.py then sets ZD_Pk_sigma_ratio = D(InitialRedshift)/D(1) and zeldovich multiplies
+# the table by its square. Net amplitude: sigma_8(z_init) = 0.8159 * D(z_init)/D(0), identical to N-GenIC/TNG
+# and to Ralf's ZD_Pk_sigma = 0.008128 at z = 127. Exact here because growth is scale independent
+# (no massive neutrinos). Do NOT also set sigma_8, and never point ZD_Pk_file_redshift at the raw table.
 ZD_Pk_filename = "$PAR2_DIR$/TNG_power_z1"
 ZD_Pk_file_redshift = 1.0
