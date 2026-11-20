@@ -1,0 +1,16 @@
+SimName = "AbacusAurora_FLAMINGO_D3A_N2500_savedICs"
+
+#include "../FLAMINGO.par2"
+#include "../../Cosmologies/abacus_cosm207/cosm.def"
+
+# FLAMINGO D3A cosmology (abacus_cosm207) at NP = 2500^3, identical to AbacusAurora_FLAMINGO_D3A_N2500.par2 except that the
+# z = 99 ICs are read from disk instead of being generated inside the run. They were made 2026-11-20 by standalone Zeldovich-MPI
+# (05d3019) from this same configuration (flamingo-n2500 @ f479245; FLAMINGO Panphasia noise N0 = 4096; NumZRanks = 4, CPD = 567;
+# 4 x 567 RVZel_2D files, 500 GB; provenance in /flare/Abacus/helenshao/ICs/flamingo_D3A_N2500_ics/provenance.txt).
+# Run with neutrino_validation/production/pbs_flamingo.sh, SIMNAME=AbacusAurora_FLAMINGO_D3A_N2500_savedICs.
+ExternalICs = 1
+InitialConditionsDirectory = "/flare/Abacus/helenshao/ICs/flamingo_D3A_N2500_ics/ic"
+ICCleanupMode = "Never"          # keep the saved ICs after the run reads them
+
+# Pin SCR to the PTHREAD flush settings the 9575f04 build was run with (aurora.def switched to SCR_FLUSH_TYPE=DFS on 2026-11-10).
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_COPY_METADATA=0", "SCR_ASSIGN_OWNERSHIP=NONE"]

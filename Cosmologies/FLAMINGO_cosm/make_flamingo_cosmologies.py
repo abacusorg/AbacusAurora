@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate FLAMINGO-matched linear inputs for the FLAMINGO DMO boxes (see FLAMINGO_MATCHING.md), 2026-11-17.
 
-For each FLAMINGO cosmology this makes its registered AbacusAurora directory Cosmologies/abacus_cosm20N/ (LS8, which has no
-registered number, goes to FLAMINGO_cosm/flamingo_LS8/; refuses to touch an existing directory) with
+For each FLAMINGO cosmology this makes its registered AbacusAurora directory Cosmologies/abacus_cosm20N/ (LS8 = abacus_cosm208 since
+2026-11-20; refuses to touch an existing directory) with
   CLASS.ini        cosmology in AbacusAurora form (omega_b, omega_cdm, h, A_s, n_s, N_ur, N_ncdm, omega_ncdm, deg_ncdm, w0/wa)
   <root>.*         CLASS output of  ~/class_public/class <root>.ini ../flamingo_prod.pre   (AbacusAurora's CLASS v2.9.0)
   CLASS_power      = <root>.z2_pk_cb.dat (root = directory name) (P_cb, z = 1),  CLASS_transfer = <root>.z2_tk.dat
@@ -28,7 +28,18 @@ HERE = Path(__file__).resolve().parent
 CLASS_AURORA = Path.home() / "class_public" / "class"
 CLASS_PROD = Path.home() / "class_ohahn_v294" / "class"
 PRE = HERE / "flamingo_prod.pre"
-MONO_BLOCK = HERE / "class_version_precision_tests" / "mono_prod.inc"
+# precision block exactly as FLAMINGO's monofonIC 3FA_CLASS plugin passes it (src/plugins/transfer_3FA_CLASS.cc @ 0ba5b9d)
+MONO_BLOCK = """compute damping scale = yes
+tol_perturb_integration = 1.e-8
+tol_background_integration = 1e-9
+hyper_flat_approximation_nu = 7000.
+transfer_neglect_delta_k_S_t0 = 0.17
+transfer_neglect_delta_k_S_t1 = 0.05
+transfer_neglect_delta_k_S_t2 = 0.17
+transfer_neglect_delta_k_S_e = 0.13
+delta_l_max = 1000
+extra metric transfer functions = yes
+"""
 M_OVER_OMEGA = 93.13858  # eV
 
 # label: (abacus counterpart, FLAMINGO DMO box, h, Omega_cdm, Omega_b, N_ur, deg, m_each_eV, A_s, n_s, sigma8_paper)
@@ -39,7 +50,7 @@ COSMO = {
     "PlanckNu0p24Fix": ("c204", "PlanckNu0p24Fix_DMO", 0.6732, 0.260764, 0.04939, 0.00441, 3, 0.08, 2.101e-9, 0.966, 0.769),
     "PlanckNu0p48Fix": ("c205", "PlanckNu0p48Fix_DMO", 0.6732, 0.255079, 0.04939, 0.00441, 3, 0.16, 2.101e-9, 0.966, 0.709),
     "PlanckNu0p24Var": ("c206", "PlanckNu0p24Var_DMO", 0.6623, 0.271416, 0.05101, 0.00441, 3, 0.08, 2.109e-9, 0.968, 0.772),
-    "LS8": ("none", "LS8_DMO", 0.682, 0.25631499, 0.0473, 2.0308, 1, 0.06, 1.836e-9, 0.965, 0.760),
+    "LS8": ("c208", "LS8_DMO", 0.682, 0.25631499, 0.0473, 2.0308, 1, 0.06, 1.836e-9, 0.965, 0.760),
 }
 
 
@@ -53,7 +64,7 @@ def class_ini(label):
     on = deg * m / M_OVER_OMEGA
     root = outdir(label).name
     return (f"root = {root}.\n"
-            f"# FLAMINGO {label} ({box}). FLAMINGO-matched linear input, 2026-11-17 (FLAMINGO_cosm/FLAMINGO_MATCHING.md); the old standard-pipeline version is in obsolete_FLAMINGO_v1/.\n"
+            f"# FLAMINGO {label} ({box}). FLAMINGO-matched linear input, 2026-11-17 (FLAMINGO_cosm/FLAMINGO_MATCHING.md)" + ("; the old standard-pipeline version is in obsolete_FLAMINGO_v1/." if label != "LS8" else "; registered as abacus_cosm208 on 2026-11-20.") + "\n"
             f"# yml: h = {h}, Omega_cdm = {oc}, Omega_b = {ob}, N_ur = {nur}, {deg} x {m} eV; Table 4: A_s = {a_s}, n_s = {n_s}, sigma8 = {s8}.\n"
             f"# Run: ~/class_public/class {root}.ini <FLAMINGO_cosm>/flamingo_prod.pre   (not abacus_base.pre)\n"
             f"omega_b = {ob * h * h:.10f}\n"
@@ -78,7 +89,7 @@ def prod_ini(label):
             f"N_ur = {nur}\nN_ncdm = 1\nm_ncdm = {m}\ndeg_ncdm = {deg}\nP_k_ini type = analytic_Pk\nA_s = {a_s:.4e}\nn_s = {n_s}\n"
             f"alpha_s = 0\nT_cmb = 2.7255\nYHe = 0.245421\nreio_parametrization = reio_none\n"
             f"k_per_decade_for_pk = 100\nk_per_decade_for_bao = 100\n"
-            + MONO_BLOCK.read_text() +
+            + MONO_BLOCK +
             "output = mPk,dTk\nP_k_max_h/Mpc = 50.\nz_pk = 1.0\nheaders = yes\nformat = camb\nwrite parameters = yes\nbackground_verbose = 1\n")
 
 
@@ -129,7 +140,7 @@ def make(label):
 
 def main():
     labels = sys.argv[1:] or list(COSMO)
-    for x in (CLASS_AURORA, CLASS_PROD, PRE, MONO_BLOCK):
+    for x in (CLASS_AURORA, CLASS_PROD, PRE):
         if not x.exists():
             raise SystemExit(f"missing {x}")
     with ThreadPoolExecutor(max_workers=len(labels)) as ex:

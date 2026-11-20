@@ -25,7 +25,7 @@ This reproduces FLAMINGO's production CLASS P_cb(z = 1) to 1.5e-7 (D3A, tested; 
 
 **Corrected inputs (2026-11-17).** `abacus_cosm202`–`206` (Planck and the neutrino variations) do **not** match FLAMINGO (§3.2): wrong neutrino degeneracy, N_ur 2.0328 and rounded h/ω. For PlanckNu0p24Fix the mismatch is −1.7% in P_cb at k ≥ 0.3 h/Mpc. They are left untouched for the existing runs.
 
-The FLAMINGO-matched inputs now occupy the registered AbacusAurora cosmology directories `Cosmologies/abacus_cosm202`–`207/` (same numbers as before, so `neutrino_cosms.csv`, `cosmologies.csv` and `Cosmologies/README.md` still apply; their rows were updated 2026-11-17). LS8 has no registered number and is in `FLAMINGO_cosm/flamingo_LS8/`. The old standard-pipeline versions of c202–c207 are in `Cosmologies/obsolete_FLAMINGO_v1/` and are still used by the completed 1800³/900³ runs. All are made by `make_flamingo_cosmologies.py` (§6):
+The FLAMINGO-matched inputs now occupy the registered AbacusAurora cosmology directories `Cosmologies/abacus_cosm202`–`208/` (same numbers as before, so `neutrino_cosms.csv`, `cosmologies.csv` and `Cosmologies/README.md` still apply; their rows were updated 2026-11-17). LS8 is registered as c208 (2026-11-20). c207 and c208 were added to `neutrino_cosms.csv`, `cosmologies.csv` and `Cosmologies/README.md` on 2026-11-20. The old standard-pipeline versions of c202–c207 are in `Cosmologies/obsolete_FLAMINGO_v1/` and are still used by the completed 1800³/900³ runs. All are made by `make_flamingo_cosmologies.py` (§6):
 
 | Use for FLAMINGO box | Directory (old version) | H0 | Ω_M (incl. ν) | Ω_Smooth | N_ur, ν | σ8 (z = 0) ours / paper |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ The FLAMINGO-matched inputs now occupy the registered AbacusAurora cosmology dir
 | PlanckNu0p24Fix_DMO | `abacus_cosm204` (obsolete_FLAMINGO_v1/abacus_cosm204) | 67.32 | 0.315840 | 0.005686 | 0.00441, 3 × 0.08 eV | 0.7677 / 0.769 |
 | PlanckNu0p48Fix_DMO | `abacus_cosm205` (obsolete_FLAMINGO_v1/abacus_cosm205) | 67.32 | 0.315841 | 0.011372 | 0.00441, 3 × 0.16 eV | 0.7086 / 0.709 |
 | PlanckNu0p24Var_DMO | `abacus_cosm206` (obsolete_FLAMINGO_v1/abacus_cosm206) | 66.23 | 0.328301 | 0.005875 | 0.00441, 3 × 0.08 eV | 0.7706 / 0.772 |
-| LS8_DMO | `FLAMINGO_cosm/flamingo_LS8` (new; no registered number) | 68.2 | 0.305000 | 0.001385 | 2.0308, 1 × 0.06 eV | 0.7596 / 0.760 |
+| LS8_DMO | `abacus_cosm208` (new; registered 2026-11-20, was `FLAMINGO_cosm/flamingo_LS8`) | 68.2 | 0.305000 | 0.001385 | 2.0308, 1 × 0.06 eV | 0.7596 / 0.760 |
 
 Each directory has CLASS.ini, CLASS_power, CLASS_transfer, cosm.def and `validation.txt`.
 - **Validation:** each CLASS_power (pipeline form: `~/class_public` + `flamingo_prod.pre`, `omega_*` parameters) agrees with the exact production form (CLASS v2.9.4 with the plugin's `Omega_b`/`Omega_cdm`/`m_ncdm`/`deg_ncdm`, in `validate/`) to ≤ 1e-5 in P_cb(z = 1).
@@ -211,7 +211,7 @@ This table is for the 1800³ comparison runs. The NP = 2500³ production setup i
 | Spectra | on-the-fly power_cdm (SWIFT folding: 256³, 6 folds × 4, TSC) | snapshots re-measured with `swiftps_estimator.py` (same estimator) | matched |
 
 ## 6. Recipe for a new FLAMINGO-matched cosmology
-All seven FLAMINGO DMO cosmologies are already done (into `Cosmologies/abacus_cosm202`–`207/` and `FLAMINGO_cosm/flamingo_LS8/`) with `python3 make_flamingo_cosmologies.py [label ...]` (in `FLAMINGO_cosm/`). The script holds the parameter table (§3.1) and does the steps below. It skips any existing directory, and writes the production-form cross-check in `validate/` plus `validation.txt`. For a new FLAMINGO cosmology, add a row to its `COSMO` table. By hand:
+All seven FLAMINGO DMO cosmologies are already done (into `Cosmologies/abacus_cosm202`–`208/`) with `python3 make_flamingo_cosmologies.py [label ...]` (in `FLAMINGO_cosm/`). The script holds the parameter table (§3.1) and does the steps below. It skips any existing directory, and writes the production-form cross-check in `validate/` plus `validation.txt`. For a new FLAMINGO cosmology, add a row to its `COSMO` table. By hand:
 
 1. **Make the directory:** `Cosmologies/FLAMINGO_cosm/<name>/` (never overwrite existing ones).
 2. **Write `CLASS.ini`** (cosmology only, in the AbacusAurora form that `make_cosm_def.py` reads):
@@ -243,7 +243,7 @@ All seven FLAMINGO DMO cosmologies are already done (into `Cosmologies/abacus_co
 - **Existing c202–c206 runs:** any FLAMINGO-matched Abacus runs made from those cosmologies inherit the §3.2 and §4 mismatches.
 
 ## 8. File index
-- `Cosmologies/abacus_cosm202`–`207/` and `FLAMINGO_cosm/flamingo_LS8/` — **FLAMINGO-matched inputs to use** (§1), made by `make_flamingo_cosmologies.py`.
+- `Cosmologies/abacus_cosm202`–`208/` — **FLAMINGO-matched inputs to use** (§1), made by `make_flamingo_cosmologies.py`.
 - `Cosmologies/obsolete_FLAMINGO_v1/abacus_cosm202`–`207/` — the old standard-pipeline versions (README.txt there), kept for the completed 1800³/900³ runs.
 - `flamingo_prod.pre` — FLAMINGO production CLASS settings (use instead of abacus_base.pre).
 - `abacus_cosm207_flamingoclass/` — D3A input (z = 1) used for the matched 900³/1800³ runs (≤ 3e-5 from production).
@@ -265,11 +265,13 @@ All FLAMINGO-matched production sims use NP = 2500³ in FLAMINGO's 1 Gpc box. Th
 | --- | --- |
 | White noise | `/flare/Abacus/helenshao/ICs/flamingo_panphasia_N4096/noise`: FLAMINGO's descriptor at Panphasia level 11, N0 = 4096 (2049 slabs × 256 MiB). Made by `zeldovich_mpi/neutrino_validation/flamingo_noise_N2500/` (job 9096592, 32 nodes, 30 min, 8.9 TB peak memory); checksums in `noise_sha256.txt`. Same realisation as the N0 = 1024/2048 sets: the large-scale modes are identical, plus smaller-scale modes. |
 | Template | `Simulations/FLAMINGO.par2`: NP = 2500**3, CPD = 567 (PPC 85.7; D. Eisenstein: avoid CPD 625, which divides 2500 evenly and could let small far-field errors add coherently into certain Fourier modes; for an 8× version, 5000³, use CPD 1215, PPC 70). Derivatives `deriv*_567_8_2_8` exist on /flare (they depend only on CPD/Order/NearFieldRadius/DerivativeExpansionRadius); stage them to DAOS with `scripts/daos-stage-resources.sh 567` for runs with `ABACUS_DAOS_RESOURCES=on`, NumZRanks = 4 (8 × 4 domain on 16 nodes). Outputs at FLAMINGO's 13 full-particle snapshot redshifts from the FLAMINGO website, z = 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, with all particles at z = 0, 0.5, 1.0 and subP8 elsewhere. (`production_ymls/L1_m9_DMO__output_list.txt` lists all 78 SWIFT snapshot times; the 13 are the documented full-particle set.) |
-| Per-cosmology par2 | `Simulations/flamingo_nu_N2500/AbacusAurora_FLAMINGO_<label>_N2500.par2` for D3A (c207), Planck (c202), PlanckNu0p12Var (c203), PlanckNu0p24Fix (c204), PlanckNu0p48Fix (c205), PlanckNu0p24Var (c206) and LS8 (cosm.def from `Cosmologies/abacus_cosm20x/`, LS8 from `FLAMINGO_cosm/flamingo_LS8/`; SCR pinned to PTHREAD for the 9575f04 build) |
+| Per-cosmology par2 | `Simulations/flamingo_nu_N2500/AbacusAurora_FLAMINGO_<label>_N2500.par2` for D3A (c207), Planck (c202), PlanckNu0p12Var (c203), PlanckNu0p24Fix (c204), PlanckNu0p48Fix (c205), PlanckNu0p24Var (c206) and LS8 (c208) (cosm.def from `Cosmologies/abacus_cosm20x/`; SCR pinned to PTHREAD for the 9575f04 build) |
 | Job script | `zeldovich_mpi/neutrino_validation/production/pbs_flamingo.sh`: capacity queue, 16 nodes (the queue maximum), 6 h walltime (halts cleanly and resumes), build 9575f04_zmpi-neutrinos. It sets ZD_EXTERNAL_NOISE_DIR to the N0 = 4096 set (the build's compiled-in default is N0 = 2048) and exports ABACUS_CHECKPOINT_CONTAINERS=0. |
 | Submit | `qsub -v SIMNAME=AbacusAurora_FLAMINGO_<label>_N2500 -o $PWD/flamingo_<label>_N2500.pbs.log pbs_flamingo.sh` (the capacity queue runs 2 jobs per user at a time) |
 | Expected cost | ~2.5–3 h per sim on 16 nodes (1800³ took 7.0 h on 2 nodes). Outputs are ~0.55 TB per sim: 3 × ~130 GB all-particle + 10 × ~16 GB subP8. |
 | Old 1800³ files | The previous `FLAMINGO.par2`, `FLAMINGO_m9/m10*.par2`, `FLAMINGO_nu_c20x.par2`, `smoke_nu256_c202.par2` and `flamingo_nu_v1/` are in `Simulations/FLAMINGO_1800_local/` (local only, includes adjusted). The old job scripts, run directories and logs are in `production/flamingo_1800_local/`. |
+
+**D3A from saved ICs:** `Simulations/flamingo_nu_N2500/AbacusAurora_FLAMINGO_D3A_N2500_savedICs.par2` is the D3A run with `ExternalICs = 1`, `InitialConditionsDirectory = "/flare/Abacus/helenshao/ICs/flamingo_D3A_N2500_ics/ic"` and `ICCleanupMode = "Never"`. It reads the 2500³ ICs made by standalone Zeldovich-MPI on 2026-11-20 (same configuration; 4 × 567 RVZel_2D files, 500 GB; σ8(z = 99) 0.0104797). `pbs_flamingo.sh` detects `ExternalICs = 1` and checks the IC directory before launching.
 
 All seven par2s parse:
 - BoxSize = 1000 Mpc × h;

@@ -1,4 +1,0 @@
-LS8: pipeline (~/class_public + flamingo_prod.pre, omega_* form) vs production form (CLASS v2.9.4, m_ncdm form), z = 1 P_cb:
-  max |P/P_prod - 1| (k = 0.005-10 h/Mpc, spline) = 2.71e-08
-  sigma8 (total matter, z = 0) = 0.7596   (paper Table 4: 0.76)
-  -> total N_eff = 3.044 (sumed over ultra-relativistic species, ncdm and dark radiation)
