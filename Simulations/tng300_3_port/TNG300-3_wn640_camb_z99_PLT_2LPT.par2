@@ -1,0 +1,12 @@
+# Run A (#1) regenerated to keep its ICs: CAMB table, z_init = 99, PLT, 2LPT, same as
+# Simulations/tng300_3_port/TNG300-3_wn640_z99PLT.par2, plus tng300_3_ictest.def (ICs kept on flare).
+# Stops at z = 20.05 (TNG snap 0) so the slice can be checked against run A's.
+SimName = "TNG300-3_wn640_camb_z99_PLT_2LPT"
+
+#include "./TNG300-3_wn640_z99PLT.par2"
+
+SimName = "TNG300-3_wn640_camb_z99_PLT_2LPT"
+#include "./tng300_3_ictest.def"
+
+TimeSliceRedshifts_Subsample = [20.046490988807516]
+FinalRedshift = 20.046490988807516

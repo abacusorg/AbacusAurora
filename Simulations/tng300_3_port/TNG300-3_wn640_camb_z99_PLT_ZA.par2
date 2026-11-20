@@ -1,0 +1,13 @@
+# Test: CAMB table, z_init = 99, PLT, Zel'dovich only. vs TNG: PLT alone; vs run A (#1): effect of 2LPT with PLT;
+# vs #3: PLT vs 2LPT at z_init = 99.
+SimName = "TNG300-3_wn640_camb_z99_PLT_ZA"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 99
+ZD_qPLT = 1
+LagrangianPTOrder = 1

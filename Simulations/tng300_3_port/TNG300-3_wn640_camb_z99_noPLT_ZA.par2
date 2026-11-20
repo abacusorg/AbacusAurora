@@ -1,0 +1,13 @@
+# Test #4: CAMB table, z_init = 99, no PLT, Zel'dovich (TNG's recipe started at z = 99). vs TNG: does a z = 99 ZA start match TNG;
+# vs #3: effect of 2LPT at z_init = 99 without PLT; vs #8: effect of z_init = 99 vs 127 with ZA, no PLT.
+SimName = "TNG300-3_wn640_camb_z99_noPLT_ZA"
+
+#include "../$ABACUS_SITE$.def"
+#include "../../Cosmologies/tng_planck2015/cosm.def"
+#include "../base.def"
+#include "./tng300_3_wn640.def"
+#include "./tng300_3_ictest.def"
+
+InitialRedshift = 99
+ZD_qPLT = 0
+LagrangianPTOrder = 1

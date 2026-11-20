@@ -56,3 +56,17 @@ Runs A and B vs TNG300-3-Dark (analysis in `~/InitialConditions/tng300_3_port_an
 TNG300-3's realization with no axis permutation, flip or shift (r(k) = 1.0000 at k < 1 h/Mpc at z = 20); run B
 matches TNG's P(k) to <= 0.5% to k = 5 h/Mpc at all redshifts, run A has +1-10% small-scale power at high z
 from 2LPT + PLT, decaying to ~1% at z = 0.
+
+#3 and #7 (2LPT without PLT) crash on the main code (LPTVelScale = max|v - displ| is pure roundoff when v = displ,
+so the uint16 aux packing overflows in the first 2LPT kick). They were run on branch `lpt-velscale-floor`
+(ce053e2, floor LPTVelScale at 1e-7; PLT runs unchanged), job 9108022; all other test runs used 744d747.
+
+Splitting A's excess vs TNG: PLT dominates at high z (A vs #3: +13% at k = 5, +2.3% at k = 2 at z = 20; ~0 at
+z = 0); 2LPT vs ZA (#7 vs #8) is +1% at k = 5 at z = 20, grows to +3-4% at k = 2-5 at z = 3-5, and leaves the
+~+1% at k = 0.5-5 at z = 0 that A shows vs TNG (TNG's own ZA transients). z_init matters little in either recipe.
+
+#2 (`TNG300-3_wn640_camb_z99_PLT_ZA`) and #4 (`TNG300-3_wn640_camb_z99_noPLT_ZA`), par files in this directory,
+code 744d747, jobs 9108899 / 9109115. Best z_init = 99 recipe for matching TNG: no PLT, ZA (#4): within 0.5% of TNG to
+k ~ 5 at z <= 5 (-0.4% at k ~ 1 at z = 0, vs #8's -0.14%), +2.7% at k = 5 at z = 20. 2LPT adds a flat +1.0-1.3% at
+k >= 0.5 at z = 0 with or without PLT (A vs #2 = #3 vs #4); PLT only matters at high z. Run A's ICs were regenerated
+(stopped at z = 20; P(k) matches run A to 7e-6) into `ICs/tng300_3_wn640/ic_TNG300-3_wn640_camb_z99_PLT_2LPT/`.
