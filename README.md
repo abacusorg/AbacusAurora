@@ -68,12 +68,12 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_DAOS_PRELOAD` | `on` | run | with DAOS on, `LD_PRELOAD` the DAOS interception library into the ranks |
 | `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
-| `ABACUS_BAD_NODES` | `on` | run | leave the nodes listed in `job/bad_nodes.txt` out of the job, as many as the spares cover (see [Bad nodes](#bad-nodes)); `off` uses them like any other |
+| `ABACUS_BAD_NODES` | `on` | run | never run on the nodes listed in `job/bad_nodes.txt` (see [Node exclusions](#node-exclusions)); `off` uses them like any other |
+| `ABACUS_SLOW_NODES` | `on` | run | make the nodes listed in `job/slow_nodes.txt` the first spares (see [Node exclusions](#node-exclusions)); `off` treats them like any other |
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
 | `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `check` only measures each node, for the short-node check; `off` skips both |
-| `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep (as found, with `check`); a node short of it runs only if the spares run out. `0` turns the check off |
+| `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep; a node short of it is never used, and the rest are ranked by how far over it they are when choosing spares (as found, with `check`, which only ranks). `0` turns the check off |
 | `ABACUS_NODEPREP_NEED_HBM_GIB` | `60` | run | the same for an HBM node |
-| `ABACUS_NODEPREP_FAIL_SHORT` | `off` | run | `on` ends the job before the sims when a short node would have to run for want of spares, or nodeprep measured nothing |
 | `ABACUS_GEMM_WARMUP` | `on` | run | at the end of the job, read the files the next job's PBS prologue test loads (see [Prologue warm-up](#prologue-warm-up)); `off` skips it |
 | `ABACUS_GEMM_WARMUP_STAGGER` | `2` | run | whole seconds between the warm-ups of two of our nodes in one rack |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
@@ -89,15 +89,27 @@ In turn, the scripts set these for `aurora.def` and Abacus:
 - `ABACUS_JOB_HALT_TIME`: when Abacus halts, the walltime less 10 minutes.
 - `ABACUS_JOB_HALT_FILE`: `/flare/Abacus/HALT.<jobid>`; create it to halt every sim in the job.
 
-## Bad nodes
+## Node exclusions
 
-`job/bad_nodes.txt` lists the nodes that have misbehaved in our runs: suspected wrong data, or sockets
-that were persistently slow across jobs. One short host name per line, with the reason and the job that
-showed it after a `#`. When it sets up the allocation, before node prep, `multisim.pbs` leaves the listed
-nodes out of the job as `ABACUS_EXCLUDE_NODES` would, but only as many as the spares cover, earlier
-lines first; any left over run, and it names them. So a job with no spares (the emulators ask for exactly
-the nodes they use) is never failed by the list. Ask for spares with `-n` for both the listed nodes (about
-85% of the list lands in a 9,000-node allocation) and those node prep finds short.
+When it sets up the allocation, `multisim.pbs` decides which nodes the sims run on (`job/exclusions.sh`):
+
+1. **Known bad**, never used: the nodes in `job/bad_nodes.txt` (`ABACUS_BAD_NODES`), suspected of faulty
+   hardware: wrong data, or failing under a job. They are left out before node prep.
+2. **Short after node prep**, never used: a node with a DDR socket or an HBM node short of whole 2 MiB
+   blocks after the pass (see [Node prep](#node-prep)).
+3. **Suspected slow**, the first spares: the nodes in `job/slow_nodes.txt` (`ABACUS_SLOW_NODES`), sockets
+   persistently slower than their peers, earlier lines first. Any the spares cannot cover run, named in a
+   warning.
+4. **The least defragmented**, the rest of the spares: the nodes with the least memory in whole blocks
+   over what they need, relative to the need, on whichever DDR socket or HBM node is tightest; a node
+   missing a result counts as none over. Without node prep's numbers, the last nodes.
+
+`ABACUS_EXCLUDE_NODES` works like 1. When 1 or 2 leave fewer nodes than the sims need, the job ends there,
+before the DAOS mount. So ask for spares with `-n` for the known bad nodes in the allocation and those node
+prep finds short (a few in a 9,000-node job), and for as many of the slow ones as are worth keeping out.
+`job/bad_nodes.txt` and `job/slow_nodes.txt` give one short host name per line, with the reason and the job
+that showed it after a `#`. `out/<jobid>/hostfile_extra` lists the spares best first, the order to bring
+them in should a node need replacing.
 
 ## Node prep
 
@@ -110,13 +122,12 @@ Doesn't work with non-reclaimable memory, so we also record the amount of memory
 regions to `out/<jobid>/nodeprep.txt`. A DDR socket that comes out short of
 `ABACUS_NODEPREP_NEED_DDR_GIB` gets a second pass that also shrinks the kernel's reclaimable caches.
 A node still short after that, on a DDR socket or an HBM node (`ABACUS_NODEPREP_NEED_HBM_GIB`), is
-moved behind the spares: ask for spares with `-n`, or it runs anyway, unless
-`ABACUS_NODEPREP_FAIL_SHORT=on` ends the job first. The spares go to nodes short of HBM before
-those short only of DDR.
+never used (see [Node exclusions](#node-exclusions)); in job 9048965 a node short of HBM stalled 20-205 s
+a step. The rest rank the spares by how far over the need they are.
 
-`ABACUS_NODEPREP=check` fills and frees nothing: it measures every node as it arrived and moves the
-short ones behind the spares the same way. Page cache that a check finds counts against a node,
-since only a fill would reclaim it.
+`ABACUS_NODEPREP=check` fills and frees nothing: it measures every node as it arrived, and its numbers
+only rank the spares, a short node first. Page cache that a check finds counts against a node, since
+only a fill would reclaim it.
 
 ## Prologue warm-up
 

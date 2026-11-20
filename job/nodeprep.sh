@@ -19,21 +19,12 @@ nodeprep_mode() {
     esac
 }
 
-# 1 if ABACUS_NODEPREP_FAIL_SHORT asks nodeprep_demote to fail rather than run a short node, else 0.
-nodeprep_fail_short() {
-    case ${ABACUS_NODEPREP_FAIL_SHORT:-off} in
-        [Oo][Nn]|1|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]) echo 1 ;;
-        [Oo][Ff][Ff]|0|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]) echo 0 ;;
-        *) echo "ERROR: ABACUS_NODEPREP_FAIL_SHORT='$ABACUS_NODEPREP_FAIL_SHORT' (want on or off)" >&2; return 1 ;;
-    esac
-}
-
-# The ABACUS_NODEPREP* switches, checked together: prints what is wrong and returns 1.
+# The ABACUS_NODEPREP* settings, checked together: prints what is wrong and returns 1.
 nodeprep_check_settings() {
-    local mode fail
-    mode=$(nodeprep_mode) && fail=$(nodeprep_fail_short) || return 1
-    if [[ $mode == off ]] && (( fail )); then
-        echo "ERROR: ABACUS_NODEPREP_FAIL_SHORT=on needs nodeprep's numbers, and ABACUS_NODEPREP is off" >&2
+    nodeprep_mode > /dev/null || return 1
+    if [[ -n ${ABACUS_NODEPREP_FAIL_SHORT+set} ]]; then
+        echo "ERROR: ABACUS_NODEPREP_FAIL_SHORT is gone: a node short after node prep is always left out, and the job" \
+             "ends if too few remain (README: Node exclusions)" >&2
         return 1
     fi
 }
@@ -112,65 +103,55 @@ nodeprep_report() {  # <log>
     (( found )) || echo "WARNING: nodeprep: no per-node results in $1" >&2
 }
 
-# Moves the hosts of <hostfile> short of whole 2 MiB blocks after the pass or a check (nodeprep_need_*),
-# or with no result in <log>, behind the rest, listed in <hostfile>.short; the sims take them only when
-# the spares past <required> run out.  Those short of HBM go last: in job 9048965 such a node stalled
-# 20-205 s a step.  Returns 1 when one must run and nodeprep_fail_short says to fail.
-nodeprep_demote() {  # <hostfile> <log> <required>
-    local hostfile=$1 log=$2 required=$3 good short nshort nspare nrun fail
-    : > "$hostfile.short"
-    fail=$(nodeprep_fail_short) || fail=1
-    if ! grep -q -E ' (mem)?node [0-9]+(:| after:) ' "$log" 2>/dev/null; then
-        if (( fail )); then
-            echo "ERROR: nodeprep: no per-node results in $log, and ABACUS_NODEPREP_FAIL_SHORT=on" >&2
-            return 1
-        fi
-        return 0
-    fi
-    good=$(mktemp) && short=$(mktemp) || return 0
-    awk -v need_ddr="$(nodeprep_need_ddr)" -v need_hbm="$(nodeprep_need_hbm)" -v good="$good" '
+# Per host of <hostfile>, tab-separated: host, state (short; unknown: no result for a NUMA node most hosts
+# report; ok), the least (GiB - need)/need over its NUMA nodes, why.  Returns 1 if <log> has no results.
+nodeprep_margins() {  # <log> <hostfile>
+    grep -q -E ' (mem)?node [0-9]+(:| after:) ' "$1" 2>/dev/null || return 1
+    awk -v need_ddr="$(nodeprep_need_ddr)" -v need_hbm="$(nodeprep_need_hbm)" '
+        function kless(a, b,   x, y) {
+            split(a, x, " "); split(b, y, " ")
+            if (x[1] != y[1]) return x[1] == "node"
+            return x[2] + 0 < y[2] + 0
+        }
         FNR == NR {
             if ($2 != "node" && $2 != "memnode") next
-            if ($3 ~ /^[0-9]+:$/) k = $1 " " $2 " " substr($3, 1, length($3) - 1)
-            else if ($4 == "after:") k = $1 " " $2 " " $3
+            if ($3 ~ /^[0-9]+:$/) n = substr($3, 1, length($3) - 1)
+            else if ($4 == "after:") n = $3
             else next
+            k = $2 " " n
             for (i = 4; i < NF; i++) if ($i == "blocks") v = $(i + 1) + 0
-            after[k] = v
-            seen[$1] = 1
+            if (!(($1, k) in after)) nkey[k]++
+            after[$1, k] = v
+            hosts[$1] = 1
             next
         }
         FNR == 1 {
-            for (k in after) {
-                split(k, f, " ")
-                need = f[2] == "memnode" ? need_hbm : need_ddr
-                if (after[k] >= need) continue
-                if (!(f[1] in ratio) || after[k] / need < ratio[f[1]]) ratio[f[1]] = after[k] / need
-                if (f[2] == "memnode") hbm[f[1]] = 1
-                why[f[1]] = why[f[1]] sprintf(", %s %s has %.1f GiB and needs %g", f[2], f[3], after[k], need)
-            }
+            # The NUMA nodes in a fixed order (DDR sockets, then HBM, each by number), and those most hosts report.
+            for (k in nkey) keys[++nk] = k
+            for (i = 2; i <= nk; i++)
+                for (j = i; j > 1 && kless(keys[j], keys[j - 1]); j--) { t = keys[j]; keys[j] = keys[j - 1]; keys[j - 1] = t }
+            for (h in hosts) nh++
+            for (k in nkey) if (2 * nkey[k] >= nh) expect[k] = 1
         }
         {
             h = $0
             sub(/\..*/, "", h)
-            if (h in ratio) printf "%d\t%.6f\t%d\t%s\t%s\n", (h in hbm) ? 2 : 1, ratio[h], FNR, $0, substr(why[h], 3)
-            else if (!(h in seen)) printf "0\t1\t%d\t%s\tno nodeprep result\n", FNR, $0
-            else print > good
-        }' "$log" "$hostfile" | sort -t $'\t' -k1,1n -k2,2gr -k3,3n > "$short" || : > "$short"
-    nshort=$(( $(wc -l < "$short") ))
-    nrun=0
-    if (( nshort > 0 )); then
-        cut -f4 "$short" > "$hostfile.short"
-        cat "$good" "$hostfile.short" > "$hostfile"
-        nspare=$(( $(wc -l < "$hostfile") - required ))
-        nrun=$(( nshort > nspare ? nshort - nspare : 0 ))
-        echo "nodeprep: $nshort node(s) are short of whole 2 MiB blocks; with $nspare spare(s), $nrun of them run:"
-        awk -F '\t' -v nrun="$nrun" '{ h = $4; sub(/\..*/, "", h); printf "  %s: %s%s\n", h, $5, NR <= nrun ? " (runs)" : "" }' "$short"
-        if (( nrun > 0 && fail )); then
-            echo "ERROR: nodeprep: $nrun node(s) short of whole 2 MiB blocks would run for want of spares, and ABACUS_NODEPREP_FAIL_SHORT=on" >&2
-        elif (( nrun > 0 )); then
-            echo "WARNING: nodeprep: $nrun node(s) short of whole 2 MiB blocks run for want of spares" >&2
-        fi
-    fi
-    rm -f "$good" "$short"
-    (( nrun == 0 || ! fail ))
+            if (!(h in hosts)) { printf "%s\tunknown\t-\tno nodeprep result\n", $0; next }
+            short = missing = tight = ""
+            m = "-"
+            for (i = 1; i <= nk; i++) {
+                k = keys[i]
+                if (!((h, k) in after)) { if (k in expect) missing = missing ", " k; continue }
+                need = k ~ /^memnode/ ? need_hbm : need_ddr
+                if (need <= 0) continue
+                v = after[h, k]
+                if (v < need) short = short sprintf(", %s has %.1f GiB and needs %g", k, v, need)
+                r = (v - need) / need
+                if (m == "-" || r < m) { m = r; tight = sprintf("tightest: %s has %.1f GiB of the %g needed", k, v, need) }
+            }
+            ms = m == "-" ? "-" : sprintf("%.4f", m)
+            if (short != "") printf "%s\tshort\t%s\t%s\n", $0, ms, substr(short, 3)
+            else if (missing != "") printf "%s\tunknown\t%s\tno result for %s%s\n", $0, ms, substr(missing, 3), tight == "" ? "" : "; " tight
+            else printf "%s\tok\t%s\t%s\n", $0, ms, tight == "" ? "no need set" : tight
+        }' "$1" "$2"
 }
