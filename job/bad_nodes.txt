@@ -8,3 +8,6 @@ x4516c6s0b0n0   # step-182 gather (8947769, 8948252): an Igather's int64 lost bi
 x4610c3s1b0n0   # step-182 gather: the root, on the same path twice; it passed once these four were off it (8948658)
 x4514c2s3b0n0   # step-182 gather: an intermediate; one of these four is suspect, which one is unknown
 x4509c4s1b0n0   # step-182 gather: an intermediate
+
+# Failed under a job.
+x4001c1s6b0n0   # 9097298: CXI link flap at 07:38 (ALCF StabilityDB), unreachable by 08:14, which ended the run
