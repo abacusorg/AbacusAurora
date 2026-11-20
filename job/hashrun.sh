@@ -42,7 +42,7 @@ prod=$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --show-toplevel)
 
 source "$prod/job/daos.sh"
 source "$prod/job/nodeprep.sh"
-source "$prod/job/badnodes.sh"
+source "$prod/job/exclusions.sh"
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -294,7 +294,7 @@ read_par2_list
 check_prod
 setup_daos
 nodeprep_check_settings || exit 1   # after setup_daos, which exports the -E settings
-badnodes_check_settings || exit 1
+excl_check_settings || exit 1
 build_code
 stage_spec
 submit

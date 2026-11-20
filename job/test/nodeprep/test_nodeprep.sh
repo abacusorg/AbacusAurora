@@ -42,13 +42,13 @@ for pair in "unset reclaim" "on reclaim" "1 reclaim" "check check" "CHECK check"
 done
 got=$(ABACUS_NODEPREP=chek nodeprep_mode 2>&1)
 result "a misspelt ABACUS_NODEPREP is an error" "$(( $? != 0 ))" "got '$got'"
-for pair in "check on 0" "on yes 0" "off off 0" "off on 1" "on maybe 1"; do
-    set -- $pair
-    got=$(ABACUS_NODEPREP=$1 ABACUS_NODEPREP_FAIL_SHORT=$2 nodeprep_check_settings 2>&1)
-    rc=$?
-    result "ABACUS_NODEPREP=$1 with ABACUS_NODEPREP_FAIL_SHORT=$2 $( (( $3 )) && echo 'is refused' || echo 'is accepted')" \
-           "$(( (rc != 0) == $3 ))" "rc=$rc, '$got'"
+for mode in on check off; do
+    got=$(ABACUS_NODEPREP=$mode nodeprep_check_settings 2>&1)
+    result "ABACUS_NODEPREP=$mode is accepted" "$(( $? == 0 ))" "'$got'"
 done
+got=$(ABACUS_NODEPREP_FAIL_SHORT=on nodeprep_check_settings 2>&1)
+result "a leftover ABACUS_NODEPREP_FAIL_SHORT is refused, saying why" \
+       "$( (( $? != 0 )) && [[ $got == *"ABACUS_NODEPREP_FAIL_SHORT is gone"* ]] && echo 1 || echo 0)" "'$got'"
 
 mkdir -p "$work/bin"
 cat > "$work/bin/mpiexec" <<'STUB'
@@ -135,8 +135,8 @@ out=$(env ABACUS_NODEPREP=off STUB_ARGS="$work/args.txt" PATH="$work/bin:$PATH" 
 [[ $out == "caller carries on" && ! -e $work/args.txt ]]
 result "off launches nothing" "$(( $? == 0 ))" "$out"
 
-# nodeprep_demote: h1's socket 1 recovers on its second pass, h2 has a short HBM node, h3 a short
-# socket, h4 no result, h5 nothing wrong.
+# nodeprep_margins: h1's socket 1 recovers on its second pass, h2 has a short HBM node (its pass killed),
+# h3 a short socket, h4 no result, and h5 no result for memnode 2, which half the hosts report.
 {
     blocks h1 node 0 before: 150.0; blocks h1 node 0 after: 460.5
     blocks h1 node 1 before: 100.0; blocks h1 node 1 after: 300.0
@@ -149,64 +149,53 @@ result "off launches nothing" "$(( $? == 0 ))" "$out"
     blocks h3 memnode 3 before: 63.0; blocks h3 memnode 3 after: 63.9
     blocks h5 node 0 before: 400.0; blocks h5 node 0 after: 470.0
 } > "$work/canned2.txt"
-# demote <name> <wanted order> <wanted text> <required> [VAR=VAL ...]
-demote() {
-    local name=$1 order=$2 want=$3 required=$4
-    shift 4
-    printf 'h1.net\nh2.net\nh3.net\nh4.net\nh5.net\n' > "$work/hosts5"
-    local out rc=0 got ok=0
-    out=$(env "$@" bash -c 'set -euo pipefail; source "$1/nodeprep.sh"; nodeprep_demote "$2" "$3" "$4"' \
-              demote "$job" "$work/hosts5" "${demote_log:-$work/canned2.txt}" "$required" 2>&1) || rc=$?
-    got=$(tr '\n' ' ' < "$work/hosts5")
-    [[ $rc == "${demote_rc:-0}" && $got == "$order " && $out == *"$want"* ]] && ok=1
-    result "$name" "$ok" "rc=$rc, order: $got, output:"$'\n'"$out"
+printf 'h1.net\nh2.net\nh3.net\nh4.net\nh5.net\n' > "$work/hosts5"
+# margins <name> <log> <wanted output> [VAR=VAL ...]: nodeprep_margins on the five hosts must print exactly
+# the wanted lines (tabs between fields) and succeed.
+margins() {
+    local name=$1 log=$2 want=$3 out rc=0
+    shift 3
+    out=$(env "$@" bash -c 'set -euo pipefail; source "$1/nodeprep.sh"; nodeprep_margins "$2" "$3"' \
+              margins "$job" "$log" "$work/hosts5" 2>&1) || rc=$?
+    result "$name" "$([[ $rc == 0 && $out == "$want" ]] && echo 1 || echo 0)" "rc=$rc, output:"$'\n'"$out"
 }
-demote "short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
-       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 60' 2
-demote "with too few spares the least short run, and it warns" "h1.net h5.net h4.net h3.net h2.net" \
-       $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n' 4
-demote "a second pass that recovers the socket counts" "h1.net h5.net h4.net h3.net h2.net" \
-       'WARNING: nodeprep: 2 node(s) short' 4
-demote "the checks can be turned off" "h1.net h2.net h3.net h5.net h4.net" \
-       'h4: no nodeprep result' 2 ABACUS_NODEPREP_NEED_DDR_GIB=0 ABACUS_NODEPREP_NEED_HBM_GIB=0
-[[ $(cat "$work/hosts5.short") == h4.net ]]
-result "the short list names the demoted hosts" "$(( $? == 0 ))"
+T=$'\t'
+want2="h1.net${T}ok${T}0.0455${T}tightest: node 1 has 345.0 GiB of the 330 needed
+h2.net${T}short${T}-0.3250${T}memnode 2 has 40.5 GiB and needs 60
+h3.net${T}short${T}-0.0606${T}node 0 has 310.0 GiB and needs 330
+h4.net${T}unknown${T}-${T}no nodeprep result
+h5.net${T}unknown${T}0.4242${T}no result for memnode 2; tightest: node 0 has 470.0 GiB of the 330 needed"
+margins "a pass: short, unknown and ok hosts, the last pass counting, a killed pass measured" "$work/canned2.txt" "$want2"
 
-# The same nodes as a check finds them, where h1's socket 1 was already whole.
+# The same nodes as a check finds them, where h1's socket 1 was already whole: the same answer.
 {
     found h1 node 0 460.5; found h1 node 1 345.0; found h1 memnode 2 63.5
     found h2 node 0 470.0; found h2 memnode 2 40.5
     found h3 node 0 310.0; found h3 memnode 3 63.9
     found h5 node 0 470.0
 } > "$work/canned4.txt"
-demote_log=$work/canned4.txt
-demote "a check's short nodes go last, the least short first" "h1.net h5.net h4.net h3.net h2.net" \
-       $'  h3: node 0 has 310.0 GiB and needs 330\n  h2: memnode 2 has 40.5 GiB and needs 60' 2
-demote "a check names the short HBM node" "h1.net h5.net h4.net h3.net h2.net" \
-       $'with 1 spare(s), 2 of them run:\n  h4: no nodeprep result (runs)\n  h3: node 0 has 310.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 40.5 GiB and needs 60\n' 4
+margins "a check's numbers read the same" "$work/canned4.txt" "$want2"
 
-# h1 is far short of DDR, h2 a little short of HBM: the spare goes to h2.
-{
-    found h1 node 0 150.0; found h1 memnode 2 63.9
-    found h2 node 0 470.0; found h2 memnode 2 57.0
-    found h3 node 0 470.0; found h5 node 0 470.0
-} > "$work/canned5.txt"
-demote_log=$work/canned5.txt
-demote "a node short of HBM is kept out before one short only of DDR" "h3.net h5.net h4.net h1.net h2.net" \
-       $'  h4: no nodeprep result (runs)\n  h1: node 0 has 150.0 GiB and needs 330 (runs)\n  h2: memnode 2 has 57.0 GiB and needs 60\n' 4
-demote_log=$work/canned2.txt
-demote "fail-short passes when the spares cover the short nodes" "h1.net h5.net h4.net h3.net h2.net" \
-       'with 3 spare(s), 0 of them run' 2 ABACUS_NODEPREP_FAIL_SHORT=on
-demote_rc=1
-demote "fail-short fails when a short node would run" "h1.net h5.net h4.net h3.net h2.net" \
-       'ERROR: nodeprep: 2 node(s) short of whole 2 MiB blocks would run' 4 ABACUS_NODEPREP_FAIL_SHORT=on
+margins "with no need set nothing is short, and a missing result still counts" "$work/canned2.txt" \
+        "h1.net${T}ok${T}-${T}no need set
+h2.net${T}ok${T}-${T}no need set
+h3.net${T}unknown${T}-${T}no result for memnode 2
+h4.net${T}unknown${T}-${T}no nodeprep result
+h5.net${T}unknown${T}-${T}no result for memnode 2" ABACUS_NODEPREP_NEED_DDR_GIB=0 ABACUS_NODEPREP_NEED_HBM_GIB=0
+
+# Both short: every short NUMA node is named, DDR before HBM.
+{ found h1 node 0 150.0; found h1 node 1 470.0; found h1 memnode 2 57.0; found h1 memnode 3 63.9; } > "$work/canned5.txt"
+margins "every short NUMA node is named, the margin the least" "$work/canned5.txt" \
+        "h1.net${T}short${T}-0.5455${T}node 0 has 150.0 GiB and needs 330, memnode 2 has 57.0 GiB and needs 60
+h2.net${T}unknown${T}-${T}no nodeprep result
+h3.net${T}unknown${T}-${T}no nodeprep result
+h4.net${T}unknown${T}-${T}no nodeprep result
+h5.net${T}unknown${T}-${T}no nodeprep result"
+
 : > "$work/empty.txt"
-demote_log=$work/empty.txt
-demote "fail-short fails when nodeprep measured nothing" "h1.net h2.net h3.net h4.net h5.net" \
-       'ERROR: nodeprep: no per-node results' 2 ABACUS_NODEPREP_FAIL_SHORT=on
-unset demote_rc
-demote "without fail-short, no results leave the hostfile as it was" "h1.net h2.net h3.net h4.net h5.net" '' 2
-unset demote_log
+out=$(bash -c 'source "$1/nodeprep.sh"; nodeprep_margins "$2" "$3"' x "$job" "$work/empty.txt" "$work/hosts5" 2>&1)
+rc=$?
+result "no per-node results: nothing printed, and it says so by failing" "$([[ $rc != 0 && -z $out ]] && echo 1 || echo 0)" "rc=$rc, '$out'"
 
 if (( fails )); then
     echo "$fails case(s) failed"
