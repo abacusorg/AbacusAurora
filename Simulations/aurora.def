@@ -71,6 +71,7 @@ CompressWriteState = 1   # =1 to compress the slabs as we write them out for a s
 SCR_Checkpoint_Seconds = 2700    # If non-zero, this overrides the option in the ConfigLines.  Forces a checkpoint this often
 
 ExitAfterCheckpoint = 1    # If non-zero, this chooses to avoid a final writing out of the state, but instead to end after a checkpoint.
+InvocationEndStateDest = "none"   # A HALT-file or MapForest-overflow halt writes no state; the next invocation resumes from the last checkpoint.  abacus older than 746952a6 rejects "none" at startup.
 
 FetchAheadExtra = 3 # Could be as much as 5
 DirectsSortCells = 1   # Turn on Morton sorting of PosXYZ
