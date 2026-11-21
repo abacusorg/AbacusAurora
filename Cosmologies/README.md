@@ -31,6 +31,7 @@ Further details are below the table.
 
 All cosmologies use tau=0.0544.  Most use 60 meV neutrinos, omega_nu = 0.00064420, scaling from z=1.
 We use HyRec, rather than RecFast.
+**Exception: the FLAMINGO-matched cosmologies c202-c208 do not follow these defaults** (no reionization, RECFAST, FLAMINGO's precision, N_eff = 3.044, three degenerate neutrinos for the massive-neutrino models); see "FLAMINGO-matched cosmologies" below.
 
 CLASS is run with the pk_ref.pre precision choices, unless the name ends with \_fast, in which case we use the defaults.
 There was one case where CLASS underflowed an integration tolerance with the pk_ref precisions; we reverted to pk_permille.pre
@@ -185,11 +186,13 @@ neutrinos as a smooth component.
 | abacus_cosm223     | core4.5d; theta_s factor=0.9800                                    | 0.02237 |  0.1200   | 0.6054| 2.1984e-09| 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 0.808199 | 0.811574  | 
 | abacus_cosm224     | core4.5d; theta_s factor=1.0000                                    | 0.02472 |  0.1200   | 0.6952| 2.1331e-09| 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 0.808223 | 0.811576  | 
 | abacus_cosm225     | core4.5d; theta_s factor=1.0000                                    | 0.02024 |  0.1200   | 0.6546| 2.0407e-09| 0.9649 | 0.000   | 2.0328 | 1      | 0.00064420 | -1.000 | 0.000 | 0.808131 | 0.811583  | 
-| abacus_cosm202 | FLAMINGO Planck | 0.022375 | 0.1201 | 0.673 | 2.101e-9 | 0.966 | 0.000 | 2.0328 | 1 | 0.0006442 | -1 | 0.0 | 0.812002 | 0.815420 |
-| abacus_cosm203 | FLAMINGO PlanckNu0p12Var | 0.022465 | 0.1194 | 0.673 | 2.113e-9 | 0.966 | 0.000 | 2.0328 | 1 | 0.0012884 | -1 | 0.0 | 0.797821 | 0.803965 |
-| abacus_cosm204 | FLAMINGO PlanckNu0p24Fix | 0.022375 | 0.1182 | 0.673 | 2.101e-9 | 0.966 | 0.000 | 2.0328 | 1 | 0.0025768 | -1 | 0.0 | 0.766760 | 0.776742 |
-| abacus_cosm205 | FLAMINGO PlanckNu0p48Fix | 0.022375 | 0.1156 | 0.673 | 2.101e-9 | 0.966 | 0.000 | 2.0328 | 1 | 0.0051536 | -1 | 0.0 | 0.714703 | 0.728707 |
-| abacus_cosm206 | FLAMINGO PlanckNu0p24Var | 0.022350 | 0.1188 | 0.662 | 2.109e-9 | 0.968 | 0.000 | 2.0328 | 1 | 0.0025768 | -1 | 0.0 | 0.768669 | 0.778584 |
+| abacus_cosm202 | FLAMINGO Planck (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre) | 0.0223834611 | 0.1201106763 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.811828 | 0.815305 |
+| abacus_cosm203 | FLAMINGO PlanckNu0p12Var (FLAMINGO-matched 2026-11-17: 3 x 0.04 eV degenerate, flamingo_prod.pre) | 0.0224316786 | 0.1190969634 | 0.6727 | 2.1130e-09 | 0.967 | 0.000 | 0.00441 | 1 | 0.001288402722 | -1 | 0.0 | 0.798967 | 0.806030 |
+| abacus_cosm204 | FLAMINGO PlanckNu0p24Fix (FLAMINGO-matched 2026-11-17: 3 x 0.08 eV degenerate, flamingo_prod.pre) | 0.0223834611 | 0.1181777859 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 0.00441 | 1 | 0.002576805444 | -1 | 0.0 | 0.767681 | 0.780642 |
+| abacus_cosm205 | FLAMINGO PlanckNu0p48Fix (FLAMINGO-matched 2026-11-17: 3 x 0.16 eV degenerate, flamingo_prod.pre) | 0.0223834611 | 0.1156013539 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 0.00441 | 1 | 0.005153610888 | -1 | 0.0 | 0.708640 | 0.730190 |
+| abacus_cosm206 | FLAMINGO PlanckNu0p24Var (FLAMINGO-matched 2026-11-17: 3 x 0.08 eV degenerate, flamingo_prod.pre) | 0.0223750922 | 0.1190542644 | 0.6623 | 2.1090e-09 | 0.968 | 0.000 | 0.00441 | 1 | 0.002576805444 | -1 | 0.0 | 0.770647 | 0.783557 |
+| abacus_cosm207 | FLAMINGO D3A, fiducial (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre) | 0.0225387846 | 0.1187279174 | 0.681 | 2.0990e-09 | 0.967 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.806879 | 0.810369 |
+| abacus_cosm208 | FLAMINGO LS8, low-S8 lensing cosmology (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre) | 0.0220003652 | 0.1192182534 | 0.682 | 1.8360e-09 | 0.965 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.759599 | 0.762885 |
 | abacus_cosm211 | 0.12 eV single species; theta_s matched, sigma8_cb = 0.811355 | 0.02237 | 0.1200 | 0.6680 | 2.1442e-09 | 0.9649 | 0.000 | 2.0328 | 1 | 0.0012884 | -1.000 | 0.000 | 0.805187 | 0.811356 |
 | abacus_cosm212 | 0.24 eV single species; theta_s matched, sigma8_cb = 0.811355 | 0.02237 | 0.1200 | 0.6573 | 2.2738e-09 | 0.9649 | 0.000 | 2.0328 | 1 | 0.0025768 | -1.000 | 0.000 | 0.801151 | 0.811361 |
 | abacus_cosm213 | massless neutrino; theta_s matched, sigma8_cb = 0.753159 | 0.02237 | 0.1200 | 0.6790 | 1.7528e-09 | 0.9649 | 0.000 | 3.046 | 0 | 0.0 | -1.000 | 0.000 | 0.753144 | 0.753144 |
@@ -317,6 +320,48 @@ This last subspace has 4 new second derivatives to measure.
 
 The randomness of the starting point was subjected to some patterns on the sign of certain coordinates
 in order to encourage a glass with better balance in 2-d projections.  This was judged simply by eye.
+
+FLAMINGO-matched cosmologies (c202-c208, regenerated 2026-11-17; c208 added 2026-11-20):
+These reproduce the linear inputs of the FLAMINGO simulations (Schaye et al. 2023) so that Abacus boxes with FLAMINGO's phases can be
+compared with FLAMINGO directly. Full provenance, tests and recipe: FLAMINGO_cosm/FLAMINGO_MATCHING.md. Generator: FLAMINGO_cosm/make_flamingo_cosmologies.py.
+The previous standard-pipeline versions of c202-c207 (one heavy neutrino, N_ur = 2.0328, rounded h and omegas, abacus_base.pre) were up to
+3% off in P_cb (PlanckNu0p48Fix) and had a 0.46% stronger BAO amplitude; they are kept locally only, in obsolete_FLAMINGO_v1/.
+
+| cosm | FLAMINGO model (DMO box) | sum m_nu | neutrino species | N_ur | h | sigma8_m (ours / paper) |
+| ---- | ------------------------ | -------- | ---------------- | ---- | - | ----------------------- |
+| c202 | Planck (Planck_DMO) | 0.06 eV | 1 x 0.06 eV | 2.0308 | 0.6732 | 0.8118 / 0.812 |
+| c203 | PlanckNu0p12Var | 0.12 eV | 3 x 0.04 eV (degenerate) | 0.00441 | 0.6727 | 0.7990 / 0.800 |
+| c204 | PlanckNu0p24Fix | 0.24 eV | 3 x 0.08 eV (degenerate) | 0.00441 | 0.6732 | 0.7677 / 0.769 |
+| c205 | PlanckNu0p48Fix | 0.48 eV | 3 x 0.16 eV (degenerate) | 0.00441 | 0.6732 | 0.7086 / 0.709 |
+| c206 | PlanckNu0p24Var | 0.24 eV | 3 x 0.08 eV (degenerate) | 0.00441 | 0.6623 | 0.7706 / 0.772 |
+| c207 | D3A, FLAMINGO's fiducial (L1_m8/m9/m10_DMO) | 0.06 eV | 1 x 0.06 eV | 2.0308 | 0.681 | 0.8069 / 0.807 |
+| c208 | LS8, low-S8 "lensing" cosmology (LS8_DMO) | 0.06 eV | 1 x 0.06 eV | 2.0308 | 0.682 | 0.7596 / 0.760 |
+
+- Parameters: h, Omega_cdm, Omega_b, N_ur and the neutrinos are taken at full precision from the active lines of each box's SWIFT
+  parameter file (FLAMINGO_cosm/production_ymls/; FLAMINGO's Omega_m excludes neutrinos); omega_b = Omega_b h^2 and omega_cdm = Omega_cdm h^2
+  are therefore not rounded. A_s and n_s are from the paper's Table 4 (4 digits); PlanckNu0p48Fix's A_s, n_s are assumed equal to Planck's.
+- Neutrino convention. The 0.06 eV models have one massive neutrino. The 0.12/0.24/0.48 eV models have three equal-mass neutrinos, written as
+  N_ncdm = 1 with deg_ncdm = 3 in CLASS.ini (FLAMINGO's ymls: N_nu = 1, deg_nu = 3, M_nu_eV = sum/3; identical to three separate species, to 1e-8 in P_cb).
+  The omega_ncdm column is the TOTAL for the species, degeneracy included: omega_ncdm = deg * m / 93.13858 eV (CLASS's m/omega for T_ncdm = 0.71611).
+  The table has no degeneracy column; deg_ncdm is in each CLASS.ini and the notes column.
+- N_eff = 3.044 in all seven: N_ur = 2.0308 + 1.0132 (one massive species) or N_ur = 0.00441 + 3 x 1.0132 (three), with T_ncdm = 0.71611.
+  The other Aurora cosmologies use N_ur = 2.0328 (N_eff = 3.046).
+- CLASS settings: ~/class_public/class (v2.9.0, as for all Aurora cosmologies) with FLAMINGO_cosm/flamingo_prod.pre INSTEAD of
+  abacus_base.pre. That file holds the settings FLAMINGO's monofonIC (3FA_CLASS plugin) passed to its CLASS (ohahn/class_public, v2.9.4):
+  recombination = RECFAST (not HyRec), the plugin's precision block (k_per_decade 100, tol_perturb_integration 1e-8, ... instead of pk_ref),
+  YHe = 0.245421, reio_none (no tau), Lambda as Omega_fld = 0; outputs and z list as abacus_base.pre (CLASS_power = z2_pk_cb, z = 1).
+  The 2011 HyRec plus pk_ref precision of abacus_base.pre give a 0.46% stronger BAO amplitude than FLAMINGO's inputs.
+- Validation: each CLASS_power agrees with FLAMINGO's production CLASS (v2.9.4 run exactly as the plugin passes the parameters) to <= 1e-5;
+  for D3A also with FLAMINGO's actual production input spectrum (0.01% in sigma8). The three-neutrino models come out 0.06-0.18% below the
+  paper's sigma8, which may mean slightly different A_s than the rounded Table 4 values (to be confirmed with W. Elbers).
+- As for all Aurora cosmologies, Abacus uses CLASS_power at z = 1 (ZD_Pk_file_redshift = 1), with the neutrinos as a smooth component
+  (Omega_Smooth = omega_ncdm/h^2). The species split therefore enters only through CLASS_power.
+- Simulations: Simulations/FLAMINGO.par2 (NP = 2500^3 in FLAMINGO's 1 Gpc box, CPD 567, FLAMINGO's 13 full-particle output redshifts) and
+  Simulations/flamingo_nu_N2500/AbacusAurora_FLAMINGO_<model>_N2500.par2, with FLAMINGO's Panphasia phases
+  (/flare/Abacus/helenshao/ICs/flamingo_panphasia_N4096/noise).
+- D3A vs c000: D3A is FLAMINGO's fiducial, the DES Y3 "3x2pt + All Ext" maximum posterior, not Planck 2018. Compared with c000 it has a higher h
+  (0.681 vs 0.6736), lower Omega_m (0.306 vs 0.315), 0.75% higher omega_b, 1.1% lower omega_cdm, higher n_s (0.967 vs 0.9649) and a similar sigma8_m
+  (0.8069 vs 0.8080), with the same 1 x 0.06 eV neutrino but N_ur = 2.0308 and the FLAMINGO CLASS settings above.
 
 ------
 
