@@ -14,6 +14,8 @@ NumRanks = 8
 
 #include "../LargeTemplate.par2"
 
+TimeStepAccel = 0.45   # PNG sims use 0.5, but we've found that larger boxes end up with smaller timesteps; trying here to match the number of total steps, so that the typical areas have similar resolution
+
 LCSamplerInner = ["subP8", "subP8"]
 LCSamplerOuter = ["subP8", "subP8"]
 
