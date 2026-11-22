@@ -1,0 +1,24 @@
+# These are the size-independent parameters for a Large sim
+
+# In addition, one should consider whether to change P64 -> P8 for lightcones, because there aren't many particles.
+# To do this, adjust:
+# LCSamplerInner = [ "subP8" ]  # Extend vector to match the number of light cones
+# LCSamplerOuter = [ "subP8" ]
+
+Map_Aaccrete=0.8198
+Map_Amerge=50
+Map_bmerge_proper=0.0384 
+Map_AccretionLookahead=1    #accretion lookahead option
+
+SofteningLength = @BoxSize@/@NP@**(1/3)/30  # Plummer-equivalent
+Map_bmerge_max_ips= @Map_bmerge_proper@*@SofteningMax@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
+TimeStepAccel = @TimeStepAccel@*2
+
+FinalRedshift = 0.2997  # We are supporting the full DESI LRG range, but there's not enough volume to make PNG viable at low redshifts.
+
+# An abridged set of timeslices, because we're supporting only heavier tracers:
+TimeSliceRedshifts_Subsample = [0.3, 0.5, 0.8, 1.1, 1.4, 2.0 ]
+TimeSliceRedshifts_Samplers = [ "subP8", "subP8", "subP8", "subP8", "subP8", "subP8" ]
+
+
+
