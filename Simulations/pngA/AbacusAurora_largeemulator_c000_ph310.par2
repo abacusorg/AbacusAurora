@@ -1,0 +1,21 @@
+# This is a copy of our central emulator, now at Large resolution.
+# We expect this can run in about 3 node-hrs, so using a 9x2 domain on debug-scaling should finish easily.
+
+SimName = "AbacusAurora_largeemulator_c000_ph310"
+
+#include "../EmulatorSlim.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+NP = 1800**3
+CPD = 405
+
+#include "../LargeTemplate.par2"
+
+ZD_Seed = @ZD_Seed@+310-300
+
+NumZRanks = 2
+
+LCSamplerInner = ["subP8", "subP8"]
+LCSamplerOuter = ["subP8", "subP8"]
+
+
