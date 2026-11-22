@@ -11,6 +11,8 @@ CPD = 405
 
 #include "../LargeTemplate.par2"
 
+TimeStepAccel = 0.4  # The PNG sims use 0.5, but we find that 8 Gpc/h boxes yield more extreme vel/acc.  0.4 will keep this closer.
+
 ZD_Seed = @ZD_Seed@+310-300
 
 NumZRanks = 2
