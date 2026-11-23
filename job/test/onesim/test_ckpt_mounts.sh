@@ -49,9 +49,18 @@ exit 1
 STUB
 cat > "$work/bin/clush" <<STUB
 #!/bin/bash
+w= x= hf=
 while [[ \$1 == -* ]]; do
-    case \$1 in -w) w=\$2; echo "hosts: \$2" >> "$work/clush.log"; shift 2 ;; -f|-o) shift 2 ;; *) shift ;; esac
+    case \$1 in
+        -w) w=\$2; shift 2 ;;
+        -x) x=\$2; shift 2 ;;
+        --hostfile=*) hf=\${1#--hostfile=}; shift ;;
+        -f|-o) shift 2 ;;
+        *) shift ;;
+    esac
 done
+[[ -n \$hf ]] && w=\$(sort -u "\$hf" | grep -vxF -e "\$x" | paste -sd, -)
+echo "hosts: \$w" >> "$work/clush.log"
 FAKEHOST=\${w%%,*} bash -c "\$*"     # the remote shell's parse of the one-string command
 STUB
 cat > "$work/bin/mountpoint" <<STUB
@@ -243,6 +252,15 @@ run ABACUS_CHECKPOINT_CONTAINERS=1
 $n0 start-dfuse --dump-handles .handles.$B
 $n0 handles mode 600" && $(wc -l < "$work/events") == 3 ]] \
     && pass "a one-host sim mounts on that host alone" || fail "events:"$'\n'"$(events)"
+
+# 9,000 hosts reach clush as a host file: as one -w list they exceed the 128 KiB argument limit.
+reset
+for i in $(seq 1 9000); do echo "x$((1000 + i))c0s0b0n0.hsn.cm.aurora.alcf.anl.gov"; done > "$work/hostfile"
+run ABACUS_CHECKPOINT_CONTAINERS=1
+counts=$(awk -F, '{print NF}' "$work/clush.log" | paste -sd' ' -)
+[[ $counts == "1 8999 9000" ]] && ! grep -q -e "too long" -e warning "$work/onesim.out" \
+    && pass "9,000 hosts: mount, then check before the relaunch" \
+    || fail "9,000 hosts: clush host counts '$counts'; $(grep -e 'too long' -e warning "$work/onesim.out" | head -2)"
 
 # No checkpoint container to restart from: no sweep.
 reset

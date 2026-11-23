@@ -68,11 +68,17 @@ libfabric settings, say) goes to the ranks untouched.
 | `ABACUS_DAOS_PRELOAD` | `on` | run | with DAOS on, `LD_PRELOAD` the DAOS interception library into the ranks |
 | `ABACUS_MPIRUN_ARGS` | empty | run | extra `mpiexec` arguments; the scripts append `--hostfile`, and with DAOS on `--no-vni` and the preload |
 | `ABACUS_EXCLUDE_NODES` | none | run | short host names, space- or comma-separated, kept out of every sim; they still count toward the request, so ask for spares with `-n` |
+| `ABACUS_BAD_NODES` | `on` | run | never run on the nodes listed in `job/bad_nodes.txt` (see [Node exclusions](#node-exclusions)); `off` uses them like any other |
+| `ABACUS_SLOW_NODES` | `on` | run | make the nodes listed in `job/slow_nodes.txt` the first spares (see [Node exclusions](#node-exclusions)); `off` treats them like any other |
 | `ABACUS_CORE_LIMIT` | `env.sh`'s (unlimited) | run | the ranks' core-dump limit, as for `ulimit -c`; `0` turns core dumps off |
-| `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `off` skips it |
-| `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep; a node short of it runs only if the spares run out. `0` turns the check off |
-| `ABACUS_NODEPREP_NEED_HBM_GIB` | `58` | run | the same for an HBM node |
+| `ABACUS_NODEPREP` | `on` | run | before the sims, reclaim each node's leftover page cache (see [Node prep](#node-prep)); `check` only measures each node, for the short-node check; `off` skips both |
+| `ABACUS_NODEPREP_NEED_DDR_GIB` | `330` | run | GiB in whole 2 MiB blocks a DDR socket must have after node prep; a node short of it is never used, and the rest are ranked by how far over it they are when choosing spares (as found, with `check`, which only ranks). `0` turns the check off |
+| `ABACUS_NODEPREP_NEED_HBM_GIB` | `60` | run | the same for an HBM node |
+| `ABACUS_GEMM_WARMUP` | `on` | run | at the end of the job, read the files the next job's PBS prologue test loads (see [Prologue warm-up](#prologue-warm-up)); `off` skips it |
+| `ABACUS_GEMM_WARMUP_STAGGER` | `2` | run | whole seconds between the warm-ups of two of our nodes in one rack |
 | `ONESIM_MAX_RESTARTS` | `3` | run | relaunches allowed per sim, however healthy each attempt looked; `0` never relaunches |
+| `ONESIM_MAX_SLOW_RESTARTS` | none | run | relaunches allowed after failures that were not rapid, within `ONESIM_MAX_RESTARTS`; unset, only that bounds them. Such a sim often needs a parameter change, so the flagship runs with `1`. Rapid failures are capped at 2 in a row |
+| `ONESIM_MIN_HEALTHY_SECONDS` | `2400` | run | an attempt that fails sooner than this is a rapid failure |
 | `ONESIM_MIN_RELAUNCH_SECONDS` | `900` | run | refuse a relaunch with less than this left before the job's halt time |
 | `ARCHIVE_LOGS` | `job/archive-logs.sh` | `postprocessing.sh` | the log-archiving script to run |
 
@@ -82,6 +88,28 @@ In turn, the scripts set these for `aurora.def` and Abacus:
 - `NNODES` and `ABACUS_MPIRUN_ARGS`: for `mpirun_cmd`.
 - `ABACUS_JOB_HALT_TIME`: when Abacus halts, the walltime less 10 minutes.
 - `ABACUS_JOB_HALT_FILE`: `/flare/Abacus/HALT.<jobid>`; create it to halt every sim in the job.
+
+## Node exclusions
+
+When it sets up the allocation, `multisim.pbs` decides which nodes the sims run on (`job/exclusions.sh`):
+
+1. **Known bad**, never used: the nodes in `job/bad_nodes.txt` (`ABACUS_BAD_NODES`), suspected of faulty
+   hardware: wrong data, or failing under a job. They are left out before node prep.
+2. **Short after node prep**, never used: a node with a DDR socket or an HBM node short of whole 2 MiB
+   blocks after the pass (see [Node prep](#node-prep)).
+3. **Suspected slow**, the first spares: the nodes in `job/slow_nodes.txt` (`ABACUS_SLOW_NODES`), sockets
+   persistently slower than their peers, earlier lines first. Any the spares cannot cover run, named in a
+   warning.
+4. **The least defragmented**, the rest of the spares: the nodes with the least memory in whole blocks
+   over what they need, relative to the need, on whichever DDR socket or HBM node is tightest; a node
+   missing a result counts as none over. Without node prep's numbers, the last nodes.
+
+`ABACUS_EXCLUDE_NODES` works like 1. When 1 or 2 leave fewer nodes than the sims need, the job ends there,
+before the DAOS mount. So ask for spares with `-n` for the known bad nodes in the allocation and those node
+prep finds short (a few in a 9,000-node job), and for as many of the slow ones as are worth keeping out.
+`job/bad_nodes.txt` and `job/slow_nodes.txt` give one short host name per line, with the reason and the job
+that showed it after a `#`. `out/<jobid>/hostfile_extra` lists the spares best first, the order to bring
+them in should a node need replacing.
 
 ## Node prep
 
@@ -94,7 +122,18 @@ Doesn't work with non-reclaimable memory, so we also record the amount of memory
 regions to `out/<jobid>/nodeprep.txt`. A DDR socket that comes out short of
 `ABACUS_NODEPREP_NEED_DDR_GIB` gets a second pass that also shrinks the kernel's reclaimable caches.
 A node still short after that, on a DDR socket or an HBM node (`ABACUS_NODEPREP_NEED_HBM_GIB`), is
-moved behind the spares: ask for spares with `-n`, or it runs anyway.
+never used (see [Node exclusions](#node-exclusions)); in job 9048965 a node short of HBM stalled 20-205 s
+a step. The rest rank the spares by how far over the need they are.
+
+`ABACUS_NODEPREP=check` fills and frees nothing: it measures every node as it arrived, and its numbers
+only rank the spares, a short node first. Page cache that a check finds counts against a node, since
+only a fill would reclaim it.
+
+## Prologue warm-up
+
+We observe that big jobs following Abacus jobs tend to fail their prologues. Our theory is that we're exerting enough memory pressure to evict kernel page cache, which causes the executables used in the prologue to be slow to load. In particular, there's a fat 800 MB `gemm.exe` executable that's served over NFS. If thousands of nodes are all asking for that file with a cold cache, could be trouble.
+
+So to ameliorate this, we try to re-warm the `gemm.exe` cache at the end of our job in a staggered fasion (`ABACUS_GEMM_WARMUP`; `ABACUS_GEMM_WARMUP_STAGGER`).
 
 ## DAOS
 

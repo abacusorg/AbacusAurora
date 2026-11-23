@@ -1,0 +1,51 @@
+# These are the parameters for high-res boxes.
+# Don't forget the cosm.def file and: 
+#    ZD_Seed
+#    BoxSize
+#    NP
+#    CPD
+#    NumZRanks
+#    FinalRedshift
+
+# In some cases, one will want to alter the TimeSliceRedshift_Subsample and TimeSliceRedshift_Samplers.
+# We may want to match the output redshifts of external simulations.
+# Further, for small sims, we may want the DM to support tests.
+# Important: invoking many subsample epochs at finer particle mass is capable of overflowing the uint16 length of individual MapLogs;
+# this is not a flexible aspect of the current data model.
+
+
+#include "aurora.def"
+#include "base.def"
+
+MapForestSize = 0.7
+
+# TODO: Adjust the MAP hyperparameters
+
+Map_AccretionLookahead=1    # We are turning on the interpolation option to find closest approach
+
+
+# We are using a finer softening, even as a function of the interparticle spacing, because finer scales go non-linear at a higher redshift.
+SofteningLength = @BoxSize@/@NP@**(1/3)/50  # Plummer-equivalent
+Map_bmerge_max_ips= @Map_bmerge_proper@*@SofteningMax@/@SofteningLength@/@BoxSize@*@NP@**(1/3.)   # Scale the same as softening, convert to IPS
+
+# We're explicitly going to sample the time evolution aless well; about half as many timesteps as in our normal sims.  
+# This means that the inner parts of clusters will be a little under-resolved.  But these sims aren't meant for lensing applications.
+# TimeStepAccel = @TimeStepAccel@*2
+
+
+# For now, keep the base Subsample epochs, but change to P8 outputs.
+TimeSliceRedshifts_Samplers = [ "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8" ]
+
+
+# Lightcones: We're doing no lightcones in these smaller boxes
+
+LCBoxRepeats = 2    
+LCOrigins = None
+LCIsOctant = None
+LCZMax1 = None
+LCSamplerInner = None
+LCZMax2 = None
+LCSamplerOuter = None
+LCDoHealpix = None
+LCHealpixZMax = None
+

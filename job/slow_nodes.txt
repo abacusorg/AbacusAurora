@@ -1,0 +1,69 @@
+# Sockets persistently slower than their peers.  multisim.pbs makes these the job's spares, earlier lines
+# first, as far as the spares go (job/exclusions.sh); any left over run.  One short host name per line, then
+# why and where seen.  Nearly all are healthy sockets at a low clock under the power cap.
+#
+# Strongest evidence first: those that paced steps (had the most busy time), then those slow in three runs,
+# two, one.
+#   z      main-thread work over its z-rank's median, in sd of its socket's spread, in 9084631 (steps 330-545)
+#          and 9097298 (493-574); slowness follows the node between those jobs, not the domain
+#   #n     rank in 9069711's top 60 by GPU-buffer-thread span above load
+#   +n s   that 9069711 score, for sockets not in either later job
+# Paced steps, and slow in every run it was in:
+x4517c6s2b0n0   # s0 +2.0 s at 1962 MHz; the pacing socket since October (9048965, 9057599, 9069711)
+x4616c3s4b0n0   # s1 paced 89% of 9097298's 576-652, z 4.4; packing 1.15x per particle at 2040 MHz
+x4202c0s6b0n0   # s0 paced 61% of 9097298's 493-574 and 8% of 9084631; z 3.1 / 3.8 at 1580 MHz
+x4504c6s7b0n0   # s1 paced 12% of 9084631; z 4.5 / 4.1 at 1490 MHz
+x4301c2s6b0n0   # s1 paced 11% of 9084631; z 3.8 / 3.7 at 1510 MHz
+x4719c2s4b0n0   # s0 paced 10% of 9084631; z 3.3 / 2.8 at 1610 MHz; 9069711 #15
+x4520c5s0b0n0   # s0 paced 12% of 9084631; z 3.2 / 2.5 at 1630 MHz
+# Slow in three runs (9069711's top 60, and z >= 2.5 in both later jobs):
+x4703c6s4b0n0   # s1 z 3.3 / 3.2 at 1580 MHz; 9069711 #36
+x4015c7s0b0n0   # s0 z 2.8 / 3.2 at 1600 MHz; 9069711 #20
+x4210c6s4b0n0   # s0 z 2.8 / 3.1 at 1630 MHz; 9069711 #47
+x4217c1s7b0n0   # s0 z 2.7 / 2.6 at 1600 MHz; 9069711 #19
+x4201c3s7b0n0   # s0 z 3.1 / 2.6 at 1620 MHz; 9069711 #37
+x4411c7s2b0n0   # s0 z 3.1 / 2.6 at 1660 MHz; 9069711 #60
+x4202c3s6b0n0   # s0 z 2.6 / 2.8 at 1630 MHz; 9069711 #43
+x4706c1s6b0n0   # s0 z 3.2 / 2.5 at 1620 MHz; 9069711 #34
+x4119c7s0b0n0   # s0 z 2.5 / 2.9 at 1650 MHz; 9069711 #16
+x4717c5s7b0n0   # s0 z 2.7 / 2.5 at 1640 MHz; 9069711 #33
+# Slow in two runs:
+x4000c1s6b0n0   # s1 z 3.9 / 4.1 at 1550 MHz
+x4012c3s7b0n0   # s1 z 3.9 / 3.9 at 1550 MHz
+x4204c3s6b0n0   # s1 z 4.0 / 3.8 at 1520 MHz; paced 5% of 9084631
+x4108c1s3b0n0   # s1 z 3.8 / 3.6 at 1530 MHz; paced 5% of 9097298's 493-574
+x4400c5s7b0n0   # s0 +1.7 s at 1421 MHz; paced DemiFlag 8995686 at 1229 MHz
+x4103c3s2b0n0   # s0 +1.7 s at 1834 MHz; +2.5 s of work beyond its clock in DemiFlag 8995686
+x4614c3s0b0n0   # s0 +1.6 s at 1411 MHz; also slow in every DemiFlag sweep order
+x4204c5s3b0n0   # s1 z 3.3 / 3.9 at 1530 MHz
+x4210c1s5b0n0   # s1 z 3.2 / 3.2 at 1580 MHz
+x4400c2s3b0n0   # s1 z 3.1 / 3.4 at 1620 MHz
+x4301c1s5b0n0   # s1 z 3.1 / 3.3 at 1540 MHz
+x4012c2s2b0n0   # s1 z 3.3 / 3.1 at 1600 MHz
+x4114c3s1b0n0   # s1 z 3.1 / 3.2 at 1590 MHz
+x4713c3s4b0n0   # s1 z 3.0 / 3.4 at 1560 MHz
+x4014c0s2b0n0   # s0 9069711 #24; z 2.6 in 9097298, not in 9084631
+x4003c0s7b0n0   # s0 9069711 #27; z 2.6 in 9097298, not in 9084631
+x4420c1s2b0n0   # s0 9069711 #55; z 2.5 in 9084631, not in 9097298
+x4600c2s6b0n0   # s0 9069711 #56; z 2.5 in 9084631, not in 9097298
+# Slow in one run:
+x4000c7s4b0n0   # s1 +1.8 s at 2025 MHz: slow despite a high clock
+x4417c0s5b0n0   # s1 z 3.6 in 9084631 at 1450 MHz, not in 9097298
+x4300c0s5b0n0   # s0 +1.7 s at 1448 MHz
+x4711c3s2b0n0   # s0 +1.5 s at 1519 MHz
+x4518c3s5b0n0   # s0 +1.5 s at 1472 MHz
+x4014c2s6b0n0   # s0 +1.4 s at 1541 MHz
+x4717c5s3b0n0   # s0 +1.4 s at 1556 MHz
+x4501c7s7b0n0   # s0 +1.3 s at 1560 MHz
+x4205c0s1b0n0   # s0 +1.3 s at 1479 MHz
+x4619c5s2b0n0   # s0 +1.3 s at 1529 MHz
+x4007c1s6b0n0   # s0 +1.3 s at 1505 MHz
+x4412c4s6b0n0   # s1 z 3.1 in 9097298 at 1560 MHz, not in 9084631
+x4416c3s3b0n0   # s1 z 3.1 in 9097298 at 1620 MHz, not in 9084631
+x4618c5s1b0n0   # s1 z 3.1 in 9097298 at 1650 MHz, not in 9084631
+x4419c7s3b0n0   # s1 z 3.1 in 9097298 at 1610 MHz, not in 9084631
+# Lattice only:
+x4610c5s6b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4311c6s1b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4307c2s5b0n0   # top 10 in lattice 9057599 (not in 9069711)
+x4710c0s6b0n0   # top 10 in lattice 9057599 (not in 9069711)

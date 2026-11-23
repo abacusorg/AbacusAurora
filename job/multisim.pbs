@@ -35,6 +35,8 @@ source "$out/env_overrides.sh"
 
 source "$abacus_prod/job/daos.sh"
 source "$abacus_prod/job/nodeprep.sh"
+source "$abacus_prod/job/gemmwarm.sh"
+source "$abacus_prod/job/exclusions.sh"
 source "$abacus_prod/job/nodeorder.sh"
 
 # --- Halt controls -----------------------------------------------------------
@@ -50,6 +52,8 @@ export ABACUS_JOB_HALT_FILE="$HALT_DIR/HALT.${PBS_JOBID%%.*}"
 # We (not Abacus) own this file's lifecycle: remove it whenever this script exits.
 cleanup() {
     rm -f "$ABACUS_JOB_HALT_FILE"
+    # Set once nodeprep or the sims may have emptied the nodes' page cache (job/gemmwarm.sh).
+    [[ -z ${gemmwarm_hostfile:-} ]] || gemmwarm_run "$gemmwarm_hostfile" "$out/gemmwarm.txt" || true
     return 0   # never let the trap mask the job's real exit code
 }
 trap cleanup EXIT
@@ -96,26 +100,45 @@ if (( required > num_nodes )); then
     echo "ERROR: nodes_per_sim($nodes_per_sim) x sims($num_sims) = $required nodes, only $num_nodes available" >&2
     exit 1
 fi
-
-nodeorder_check   # here, before the DAOS mount is paid for
-echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
+# Which nodes the sims get (job/exclusions.sh), decided here, before the DAOS mount is paid for.
+# Suspected faulty hardware (job/bad_nodes.txt) is never used.
+excl_check_settings || exit 1
+excl_bad nodes.sorted
+excl_need nodes.sorted "$required" "after leaving out the bad nodes" || exit 1
+nodeorder_check
 echo
 
 # --- Node prep -----------------------------------------------------------------
-# On every node, spares included, before anything else runs there (job/nodeprep.sh).  Nodes it
-# leaves short of whole 2 MiB blocks go to the end of nodes.sorted, where the spares are.
+# Short after a pass is never used; a check's numbers include page cache a pass would reclaim, so
+# they only rank the spares.
 : > nodes.sorted.short
-if _is_on "${ABACUS_NODEPREP:-on}"; then
+: > nodes.margins
+nodeprep_check_settings || exit 1
+gemmwarm_check_settings || exit 1
+cp nodes.sorted nodes.prepped
+gemmwarm_hostfile=$out/nodes.prepped
+prep_mode=$(nodeprep_mode)
+if [[ $prep_mode != off ]]; then
     nodeprep_run "$out/nodeprep" nodes.sorted "$out/nodeprep.txt"
-    nodeprep_demote nodes.sorted "$out/nodeprep.txt" "$required"
+    if ! nodeprep_margins "$out/nodeprep.txt" nodes.sorted > nodes.margins; then
+        echo "WARNING: nodeprep: no per-node results in $out/nodeprep.txt; no node is left out for its memory" >&2
+    elif [[ $prep_mode == reclaim ]]; then
+        excl_short nodes.sorted nodes.margins
+        excl_need nodes.sorted "$required" "after leaving out the short nodes" || exit 1
+    fi
 else
     echo "nodeprep: off (ABACUS_NODEPREP=$ABACUS_NODEPREP)"
 fi
 echo
 
-# Nodes past what the sims use become a spare pool (future blacklist-and-replace), less the short ones.
+# The spares (job/slow_nodes.txt first, then the least defragmented), listed best first in
+# hostfile_extra, a pool for replacing nodes (future blacklist-and-replace).
+excl_spares nodes.sorted "$required" nodes.margins
+num_nodes=$(( $(wc -l < nodes.sorted) ))
+echo "Allocation: $num_sims sim(s) x $nodes_per_sim node(s) = $required used; $(( num_nodes - required )) spare"
+echo
 export HOSTFILE_EXTRA="$out/hostfile_extra"
-tail -n +"$(( required + 1 ))" nodes.sorted | grep -v -x -F -f nodes.sorted.short > "$HOSTFILE_EXTRA" || true
+cut -f 1 nodes.sorted.spares > "$HOSTFILE_EXTRA"
 
 # --- Storage -------------------------------------------------------------------
 # Where the storage roots point was decided at submit time (hashrun.sh recorded it in

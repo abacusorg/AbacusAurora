@@ -1,0 +1,24 @@
+# This is a Large res version of the TritoFlag sim, on the idea that this can provide a larger domain for cross-comparison of clustering results between base and large resolutions.
+
+
+SimName = "AbacusAurora_largetrito_c000_ph420"
+
+#include "../TritoFlag.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+NP = 5000**3
+CPD = 1125
+
+# We think this will run in about 65 node-hours.  We'll use 25x8 domain, 100 nodes, and try to finish in an hour
+NumRanks = 8
+
+#include "../LargeTemplate.par2"
+
+TimeStepAccel = 0.45   # PNG sims use 0.5, but we've found that larger boxes end up with smaller timesteps; trying here to match the number of total steps, so that the typical areas have similar resolution
+
+LCSamplerInner = ["subP8", "subP8"]
+LCSamplerOuter = ["subP8", "subP8"]
+
+ZD_Seed = @ZD_Seed@+420-420
+
+
