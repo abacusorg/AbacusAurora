@@ -331,7 +331,8 @@ FLAMINGO-matched cosmologies (c202-c208, regenerated 2026-11-17; c208 added 2026
 These reproduce the linear inputs of the FLAMINGO simulations (Schaye et al. 2023) so that Abacus boxes with FLAMINGO's phases can be
 compared with FLAMINGO directly. Full provenance, tests and recipe: FLAMINGO_cosm/FLAMINGO_MATCHING.md. Generator: FLAMINGO_cosm/make_flamingo_cosmologies.py.
 The previous standard-pipeline versions of c202-c207 (one heavy neutrino, N_ur = 2.0328, rounded h and omegas, abacus_base.pre) were up to
-3% off in P_cb (PlanckNu0p48Fix) and had a 0.46% stronger BAO amplitude; they are kept locally only, in obsolete_FLAMINGO_v1/.
+3% off in P_cb (PlanckNu0p48Fix) and had a 0.46% stronger BAO amplitude. The old c202-c206 are kept in obsolete_c202-c206/ (README.txt there);
+the old c207 was never on main.
 
 | cosm | FLAMINGO model (DMO box) | sum m_nu | neutrino species | N_ur | h | sigma8_m (ours / paper) |
 | ---- | ------------------------ | -------- | ---------------- | ---- | - | ----------------------- |
