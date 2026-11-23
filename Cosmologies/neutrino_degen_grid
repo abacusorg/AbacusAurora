@@ -3,6 +3,7 @@
 ## neutrino population: 3 equal-mass species (N_ncdm = 1, deg_ncdm = 3, omega_ncdm = species total) instead of one heavy species,
 ## with N_ur = 0.00641 so N_eff = 3.046 as in c000 (3 x 1.0132 + 0.00641). The deg_ncdm column is passed to CLASS/classy as is.
 ## Run: cd util && python run_class.py --table ../Cosmologies/neutrino_degen_grid --glass neutrino_degen_glass.dat
+## Results (solved h, A_s, theta_s, sigma8_cb) and why the search is needed: Cosmologies/README.md, "Three-degenerate-neutrino versions".
 
 | root               | notes                                                                                     | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur    | N_ncdm | deg_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
 | ------------------ | -----                                                                                     | ------- | --------- | ------ | --------- | ------ | ------- | ------- | ------ | -------- | ---------- |------- | ------ | -------- | --------- |
