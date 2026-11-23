@@ -50,5 +50,30 @@ AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     215 310
 AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  215 311
 AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  215 312
 
+
+# Three equal-mass neutrinos (c262-c267, 2026-11-23): c211/212/214/215/217/218 with the mass split 3 ways, N_ur = 0.00641,
+# theta_s and sigma8_cb re-matched; same templates and seeds. See Cosmologies/README.md, "Three-degenerate-neutrino versions".
+# Around c000: 0.12 eV, 0.24 eV
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     262 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  262 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  262 312
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     263 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  263 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  263 312
+# Around c116 (high sigma8): 0.12 eV, 0.24 eV
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     266 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  266 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  266 312
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     267 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  267 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  267 312
+# Around c004 (low sigma8): 0.12 eV, 0.24 eV
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     264 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  264 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  264 312
+AbacusAurora_emulatorslim_cCCC_phPPP    EmulatorSlim     265 310
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  265 311
+AbacusAurora_emulatorslim0p5_cCCC_phPPP EmulatorSlim0p5  265 312
+
 # We also have the FLAMINGO cosmologies, but maybe this is only worth doing for the matched sims?
 

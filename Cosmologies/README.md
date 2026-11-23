@@ -421,7 +421,22 @@ Three-degenerate-neutrino versions of the c000-based neutrino progressions (c262
 c262-c267 are c211, c212, c214, c215, c217 and c218 with the same total neutrino mass split into three equal-mass species
 (N_ncdm = 1, deg_ncdm = 3, omega_ncdm = the species total) instead of one heavy species, and N_ur = 0.00641 instead of 2.0328 so that
 N_eff stays 3.046 (3 x 1.0132 + 0.00641), as in c000. omega_b, omega_cdm, omega_ncdm, n_s and alpha_s are unchanged. c211-c218 are not
-modified. Same CLASS setup as c211-c218 (~/class_public + abacus_base.pre).
+modified.
+
+Conventions (all as c211-c218 and the rest of the AbacusAurora emulator suite, except the neutrino population):
+- CLASS: ~/class_public (abacusorg fork, v2.9.0, 6cf8e384), run as `class <root>.ini ../abacus_base.pre`; classy from the same commit for
+  the h and A_s searches.
+- abacus_base.pre (the AbacusAurora standard, NOT FLAMINGO's flamingo_prod.pre): recombination = HyRec (2011), YHe = BBN, reionization
+  reio_camb with tau_reio = 0.0544, T_cmb = 2.7255, AbacusAurora's pk_ref-level precision block (tol_perturb_integration = 1e-6,
+  k_step_sub = 0.015, l_max_ncdm = 50, ncdm_fluid_approximation = 3, ...), P_k_max = 50 h/Mpc, outputs at z = 0, 1, 3, 7, 49.
+- Neutrinos: N_ncdm = 1 with deg_ncdm = 3 (three equal-mass species: 3 x 0.04 eV for 0.12 eV, 3 x 0.08 eV for 0.24 eV), omega_ncdm =
+  the total (0.0012884 or 0.0025768, as in c21x), N_ur = 0.00641 so N_eff = 3.046. (c211-c218: one heavy species, N_ur = 2.0328.)
+- Matching: theta_s = c000's (h searched) and sigma8_cb(z = 0) = the base cosmology's (A_s calibrated), as for c211-c218; see below.
+- Abacus inputs: CLASS_power = P_cb at z = 1 with ZD_Pk_file_redshift = 1.0; CLASS_transfer = the z = 1 transfer functions; cosm.def
+  from make_cosm_def.py (H0, Omega_M, Omega_Smooth = omega_ncdm/h^2, ...). Inside Abacus the neutrinos are a smooth component
+  (Omega_Smooth), so the mass split enters the N-body run only through CLASS_power, H0 and N_ur.
+- Sims: EmulatorSlim / EmulatorSlim0p5 templates (box 1215 Mpc/h, NP = 4480^3, CPD 1125, Abacus seeds ph310-ph312), with the same
+  seeds as the c21x par2s (Simulations/phaseC/).
 
 Why h and A_s were solved again. c211-c218 are not defined by fixed h and A_s but by two matching conditions, and the same two define c262-c267:
 - theta_s (the CMB acoustic angle) equal to c000's, 100 theta_s = 1.041533; h is the parameter tuned to meet it (util/H0_search.py);
