@@ -1,7 +1,7 @@
 # Template for the FLAMINGO-phase-matched boxes at AuroraFlagship mass resolution (2026-11-17): FLAMINGO's 1 Gpc volume with
 # NP = 2500^3 (interparticle spacing 0.2724 Mpc/h for h = 0.681; Flagship: 10000/36864 = 0.2713 Mpc/h).
 # Phases: FLAMINGO's Panphasia noise at N0 = 4096 (/flare/Abacus/helenshao/ICs/flamingo_panphasia_N4096/noise, GridRes 2500),
-# selected at run time with ZD_EXTERNAL_NOISE_DIR (see neutrino_validation/production/pbs_flamingo.sh).
+# read through ZD_WhiteNoiseDirectory below (embedded ICs staged in /dev/shm, deleted after the IC step; ExternalICs = 0).
 # Cosmology: #include one of Cosmologies/FLAMINGO_cosm/flamingo_<label>/cosm.def (FLAMINGO_MATCHING.md).
 # The previous 1800^3 FLAMINGO.par2 and its derivatives are in FLAMINGO_1800_local/ (kept locally, not in the repo).
 # Run with abacus/subprojects/zeldovich_mpi/neutrino_validation/production/pbs_flamingo.sh (capacity queue, 16 nodes).
@@ -24,7 +24,12 @@ CPD = 567          # PPC = 85.7 (567 = 3^4*7), as advised (D. Eisenstein 2026-11
 NumZRanks = 4      # 16 nodes x 2 ranks = 8 x 4 domain: ~71 slabs per x-rank, ~142 cells per z-column (cf. LargeTest 7 x 4 on 14 nodes)
 LogVerbosity = -1
 
-ZD_Seed = 0                 # unused with LOAD_EXTERNAL_NOISE (required by the parameter parser)
+# FLAMINGO's phases: unit white noise read by the embedded Zeldovich-MPI (needs zeldovich_mpi >= 05d3019, e.g. abacus
+# aurora-zmpi-bump; older builds ignore these keys and draw Gaussian noise from ZD_Seed). The log must show
+# "Reading external white noise .../output_k_space_slab_y.<y> (layout monofonic); ZD_Seed is unused".
+ZD_WhiteNoiseDirectory = "/flare/Abacus/helenshao/ICs/flamingo_panphasia_N4096/noise"   # output_k_space_slab_y.0..2048, N0 = 4096
+ZD_white_noise_layout = "monofonic"   # z fastest, cropped from N0 = 4096 to 2500; file stem defaults to output_k_space_slab
+ZD_Seed = 0                 # unused with ZD_WhiteNoiseDirectory (required by the parameter parser)
 ZD_CornerModes = 1          # keep |k| >= N/2 cube corners, as monofonIC does (FLAMINGO mode set)
 ZD_f_cluster = 1 - @Omega_Smooth@/@Omega_M@   # smooth neutrinos are not displaced
 
