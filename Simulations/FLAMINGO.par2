@@ -43,9 +43,11 @@ LCHealpixZMax = None
 
 FinalRedshift = 0.0   # to z = 0 for comparison with FLAMINGO snapshots
 
-# The 13 redshifts at which FLAMINGO kept full particle data (https://flamingo.strw.leidenuniv.nl/simulations.html, "Snapshots":
-# snapshots 10 ... 78 in L1_m8, which has an extra z = 12.26 snapshot; one lower in L1_m9 and L1_m10), all particles at each.
-TimeSliceRedshifts_Subsample = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]
-TimeSliceRedshifts_Samplers = ["all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all"]
+# All 79 FLAMINGO snapshot redshifts (L1_m8: the 78 of L1_m9/L1_m10, from the L1_m9_DMO SWIFT output list, plus z = 12.26;
+# https://dataweb.cosma.dur.ac.uk:8443/flamingo/snapshots/snapshot_redshifts.html). All particles at the 13 redshifts where FLAMINGO
+# kept L1_m8 particle data (z = 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5; https://flamingo.strw.leidenuniv.nl/simulations.html),
+# subP8 at the other 66.
+TimeSliceRedshifts_Subsample = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5, 2.55, 2.6, 2.65, 2.7, 2.75, 2.8, 2.85, 2.9, 2.95, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.5, 6.04, 6.63, 7.26, 7.95, 8.7, 9.51, 10.38, 12.26, 15.0]
+TimeSliceRedshifts_Samplers = ["all", "subP8", "all", "subP8", "all", "subP8", "all", "subP8", "all", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8", "subP8"]
 
 SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
