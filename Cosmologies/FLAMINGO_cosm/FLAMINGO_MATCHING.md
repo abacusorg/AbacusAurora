@@ -237,6 +237,7 @@ All seven FLAMINGO DMO cosmologies are already done (into `Cosmologies/abacus_co
 6. **Use it:** `#include` it from the par2 (ZD_Pk_file_redshift = 1 comes from cosm.def).
 
 ## 7. Open items
+- **Phases (resolved 2026-11-20):** Willem Elbers confirmed that all FLAMINGO 1 Gpc (L1) boxes use the same phases. So the `Flamino_Gpc1` Panphasia noise (N0 = 2048/4096 sets) is phase-matched to every L1 cosmology variation, not only D3A.
 - **σ8 of the degenerate-ν boxes:** PlanckNu0p12Var, PlanckNu0p24Fix, PlanckNu0p24Var and PlanckNu0p48Fix come out 0.06–0.18% below the paper's σ8 (0.7990 vs 0.800, 0.7677 vs 0.769, 0.7706 vs 0.772, 0.7086 vs 0.709). D3A, Planck and LS8 match within rounding. That suggests a slightly different A_s (or σ8 definition) for those boxes than the 4-digit Table 4 values. An 0.18% σ8 offset is 0.36% in P. The production monofonIC confs would settle it.
 - **Production conf values:** YHe = 0.245421, and A_s/n_s for PlanckNu0p48Fix, are assumptions. Ask Willem for the monofonIC `.conf` files of the production boxes. (YHe 0.2455 vs 0.245421 changes P_cb by < 1e-5, so this is low priority.)
 - **Growth outside z ≈ 1:** Abacus's growth lacks radiation. Our z = 1-normalized runs are −0.35% (z = 12), −0.14% (z = 5) and −0.07% (z ≤ 2) in P vs FLAMINGO at k ≈ 0.05–0.1.
