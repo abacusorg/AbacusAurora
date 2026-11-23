@@ -281,3 +281,54 @@ All seven par2s parse:
 - ZD_Pk_sigma_ratio = D(99)/D(1) and ZD_f_cluster = 1 − Ω_Smooth/Ω_M for each cosmology.
 
 The ZD noise reader keeps the modes of a native 2500³ grid from the N0 = 4096 slabs.
+
+## 10. c302–c308: FLAMINGO parameters with AbacusAurora's CLASS settings (2026-11-23)
+
+c30N is c20N with the CLASS settings changed and nothing else: a set that differs from the FLAMINGO-matched
+cosmologies only in the CLASS setup, so that the two sets of Abacus boxes isolate its effect.
+
+| c20N (FLAMINGO-matched) | c30N | FLAMINGO model |
+|---|---|---|
+| c202 | c302 | Planck |
+| c203 | c303 | PlanckNu0p12Var |
+| c204 | c304 | PlanckNu0p24Fix |
+| c205 | c305 | PlanckNu0p48Fix |
+| c206 | c306 | PlanckNu0p24Var |
+| c207 | c307 | D3A |
+| c208 | c308 | LS8 |
+
+**Identical in c20N and c30N.** Every line of `CLASS.ini` except `root` and the comments (h, A_s, n_s, ω_b, ω_cdm, ω_ncdm, N_ur, N_ncdm,
+deg_ncdm, w0, wa), so no h or A_s search was run; `cosm.def` (H0, Ω_M, Ω_Smooth, …: everything Abacus itself uses), checked with diff;
+the CLASS binary (`~/class_public`, v2.9.0); and, for the sims, the par2 settings, phases and outputs. The only thing an Abacus run sees
+differently is `CLASS_power`.
+
+**Different: the CLASS settings file.**
+
+| | c20N: `FLAMINGO_cosm/flamingo_prod.pre` | c30N: `abacus_base.pre` |
+|---|---|---|
+| Recombination | RECFAST (v2.9 default, which FLAMINGO's ICs used) | HyRec (2011) |
+| Precision | FLAMINGO's monofonIC precision block (`tol_perturb_integration` 1e-8, 100 k per decade, …) | AbacusAurora's pk_ref-level block (`tol_perturb_integration` 1e-6, `k_step_sub` 0.015, `l_max_ncdm` 50, …) |
+| YHe | 0.245421 | BBN |
+| Reionization | none | reio_camb, τ = 0.0544 (no effect on the matter P(k) at fixed A_s) |
+
+Made with `~/class_public/class abacus_cosm30N.ini ../abacus_base.pre`; `CLASS_power` = z = 1 P_cb, `CLASS_transfer` = z = 1
+transfer functions, `cosm.def` from `make_cosm_def.py`.
+
+**Measured differences** (linear P_cb(z = 1), cubic-spline interpolation, c30N / c20N − 1; b = BAO amplitude from `bao_wiggle_fit.py`,
+median ± half 16–84% range of 54 template variants, k = 0.015–0.4 h/Mpc; σ8_cb at z = 0):
+
+| | k = 0.01 | 0.1 | 0.3 | 1 | 5 h/Mpc | b | σ8_cb c30N / c20N |
+|---|---|---|---|---|---|---|---|
+| c302 Planck | +0.01% | −0.03% | +0.04% | +0.07% | +0.10% | +0.0048 ± 0.0015 | 0.815591 / 0.815305 |
+| c303 PlanckNu0p12Var | +0.03% | +0.05% | +0.16% | +0.24% | +0.36% | +0.0045 ± 0.0016 | 0.806697 / 0.806030 |
+| c304 PlanckNu0p24Fix | +0.02% | +0.11% | +0.17% | +0.24% | +0.35% | +0.0036 ± 0.0018 | 0.781500 / 0.780642 |
+| c305 PlanckNu0p48Fix | +0.01% | +0.34% | +0.25% | +0.25% | +0.35% | +0.0040 ± 0.0038 | 0.731663 / 0.730190 |
+| c306 PlanckNu0p24Var | +0.01% | +0.11% | +0.18% | +0.24% | +0.35% | +0.0042 ± 0.0021 | 0.784419 / 0.783557 |
+| c307 D3A | +0.01% | −0.03% | +0.04% | +0.07% | +0.10% | +0.0045 ± 0.0015 | 0.810653 / 0.810369 |
+| c308 LS8 | +0.01% | −0.03% | +0.04% | +0.07% | +0.10% | +0.0045 ± 0.0015 | 0.763153 / 0.762885 |
+
+- The BAO excess (b ≈ +0.004–0.005) is the §4 result: HyRec (+0.0033) and pk_ref precision (+0.0012) together, for every cosmology.
+- Away from the BAO the single-neutrino models agree to ≤ 0.1%. The three-neutrino models (c303–c306) differ by up to ~0.35% at high k
+  and 0.1–0.2% in σ8_cb, presumably from how precisely the two settings files integrate the massive neutrinos (not isolated).
+- Which to use: c20N for any comparison with FLAMINGO itself; c30N for comparisons within the AbacusAurora suite (c211–c218, c262–c267,
+  the emulator), which all use `abacus_base.pre`; c20N vs c30N Abacus boxes for the effect of the CLASS settings on the nonlinear P(k).

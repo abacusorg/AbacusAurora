@@ -31,7 +31,7 @@ Further details are below the table.
 
 All cosmologies use tau=0.0544.  Most use 60 meV neutrinos, omega_nu = 0.00064420, scaling from z=1.
 We use HyRec, rather than RecFast.
-**Exception: the FLAMINGO-matched cosmologies c202-c208 do not follow these defaults** (no reionization, RECFAST, FLAMINGO's precision, N_eff = 3.044, three degenerate neutrinos for the massive-neutrino models); see "FLAMINGO-matched cosmologies" below.
+**Exception: the FLAMINGO-matched cosmologies c202-c208 do not follow these defaults** (no reionization, RECFAST, FLAMINGO's precision, N_eff = 3.044, three degenerate neutrinos for the massive-neutrino models); see "FLAMINGO-matched cosmologies" below. c302-c308 have the same parameters as c202-c208 but the standard settings above.
 
 CLASS is run with the pk_ref.pre precision choices, unless the name ends with \_fast, in which case we use the defaults.
 There was one case where CLASS underflowed an integration tolerance with the pk_ref precisions; we reverted to pk_permille.pre
@@ -193,6 +193,13 @@ neutrinos as a smooth component.
 | abacus_cosm206 | FLAMINGO PlanckNu0p24Var (FLAMINGO-matched 2026-11-17: 3 x 0.08 eV degenerate, flamingo_prod.pre) | 0.0223750922 | 0.1190542644 | 0.6623 | 2.1090e-09 | 0.968 | 0.000 | 0.00441 | 1 | 0.002576805444 | -1 | 0.0 | 0.770647 | 0.783557 |
 | abacus_cosm207 | FLAMINGO D3A, fiducial (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre) | 0.0225387846 | 0.1187279174 | 0.681 | 2.0990e-09 | 0.967 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.806879 | 0.810369 |
 | abacus_cosm208 | FLAMINGO LS8, low-S8 lensing cosmology (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre) | 0.0220003652 | 0.1192182534 | 0.682 | 1.8360e-09 | 0.965 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.759599 | 0.762885 |
+| abacus_cosm302 | FLAMINGO Planck parameters as c202, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0223834611 | 0.1201106763 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.812173 | 0.815591 |
+| abacus_cosm303 | FLAMINGO PlanckNu0p12Var parameters as c203, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0224316786 | 0.1190969634 | 0.6727 | 2.1130e-09 | 0.967 | 0.000 | 0.00441 | 1 | 0.001288402722 | -1 | 0.0 | 0.799716 | 0.806697 |
+| abacus_cosm304 | FLAMINGO PlanckNu0p24Fix parameters as c204, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0223834611 | 0.1181777859 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 0.00441 | 1 | 0.002576805444 | -1 | 0.0 | 0.768796 | 0.781500 |
+| abacus_cosm305 | FLAMINGO PlanckNu0p48Fix parameters as c205, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0223834611 | 0.1156013539 | 0.6732 | 2.1010e-09 | 0.966 | 0.000 | 0.00441 | 1 | 0.005153610888 | -1 | 0.0 | 0.710613 | 0.731663 |
+| abacus_cosm306 | FLAMINGO PlanckNu0p24Var parameters as c206, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0223750922 | 0.1190542644 | 0.6623 | 2.1090e-09 | 0.968 | 0.000 | 0.00441 | 1 | 0.002576805444 | -1 | 0.0 | 0.771766 | 0.784419 |
+| abacus_cosm307 | FLAMINGO D3A parameters as c207, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0225387846 | 0.1187279174 | 0.681 | 2.0990e-09 | 0.967 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.807223 | 0.810653 |
+| abacus_cosm308 | FLAMINGO LS8 parameters as c208, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb) | 0.0220003652 | 0.1192182534 | 0.682 | 1.8360e-09 | 0.965 | 0.000 | 2.0308 | 1 | 0.000644201361 | -1 | 0.0 | 0.759922 | 0.763153 |
 | abacus_cosm211 | 0.12 eV single species; theta_s matched, sigma8_cb = 0.811355 | 0.02237 | 0.1200 | 0.6680 | 2.1442e-09 | 0.9649 | 0.000 | 2.0328 | 1 | 0.0012884 | -1.000 | 0.000 | 0.805187 | 0.811356 |
 | abacus_cosm212 | 0.24 eV single species; theta_s matched, sigma8_cb = 0.811355 | 0.02237 | 0.1200 | 0.6573 | 2.2738e-09 | 0.9649 | 0.000 | 2.0328 | 1 | 0.0025768 | -1.000 | 0.000 | 0.801151 | 0.811361 |
 | abacus_cosm213 | massless neutrino; theta_s matched, sigma8_cb = 0.753159 | 0.02237 | 0.1200 | 0.6790 | 1.7528e-09 | 0.9649 | 0.000 | 3.046 | 0 | 0.0 | -1.000 | 0.000 | 0.753144 | 0.753144 |
@@ -344,6 +351,26 @@ the old c207 was never on main.
 | c207 | D3A, FLAMINGO's fiducial (L1_m8/m9/m10_DMO) | 0.06 eV | 1 x 0.06 eV | 2.0308 | 0.681 | 0.8069 / 0.807 |
 | c208 | LS8, low-S8 "lensing" cosmology (LS8_DMO) | 0.06 eV | 1 x 0.06 eV | 2.0308 | 0.682 | 0.7596 / 0.760 |
 
+FLAMINGO-parameter cosmologies with AbacusAurora's CLASS settings (c302-c308, 2026-11-23):
+c30N has exactly the cosmological parameters of c20N (CLASS.ini and cosm.def identical apart from the root and comments: same h, A_s, n_s,
+omegas, N_ur and neutrino species; no h or A_s search), but its CLASS_power is computed with the standard AbacusAurora settings,
+abacus_base.pre, instead of FLAMINGO's production settings, FLAMINGO_cosm/flamingo_prod.pre. Same CLASS binary (~/class_public, v2.9.0).
+c20N vs c30N therefore isolates the effect of the CLASS settings alone. Use c20N to compare with FLAMINGO itself, c30N to compare with
+the rest of the AbacusAurora suite, which uses abacus_base.pre.
+
+| | c202-c208 (FLAMINGO-matched) | c302-c308 (AbacusAurora CLASS settings) |
+| - | --------------------------- | --------------------------------------- |
+| settings file | FLAMINGO_cosm/flamingo_prod.pre | abacus_base.pre |
+| recombination | RECFAST (CLASS v2.9 default, as FLAMINGO's monofonIC plugin) | HyRec (2011) |
+| precision | FLAMINGO's monofonIC precision block | AbacusAurora's pk_ref-level block |
+| YHe | 0.245421 | BBN |
+| reionization | none | reio_camb, tau = 0.0544 |
+| cosmological parameters, cosm.def | FLAMINGO's | identical |
+
+Measured c30N / c20N - 1 in the linear P_cb(z = 1) inputs (details in FLAMINGO_cosm/FLAMINGO_MATCHING.md section 10): a BAO amplitude
+b = +0.004 to +0.005 for every cosmology (HyRec + pk_ref, as found for c207); outside the BAO, <= 0.1% for the single-neutrino models
+(c302, c307, c308) and rising to ~0.35% at k = 5 h/Mpc for the three-neutrino models (c303-c306); sigma8_cb +0.04% (1 nu) to +0.20% (c305).
+
 - Parameters: h, Omega_cdm, Omega_b, N_ur and the neutrinos are taken at full precision from the active lines of each box's SWIFT
   parameter file (FLAMINGO_cosm/production_ymls/; FLAMINGO's Omega_m excludes neutrinos); omega_b = Omega_b h^2 and omega_cdm = Omega_cdm h^2
   are therefore not rounded. A_s and n_s are from the paper's Table 4 (4 digits); PlanckNu0p48Fix's A_s, n_s are assumed equal to Planck's.
@@ -390,4 +417,39 @@ We'd like to include one or more runs with neutrinos treated in the LRA; needs s
 
 We'd like to consider an f_NL!=0 run; needs moderate code development.
 
+Three-degenerate-neutrino versions of the c000-based neutrino progressions (c262-c267, 2026-11-20):
+c262-c267 are c211, c212, c214, c215, c217 and c218 with the same total neutrino mass split into three equal-mass species
+(N_ncdm = 1, deg_ncdm = 3, omega_ncdm = the species total) instead of one heavy species, and N_ur = 0.00641 instead of 2.0328 so that
+N_eff stays 3.046 (3 x 1.0132 + 0.00641), as in c000. omega_b, omega_cdm, omega_ncdm, n_s and alpha_s are unchanged. c211-c218 are not
+modified. Same CLASS setup as c211-c218 (~/class_public + abacus_base.pre).
 
+Why h and A_s were solved again. c211-c218 are not defined by fixed h and A_s but by two matching conditions, and the same two define c262-c267:
+- theta_s (the CMB acoustic angle) equal to c000's, 100 theta_s = 1.041533; h is the parameter tuned to meet it (util/H0_search.py);
+- sigma8_cb(z = 0) equal to the base cosmology's: c000 (0.811355) for c262/c263, c004 (0.753159) for c264/c265, c116 (0.869782) for
+  c266/c267; A_s is the parameter tuned to meet it (util/calibrate_A_s.py).
+CLASS computes theta_s and sigma8_cb from the inputs. Changing the mass split (and N_ur with it) changes the expansion history and the
+CDM+baryon transfer function slightly, so with c21x's h and A_s the new models would miss both targets, mostly sigma8_cb: at fixed A_s,
+three 0.04 eV (0.08 eV) neutrinos give ~0.5% more sigma8_cb than one 0.12 eV (0.24 eV) neutrino. (Lighter neutrinos become
+non-relativistic later, so they suppress the growth of CDM+baryon structure for a shorter time.) Re-solving h and A_s keeps every c26x on
+the same theta_s and sigma8_cb as its c21x partner, so the mass split is the only physical difference between the pair.
+
+Run: cd util && python run_class.py --table ../Cosmologies/neutrino_degen_grid --glass neutrino_degen_glass.dat (staging table
+Cosmologies/neutrino_degen_grid; classy from ~/class_public, the same commit as the class binary). Results:
+
+| new | copies | neutrinos | h (c21x) | A_s (c21x) | A_s change | 100 theta_s | sigma8_cb (target) | N_eff |
+| --- | ------ | --------- | -------- | ---------- | ---------- | ----------- | ------------------ | ----- |
+| c262 | c211 | 3 x 0.04 eV | 0.6686 (0.668) | 2.1249e-09 (2.1442e-09) | -0.90% | 1.041516 | 0.811353 (0.811355) | 3.04601 |
+| c263 | c212 | 3 x 0.08 eV | 0.6573 (0.6573) | 2.2470e-09 (2.2738e-09) | -1.18% | 1.041510 | 0.811359 (0.811355) | 3.04601 |
+| c264 | c214 | 3 x 0.04 eV | 0.6686 (0.668) | 1.8310e-09 (1.8476e-09) | -0.90% | 1.041516 | 0.753156 (0.753159) | 3.04601 |
+| c265 | c215 | 3 x 0.08 eV | 0.6573 (0.6573) | 1.9362e-09 (1.9593e-09) | -1.18% | 1.041510 | 0.753159 (0.753159) | 3.04601 |
+| c266 | c217 | 3 x 0.04 eV | 0.6686 (0.668) | 2.4420e-09 (2.4641e-09) | -0.90% | 1.041516 | 0.869788 (0.869782) | 3.04601 |
+| c267 | c218 | 3 x 0.08 eV | 0.6573 (0.6573) | 2.5822e-09 (2.6130e-09) | -1.18% | 1.041510 | 0.869774 (0.869782) | 3.04601 |
+
+- sigma8_cb is within 1e-5 of the target and 100 theta_s within 2e-5 of c000's for all six.
+- The A_s change (-0.9% for 0.12 eV, -1.2% for 0.24 eV) is the main effect of the mass split at fixed sigma8_cb.
+- h is unchanged for 0.24 eV. For 0.12 eV it moves from c211's 0.668 to 0.6686, partly because c211's h was kept to 3 decimals and the
+  new search to 4; the split's own effect on theta_s at fixed h is small and was not isolated.
+- An alternative convention, not made: copy c21x's h and A_s and change only the split. That isolates the split at fixed inputs but puts
+  sigma8_cb ~0.45% above the targets (~0.9% in P(k)).
+- Sims: Simulations/phaseC/AbacusAurora_emulatorslim_c26[2-7]_ph310.par2 and AbacusAurora_emulatorslim0p5_c26[2-7]_ph31[12].par2, the
+  same templates and seeds as the c21x par2s, so each c26x box is phase-matched to its c21x partner and to the c000/c004/c116 base runs.
