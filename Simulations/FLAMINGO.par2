@@ -18,9 +18,7 @@ BoxSize = 10*@H0@  # FLAMINGO L = 1000 Mpc, expressed in Mpc/h
 
 # Custom parameters
 NP = 2500**3       # AuroraFlagship mass resolution in FLAMINGO's 1 Gpc box
-CPD = 567          # PPC = 85.7 (567 = 3^4*7), as advised (D. Eisenstein 2026-11-17): not 625, which divides NP^(1/3) = 2500 evenly and could let
-                   # small far-field errors add coherently into certain Fourier modes. Derivatives deriv*_567_8_2_8 exist on /flare;
-                   # stage them to DAOS (scripts/daos-stage-resources.sh 567) for runs with ABACUS_DAOS_RESOURCES=on. (8x version, 5000^3: CPD 1215, PPC 70.)
+CPD = 567
 NumZRanks = 4      # 16 nodes x 2 ranks = 8 x 4 domain: ~71 slabs per x-rank, ~142 cells per z-column (cf. LargeTest 7 x 4 on 14 nodes)
 LogVerbosity = -1
 
@@ -45,9 +43,9 @@ LCHealpixZMax = None
 
 FinalRedshift = 0.0   # to z = 0 for comparison with FLAMINGO snapshots
 
-# FLAMINGO's full-particle snapshot redshifts as listed on the FLAMINGO website (z = 5 ... 0, 13 outputs).
-# Samplers: all particles at z = 0, 0.5, 1.0; subP8 at every other redshift.
+# The 13 redshifts at which FLAMINGO kept full particle data (https://flamingo.strw.leidenuniv.nl/simulations.html, "Snapshots":
+# snapshots 10 ... 78 in L1_m8, which has an extra z = 12.26 snapshot; one lower in L1_m9 and L1_m10), all particles at each.
 TimeSliceRedshifts_Subsample = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]
-TimeSliceRedshifts_Samplers = ["all", "subP8", "subP8", "subP8", "subP8", "all", "subP8", "all", "subP8", "subP8", "subP8", "subP8", "subP8"]
+TimeSliceRedshifts_Samplers = ["all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all", "all"]
 
 SCR_Checkpoint_Seconds = 10800   # Do very few checkpoints for these sims
