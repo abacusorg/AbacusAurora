@@ -1,0 +1,10 @@
+SimName = "AbacusAurora_FLAMINGO_D3A_N5000"
+
+#include "../FLAMINGO_N5000.par2"
+#include "../../Cosmologies/abacus_cosm207/cosm.def"
+
+# FLAMINGO D3A cosmology (abacus_cosm207), FLAMINGO-matched linear input (CLASS v2.9 + flamingo_prod.pre, z = 1 P_cb; FLAMINGO_MATCHING.md).
+# Same as flamingo_nu_N2500/AbacusAurora_FLAMINGO_D3A_N2500.par2 except the template (NP = 5000^3).
+
+# SCR flush pinned to PTHREAD, as in the 2500^3 boxes.
+SCR_ConfigLines = ["SCR_COPY_TYPE=SINGLE", "SCR_SET_SIZE=8", "SCR_CACHE_SIZE=1", "SCR_FLUSH=1", "SCR_FLUSH_ASYNC=1", "SCR_FLUSH_TYPE=PTHREAD", "SCR_PREFIX_SIZE=0", "SCR_COPY_METADATA=0", "SCR_ASSIGN_OWNERSHIP=NONE"]
