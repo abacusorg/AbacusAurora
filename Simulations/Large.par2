@@ -45,7 +45,7 @@ TimeStepAccel = @TimeStepAccel@*2
 
 ZD_Seed = 3943    # This will be the most common phase
 
-FinalRedshift = 0.3 # We are supporting the full DESI LRG range, but there's not enough volume to make PNG viable at low redshifts.
+FinalRedshift = 0.2997  # We are supporting the full DESI LRG range, but there's not enough volume to make PNG viable at low redshifts.
 
 # An abridged set of timeslices, because we're supporting only heavier tracers:
 TimeSliceRedshifts_Subsample = [0.3, 0.5, 0.8, 1.1, 1.4, 2.0 ]

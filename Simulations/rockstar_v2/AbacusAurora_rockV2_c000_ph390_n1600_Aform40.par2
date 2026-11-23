@@ -1,0 +1,18 @@
+SimName = "AbacusAurora_rockV2_c000_ph390_n1600_Aform40"
+
+#include "../HighRes.par2"
+#include "../../Cosmologies/abacus_cosm000/cosm.def"
+
+NP = 1600**3
+CPD = 405
+
+BoxSize = 217      # Matches the flagship mass exactly
+ZD_Seed = 12507    # Same as Rockstar.par2
+
+NumZRanks = 2
+LogVerbosity = -1
+
+MapForestSize = 2.0   # Finding that we need a lot on this small sim
+Map_MinMultiplicity = 40   # Turn off small MAPs that are flooding the MapLogs
+
+SCR_Checkpoint_Seconds = 1200   # Going to checkpoint frequently, out of concern that the sim will exhaust the MapLog length and require a new FinalRedshift.

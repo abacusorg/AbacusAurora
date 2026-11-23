@@ -1,0 +1,15 @@
+## Neutrino staging table, three degenerate massive neutrinos (cosm262-267; 2026-11-20)
+## Same as cosm211/212/214/215/217/218 (c000 + neutrino mass, theta_s matched, sigma8_cb targets of c000/c004/c116) except the
+## neutrino population: 3 equal-mass species (N_ncdm = 1, deg_ncdm = 3, omega_ncdm = species total) instead of one heavy species,
+## with N_ur = 0.00641 so N_eff = 3.046 as in c000 (3 x 1.0132 + 0.00641). The deg_ncdm column is passed to CLASS/classy as is.
+## Run: cd util && python run_class.py --table ../Cosmologies/neutrino_degen_grid --glass neutrino_degen_glass.dat
+## Results (solved h, A_s, theta_s, sigma8_cb) and why the search is needed: Cosmologies/README.md, "Three-degenerate-neutrino versions".
+
+| root               | notes                                                                                     | omega_b | omega_cdm | h      | A_s       | n_s    | alpha_s | N_ur    | N_ncdm | deg_ncdm | omega_ncdm | w0_fld | wa_fld | sigma8_m | sigma8_cb |
+| ------------------ | -----                                                                                     | ------- | --------- | ------ | --------- | ------ | ------- | ------- | ------ | -------- | ---------- |------- | ------ | -------- | --------- |
+| abacus_cosm262     | 0.12 eV as 3 x 0.04 eV degenerate (cf. c211); theta_s matched, sigma8_cb = 0.811355       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0012884  | -1.000 | 0.000  |          |           |
+| abacus_cosm263     | 0.24 eV as 3 x 0.08 eV degenerate (cf. c212); theta_s matched, sigma8_cb = 0.811355       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0025768  | -1.000 | 0.000  |          |           |
+| abacus_cosm264     | 0.12 eV as 3 x 0.04 eV degenerate (cf. c214); theta_s matched, sigma8_cb = 0.753159       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0012884  | -1.000 | 0.000  |          |           |
+| abacus_cosm265     | 0.24 eV as 3 x 0.08 eV degenerate (cf. c215); theta_s matched, sigma8_cb = 0.753159       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0025768  | -1.000 | 0.000  |          |           |
+| abacus_cosm266     | 0.12 eV as 3 x 0.04 eV degenerate (cf. c217); theta_s matched, sigma8_cb = 0.869782       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0012884  | -1.000 | 0.000  |          |           |
+| abacus_cosm267     | 0.24 eV as 3 x 0.08 eV degenerate (cf. c218); theta_s matched, sigma8_cb = 0.869782       | 0.02237 | 0.1200    | TBD   | 2.TBD e-9 | 0.9649 | 0.000   | 0.00641 | 1      | 3        | 0.0025768  | -1.000 | 0.000  |          |           |

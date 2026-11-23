@@ -1,0 +1,13 @@
+# Nodes suspected of faulty hardware.  multisim.pbs never runs on these: it leaves every one in the
+# allocation out of the job (job/exclusions.sh).  One short host name per line, then why and where seen.
+
+# Wrong data.
+x4703c5s7b0n0   # 9066352 rank 16659: env-record bytes as 20 particles' z-acceleration at step 62; its GPU page
+                #   fault was the crash's first error
+x4516c6s0b0n0   # step-182 gather (8947769, 8948252): an Igather's int64 lost bit 23 twice; sender on this node
+x4610c3s1b0n0   # step-182 gather: the root, on the same path twice; it passed once these four were off it (8948658)
+x4514c2s3b0n0   # step-182 gather: an intermediate; one of these four is suspect, which one is unknown
+x4509c4s1b0n0   # step-182 gather: an intermediate
+
+# Failed under a job.
+x4001c1s6b0n0   # 9097298: CXI link flap at 07:38 (ALCF StabilityDB), unreachable by 08:14, which ended the run

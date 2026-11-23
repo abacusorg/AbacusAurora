@@ -1,9 +1,18 @@
 root,notes,omega_b,omega_cdm,h,A_s,n_s,alpha_s,N_ur,N_ncdm,omega_ncdm,w0_fld,wa_fld,sigma8_m,sigma8_cb,sigma8_cb_target
-abacus_cosm202,FLAMINGO Planck,0.022375,0.1201,0.673,2.101e-9,0.966,0.000,2.0328,1,0.0006442,-1,0.0,0.812002,0.815420,
-abacus_cosm203,FLAMINGO PlanckNu0p12Var,0.022465,0.1194,0.673,2.113e-9,0.966,0.000,2.0328,1,0.0012884,-1,0.0,0.797821,0.803965,
-abacus_cosm204,FLAMINGO PlanckNu0p24Fix,0.022375,0.1182,0.673,2.101e-9,0.966,0.000,2.0328,1,0.0025768,-1,0.0,0.766760,0.776742,
-abacus_cosm205,FLAMINGO PlanckNu0p48Fix,0.022375,0.1156,0.673,2.101e-9,0.966,0.000,2.0328,1,0.0051536,-1,0.0,0.714703,0.728707,
-abacus_cosm206,FLAMINGO PlanckNu0p24Var,0.022350,0.1188,0.662,2.109e-9,0.968,0.000,2.0328,1,0.0025768,-1,0.0,0.768669,0.778584,
+abacus_cosm202,"FLAMINGO Planck (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre)",0.0223834611,0.1201106763,0.6732,2.1010e-09,0.966,0.000,2.0308,1,0.000644201361,-1,0.0,0.811828,0.815305,
+abacus_cosm203,"FLAMINGO PlanckNu0p12Var (FLAMINGO-matched 2026-11-17: 3 x 0.04 eV degenerate, flamingo_prod.pre)",0.0224316786,0.1190969634,0.6727,2.1130e-09,0.967,0.000,0.00441,1,0.001288402722,-1,0.0,0.798967,0.806030,
+abacus_cosm204,"FLAMINGO PlanckNu0p24Fix (FLAMINGO-matched 2026-11-17: 3 x 0.08 eV degenerate, flamingo_prod.pre)",0.0223834611,0.1181777859,0.6732,2.1010e-09,0.966,0.000,0.00441,1,0.002576805444,-1,0.0,0.767681,0.780642,
+abacus_cosm205,"FLAMINGO PlanckNu0p48Fix (FLAMINGO-matched 2026-11-17: 3 x 0.16 eV degenerate, flamingo_prod.pre)",0.0223834611,0.1156013539,0.6732,2.1010e-09,0.966,0.000,0.00441,1,0.005153610888,-1,0.0,0.708640,0.730190,
+abacus_cosm206,"FLAMINGO PlanckNu0p24Var (FLAMINGO-matched 2026-11-17: 3 x 0.08 eV degenerate, flamingo_prod.pre)",0.0223750922,0.1190542644,0.6623,2.1090e-09,0.968,0.000,0.00441,1,0.002576805444,-1,0.0,0.770647,0.783557,
+abacus_cosm207,"FLAMINGO D3A, fiducial (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre)",0.0225387846,0.1187279174,0.681,2.0990e-09,0.967,0.000,2.0308,1,0.000644201361,-1,0.0,0.806879,0.810369,
+abacus_cosm208,"FLAMINGO LS8, low-S8 lensing cosmology (FLAMINGO-matched 2026-11-17: 1 x 0.06 eV, flamingo_prod.pre)",0.0220003652,0.1192182534,0.682,1.8360e-09,0.965,0.000,2.0308,1,0.000644201361,-1,0.0,0.759599,0.762885,
+abacus_cosm302,"FLAMINGO Planck parameters as c202, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0223834611,0.1201106763,0.6732,2.1010e-09,0.966,0.000,2.0308,1,0.000644201361,-1,0.0,0.812173,0.815591,
+abacus_cosm303,"FLAMINGO PlanckNu0p12Var parameters as c203, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0224316786,0.1190969634,0.6727,2.1130e-09,0.967,0.000,0.00441,1,0.001288402722,-1,0.0,0.799716,0.806697,
+abacus_cosm304,"FLAMINGO PlanckNu0p24Fix parameters as c204, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0223834611,0.1181777859,0.6732,2.1010e-09,0.966,0.000,0.00441,1,0.002576805444,-1,0.0,0.768796,0.781500,
+abacus_cosm305,"FLAMINGO PlanckNu0p48Fix parameters as c205, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0223834611,0.1156013539,0.6732,2.1010e-09,0.966,0.000,0.00441,1,0.005153610888,-1,0.0,0.710613,0.731663,
+abacus_cosm306,"FLAMINGO PlanckNu0p24Var parameters as c206, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0223750922,0.1190542644,0.6623,2.1090e-09,0.968,0.000,0.00441,1,0.002576805444,-1,0.0,0.771766,0.784419,
+abacus_cosm307,"FLAMINGO D3A parameters as c207, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0225387846,0.1187279174,0.681,2.0990e-09,0.967,0.000,2.0308,1,0.000644201361,-1,0.0,0.807223,0.810653,
+abacus_cosm308,"FLAMINGO LS8 parameters as c208, AbacusAurora CLASS settings (abacus_base.pre: HyRec, pk_ref precision, YHe BBN, reio_camb)",0.0220003652,0.1192182534,0.682,1.8360e-09,0.965,0.000,2.0308,1,0.000644201361,-1,0.0,0.759922,0.763153,
 abacus_cosm211,"0.12 eV single species; theta_s matched, sigma8_cb = 0.811355",0.02237,0.1200,0.6680,2.1462e-09,0.9649,0.000,2.0328,1,0.0012884,-1.000,0.000,0.805562,0.811734,0.811355
 abacus_cosm212,"0.24 eV single species; theta_s matched, sigma8_cb = 0.811355",0.02237,0.1200,0.6573,2.2784e-09,0.9649,0.000,2.0328,1,0.0025768,-1.000,0.000,0.801961,0.812182,0.811355
 abacus_cosm213,"massless neutrino; theta_s matched, sigma8_cb = 0.753159",0.02237,0.1200,0.6790,1.7528e-09,0.9649,0.000,3.046,0,0.0,-1.000,0.000,0.753144,0.753144,0.753159
@@ -12,3 +21,9 @@ abacus_cosm215,"0.24 eV single species; theta_s matched, sigma8_cb = 0.753159",0
 abacus_cosm216,"massless neutrino; theta_s matched, sigma8_cb = 0.869782",0.02237,0.1200,0.6790,2.3377e-09,0.9649,0.000,3.046,0,0.0,-1.000,0.000,0.869773,0.869773,0.869782
 abacus_cosm217,"0.12 eV single species; theta_s matched, sigma8_cb = 0.869782",0.02237,0.1200,0.6680,2.4664e-09,0.9649,0.000,2.0328,1,0.0012884,-1.000,0.000,0.863566,0.870183,0.869782
 abacus_cosm218,"0.24 eV single species; theta_s matched, sigma8_cb = 0.869782",0.02237,0.1200,0.6573,2.6183e-09,0.9649,0.000,2.0328,1,0.0025768,-1.000,0.000,0.859702,0.870658,0.869782
+abacus_cosm262,"0.12 eV as 3 x 0.04 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c211); theta_s matched, sigma8_cb = 0.811355",0.02237,0.1200,0.6686,2.1249e-09,0.9649,0.000,0.00641,1,0.0012884,-1.000,0.000,0.804376,0.811353,0.811355
+abacus_cosm263,"0.24 eV as 3 x 0.08 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c212); theta_s matched, sigma8_cb = 0.811355",0.02237,0.1200,0.6573,2.2470e-09,0.9649,0.000,0.00641,1,0.0025768,-1.000,0.000,0.798373,0.811359,0.811355
+abacus_cosm264,"0.12 eV as 3 x 0.04 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c214); theta_s matched, sigma8_cb = 0.753159",0.02237,0.1200,0.6686,1.8310e-09,0.9649,0.000,0.00641,1,0.0012884,-1.000,0.000,0.746679,0.753156,0.753159
+abacus_cosm265,"0.24 eV as 3 x 0.08 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c215); theta_s matched, sigma8_cb = 0.753159",0.02237,0.1200,0.6573,1.9362e-09,0.9649,0.000,0.00641,1,0.0025768,-1.000,0.000,0.741104,0.753159,0.753159
+abacus_cosm266,"0.12 eV as 3 x 0.04 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c217); theta_s matched, sigma8_cb = 0.869782",0.02237,0.1200,0.6686,2.4420e-09,0.9649,0.000,0.00641,1,0.0012884,-1.000,0.000,0.862308,0.869788,0.869782
+abacus_cosm267,"0.24 eV as 3 x 0.08 eV degenerate (N_ncdm 1 x deg_ncdm 3; cf. c218); theta_s matched, sigma8_cb = 0.869782",0.02237,0.1200,0.6573,2.5822e-09,0.9649,0.000,0.00641,1,0.0025768,-1.000,0.000,0.855853,0.869774,0.869782
