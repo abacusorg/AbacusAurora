@@ -32,15 +32,35 @@
 # unless -f is given, since that run's step 6 may combine the checksum files out from
 # under these checks.
 #
+# Per column (-c), for a sim too big to check in one pass (post-check.pbs farms the
+# columns out over nodes).  Each column's checksum records name exactly the files its
+# ranks wrote, so the same three steps run on those records alone:
+#
+#   1. as above, over the column's rank checksum files.
+#   2, 5. every file the column recorded is on disk at the recorded size -- one stat
+#      per recorded file, not a listing of the directory.  An output directory kept per
+#      column (a path component colNNN: maplogs/colNNN/, subsamples/z*/colNNN/) is
+#      listed too, so a file in it that nothing recorded is caught, as above.
+#
+# What a column cannot check is a file nothing recorded in a directory the columns
+# share (the group files, slices and light cones, whose names carry the column in three
+# different formats).  postprocessing.sh's step 5 still catches those.
+#
+# A column's record is postcheck/colNNN.checking, renamed to colNNN.checked or
+# colNNN.checkfailed, with the same skip rules as a whole sim's.  The whole-sim
+# postprocess.checked is never written by -c.
+#
 # The SimDirectory is the OutputDirectory: checksums/ and maplogs/ are written there
 # (P.OutputDirectory in io_thread.cpp and timestep.cpp), as are the group files and
 # slices.  log/ is not needed here.
 #
-# Usage: post-check.sh [-f] [-j N] [--daos] <simdir> [simdir ...]
+# Usage: post-check.sh [-f] [-j N] [-c COLS] [--daos] <simdir> [simdir ...]
 #   -f       re-check sims that were already checked, failed, or were interrupted
-#   -j N     process up to N sims at once. A parallel sim's output is held back and
-#            printed in one piece when it finishes, so that two sims cannot interleave;
-#            its `postprocess.checking` file shows progress in the meantime.
+#   -j N     process up to N sims (or sim-columns) at once. A parallel one's output is
+#            held back and printed in one piece when it finishes, so that two cannot
+#            interleave; its .checking record shows progress in the meantime.
+#   -c COLS  check only these columns of each sim, one at a time: comma-separated
+#            column numbers (the NNN of checksums/colNNN), and -c may repeat.
 #   --daos   mount the DAOS Outputs container first, for sims whose outputs are on
 #            DAOS (ABACUS_DAOS_OUTPUTS=on).  Inside a PBS allocation this mounts
 #            across the allocation; on a login node it mounts per-user, for this node
@@ -50,7 +70,7 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: post-check.sh [-f] [-j N] [--daos] <simdir> [simdir ...]" >&2
+    echo "usage: post-check.sh [-f] [-j N] [-c COLS] [--daos] <simdir> [simdir ...]" >&2
     exit 2
 }
 
@@ -58,6 +78,7 @@ force=0
 daos=0
 jobs=1
 simdirs=()
+colargs=()
 while (( $# )); do
     case $1 in
         -f|--force) force=1; shift ;;
@@ -67,6 +88,12 @@ while (( $# )); do
                     jobs=$2; shift 2 ;;
         -j*)        jobs=${1#-j}; shift ;;
         --jobs=*)   jobs=${1#--jobs=}; shift ;;
+        -c|--column|--columns)
+                    (( $# >= 2 )) || { echo "error: $1 needs column numbers" >&2; usage; }
+                    colargs+=("$2"); shift 2 ;;
+        -c*)        colargs+=("${1#-c}"); shift ;;
+        --column=*|--columns=*)
+                    colargs+=("${1#*=}"); shift ;;
         --)         shift; simdirs+=("$@"); break ;;
         -*)         echo "error: unknown option '$1'" >&2; usage ;;
         *)          simdirs+=("$1"); shift ;;
@@ -77,7 +104,35 @@ if [[ ! $jobs =~ ^[1-9][0-9]*$ ]]; then
     echo "error: -j takes a positive integer, not '$jobs'" >&2
     usage
 fi
-set -- "${simdirs[@]}"
+
+# The columns, as the three-digit NNN of checksums/colNNN.  10# so that a leading zero
+# is not read as octal ("008" is column 8, not an error).
+columns=()
+for arg in ${colargs[@]+"${colargs[@]}"}; do
+    IFS=, read -r -a parts <<< "$arg"
+    for c in ${parts[@]+"${parts[@]}"}; do
+        if [[ ! $c =~ ^[0-9]+$ ]] || (( 10#$c > 999 )); then
+            echo "error: -c takes column numbers 0-999, not '$c'" >&2
+            usage
+        fi
+        columns+=("$(printf '%03d' $((10#$c)))")
+    done
+done
+if (( ${#colargs[@]} )) && (( ! ${#columns[@]} )); then
+    echo "error: -c named no columns" >&2
+    usage
+fi
+
+# The work items, "<simdir> <column>" with the column empty for a whole sim.  A path
+# with a space in it would be split here, but the size checks already assume none.
+items=()
+for src in "${simdirs[@]}"; do
+    if (( ${#columns[@]} )); then
+        for c in "${columns[@]}"; do items+=("${src%/} $c"); done
+    else
+        items+=("${src%/} ")
+    fi
+done
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # For daos_resolve/daos_mount/daos_login_mount.  Sourcing only defines them; nothing
@@ -112,12 +167,16 @@ else
     findsizes() { find "$1" -type f -printf '%s\t%p\n'; }
 fi
 
-# The in-progress record, relative to the SimDirectory.  Not postprocessing.sh's
-# `postprocess`, which that script would take for an interrupted run of its own.
-record=postprocess.checking
+# run_one() sets these per item, and process_sim() and its helpers read them:
+#   record  the in-progress record, relative to the SimDirectory: postprocess.checking
+#           for a whole sim -- not postprocessing.sh's `postprocess`, which that script
+#           would take for an interrupted run of its own -- or postcheck/colNNN.checking
+#   col     the column's NNN, or empty for a whole sim
+record=
+col=
 
 # Progress goes to the screen and to the record at once; the record is what
-# survives to explain a postprocess.checkfailed.
+# survives to explain a .checkfailed.
 say() {
     printf '  %s\n' "$*"
     printf '%s\n' "$*" >> "$record"
@@ -125,7 +184,32 @@ say() {
 
 # "<size> <path>" for everything on disk under $1, sorted by path then size.
 ondisk_sizes() {
+    if [[ -n $col ]]; then column_ondisk_sizes "$1"; return; fi
     findsizes "$1" | gawk '{print $1, $2}' | LC_ALL=C sort -k2,2 -k1,1
+}
+
+# The per-column version: "<size> <path>" for each file under $1 that this column
+# recorded, stat()ed one by one, plus everything in any colNNN directory of this column
+# under $1, which is this column's alone.  A recorded file that is missing simply has no
+# line, which the comparison reports.  sort -u because a file in a colNNN directory
+# turns up both ways.
+column_ondisk_sizes() {
+    local root=$1 d
+    local -a coldirs=()
+    while IFS= read -r d; do
+        coldirs+=("$d")
+    done < <(recorded_sizes "$root" |
+                 gawk -v c="col$col" 'match($2, "(^|/)" c "/") {
+                                          print substr($2, 1, RSTART + RLENGTH - 2) }' |
+                 LC_ALL=C sort -u)
+    {
+        # stat's exit status is nonzero for a missing file; the comparison is what reports it.
+        recorded_sizes "$root" | gawk '{ print $2 }' |
+            xargs -r -d '\n' stat -c '%s %n' -- 2>/dev/null || true
+        for d in ${coldirs[@]+"${coldirs[@]}"}; do
+            if [[ -d $d ]]; then findsizes "$d" | gawk '{ print $1, $2 }'; fi
+        done
+    } | LC_ALL=C sort -u -k2,2 -k1,1
 }
 
 # The checksum records the size checks look at: the ones naming something inside
@@ -197,8 +281,13 @@ process_sim() {
     shopt -s nullglob
     # Both layouts: the per-rank files a run writes, and the per-column files
     # postprocessing.sh's step 6 leaves behind, so that -f can re-check an
-    # already-combined sim.
-    cksums=(checksums/col*/checksums.*.crc32 checksums/col*.crc32)
+    # already-combined sim.  Only this column's, with -c -- the [.] makes the combined
+    # name a pattern, which nullglob drops when absent; a plain name it would keep.
+    if [[ -n $col ]]; then
+        cksums=(checksums/col$col/checksums.*.crc32 checksums/col$col[.]crc32)
+    else
+        cksums=(checksums/col*/checksums.*.crc32 checksums/col*.crc32)
+    fi
     shopt -u nullglob
 
     # --- Step 1 -----------------------------------------------------------
@@ -296,54 +385,71 @@ process_sim() {
     say "  ok: $checked directories besides maplogs"
 }
 
-ntotal=$#     # $# is the sim count: getopts was shifted off, and the loop never shifts
+ntotal=${#items[@]}
 
-# One sim, start to finish, leaving $PWD alone.  Exits 0 if the sim checked out (or
-# was already fully post-processed), 1 if it failed, 2 if an earlier record is in the
-# way.  Everything it prints belongs to this sim alone, which is what lets -j hold it
-# back and print it whole.
+# One sim, or one column of one, start to finish, leaving $PWD alone.  Exits 0 if it
+# checked out (or the sim was already fully post-processed), 1 if it failed, 2 if an
+# earlier record is in the way.  Everything it prints belongs to this item alone,
+# which is what lets -j hold it back and print it whole.
+#
+# record and col are deliberately local here and not in process_sim(): bash scoping is
+# dynamic, so process_sim and its helpers see this item's values.
 run_one() {
-    local src=${1%/} nsim=$2 stale
-    echo "=== $(basename "$src") ($nsim of $ntotal) ==="
+    local src=$1 col=$2 n=$3 stale label base record
+    if [[ -n $col ]]; then
+        label="$(basename "$src") col$col"
+        base=postcheck/col$col
+    else
+        label=$(basename "$src")
+        base=postprocess
+    fi
+    record=$base.checking
+    echo "=== $label ($n of $ntotal) ==="
 
     if [[ ! -d $src ]]; then
         echo "  error: not a directory: $src" >&2
+        return 1
+    fi
+    if [[ -n $col && ! -d $src/checksums/col$col && ! -e $src/checksums/col$col.crc32 ]]; then
+        echo "  error: no column $col here (neither checksums/col$col/ nor checksums/col$col.crc32)" >&2
         return 1
     fi
     if [[ -e $src/postprocess.done ]] && (( ! force )); then
         echo "  postprocess.done is already here; nothing to do"
         return 0
     fi
-    if [[ -e $src/postprocess.checked ]] && (( ! force )); then
-        echo "  postprocess.checked is already here; nothing to do (pass -f to re-check)"
+    if [[ -e $src/$base.checked ]] && (( ! force )); then
+        echo "  $base.checked is already here; nothing to do (pass -f to re-check)"
         return 0
     fi
     # A bare `postprocess` is postprocessing.sh's, running or interrupted: its step 6
     # could combine the checksum files while these checks read them.
-    for stale in postprocess.checkfailed "$record" postprocess; do
+    for stale in "$base.checkfailed" "$record" postprocess; do
         if [[ -e $src/$stale ]] && (( ! force )); then
             echo "  $stale is from an earlier run; skipping (pass -f to retry)" >&2
             return 2
         fi
     done
 
-    rm -f -- "$src/postprocess.checkfailed" "$src/postprocess.checked"
+    [[ -z $col ]] || mkdir -p -- "$src/postcheck"
+    rm -f -- "$src/$base.checkfailed" "$src/$base.checked"
     {
         echo "# post-check.sh (postprocessing.sh steps 1, 2, 5)"
         echo "sim:     $(cd -- "$src" && pwd)"
+        [[ -z $col ]] || echo "column:  $col"
         echo "started: $(date -Is) on $(hostname) by ${USER:-$(id -un)}"
     } > "$src/$record"
 
-    # A subshell so that the cd, and any step's exit, is contained to this sim.
+    # A subshell so that the cd, and any step's exit, is contained to this item.
     if ( cd -- "$src" && process_sim ); then
         echo "finished: $(date -Is)  all checks passed" >> "$src/$record"
-        mv -f -- "$src/$record" "$src/postprocess.checked"
-        echo "  wrote postprocess.checked"
+        mv -f -- "$src/$record" "$src/$base.checked"
+        echo "  wrote $base.checked"
         return 0
     fi
     echo "finished: $(date -Is)  FAILED" >> "$src/$record"
-    mv -f -- "$src/$record" "$src/postprocess.checkfailed"
-    echo "  wrote postprocess.checkfailed" >&2
+    mv -f -- "$src/$record" "$src/$base.checkfailed"
+    echo "  wrote $base.checkfailed" >&2
     return 1
 }
 
@@ -358,17 +464,17 @@ tally() {
 }
 
 if (( jobs == 1 )); then
-    nsim=0
-    for src; do
-        nsim=$((nsim + 1))
+    n=0
+    for item in "${items[@]}"; do
+        n=$((n + 1))
         status=0
-        run_one "$src" "$nsim" || status=$?
+        run_one "${item% *}" "${item##* }" "$n" || status=$?
         tally "$status"
     done
 else
     tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/post-check.XXXXXX")
     trap 'rm -rf -- "$tmpdir"' EXIT
-    declare -A pending=()   # sim index -> launched but not yet reported
+    declare -A pending=()   # item index -> launched but not yet reported
     nrunning=0
 
     # Block until at least one child has exited, then report every child that has
@@ -378,7 +484,7 @@ else
     # collected only costs a later `wait -n` that returns at once.
     reap() {
         local idx status
-        wait -n 2>/dev/null || true   # a child's nonzero exit is this sim's news, not an error
+        wait -n 2>/dev/null || true   # a child's nonzero exit is this item's news, not an error
         for idx in "${!pending[@]}"; do
             [[ -e $tmpdir/$idx.status ]] || continue
             status=$(< "$tmpdir/$idx.status")
@@ -390,19 +496,19 @@ else
         done
     }
 
-    nsim=0
-    for src; do
-        nsim=$((nsim + 1))
+    n=0
+    for item in "${items[@]}"; do
+        n=$((n + 1))
         while (( nrunning >= jobs )); do reap; done
-        echo "--- started $(basename "${src%/}") ($nsim of $ntotal) ---"
+        echo "--- started $(basename "${item% *}") ${item##* } ($n of $ntotal) ---"
         # The status file is written last, so its presence means the output file is
         # complete: reap() needs no other handshake.
         (
             status=0
-            run_one "$src" "$nsim" > "$tmpdir/$nsim.out" 2>&1 || status=$?
-            echo "$status" > "$tmpdir/$nsim.status"
+            run_one "${item% *}" "${item##* }" "$n" > "$tmpdir/$n.out" 2>&1 || status=$?
+            echo "$status" > "$tmpdir/$n.status"
         ) &
-        pending[$nsim]=1
+        pending[$n]=1
         nrunning=$((nrunning + 1))
     done
     while (( nrunning )); do reap; done

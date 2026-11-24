@@ -1,0 +1,141 @@
+#!/bin/bash -l
+#PBS -A Abacus
+#PBS -l filesystems=flare
+#PBS -l place=scatter
+#PBS -l select=3
+#PBS -l walltime=0:30:00
+#PBS -q debug
+#PBS -N post-check
+#PBS -j oe
+
+# Run post-check.sh on one big sim, one column at a time, with the columns farmed out
+# over the allocation: one mpiexec with POSTCHECK_PPN ranks per node (default 1), and
+# rank r takes columns r, r+N, r+2N, ... of the sim's checksums/colNNN, in order.  So
+# 80 nodes on an 80-column sim is one column per node.
+#
+# One job and one mpiexec rather than a job array: the columns are short and all the
+# same size, so a single allocation does them at once instead of queueing 80 times.
+#
+# Each column leaves postcheck/colNNN.checked or .checkfailed in the SimDirectory (see
+# post-check.sh).  Each rank's screen output goes to postcheck/<jobid>/rankNNNN.log,
+# and this script ends by listing every column that is not .checked.  A column that
+# was already .checked is skipped, so resubmitting after a partial run only redoes the
+# rest; POSTCHECK_FLAGS=-f redoes them all.
+#
+# Usage, from the AbacusAurora checkout (or set POSTCHECK_SH):
+#   qsub -v POSTCHECK_SIM=/flare/.../SimName job/post-check.pbs
+#   qsub -v POSTCHECK_SIM=...,POSTCHECK_PPN=4 -l select=20 job/post-check.pbs
+#
+# Environment (pass with qsub -v; commas separate variables there):
+#   POSTCHECK_SIM     the SimDirectory (required)
+#   POSTCHECK_PPN     ranks per node (default 1)
+#   POSTCHECK_FLAGS   extra post-check.sh options for every rank, e.g. "-f" or "-j 2"
+#   POSTCHECK_SH      path to post-check.sh (default: job/post-check.sh or post-check.sh
+#                     under the directory qsub was run from)
+#
+# Not for sims whose outputs are on DAOS: post-check.sh --daos would have every rank
+# mount the container across the whole allocation.
+
+set -euo pipefail
+
+: "${POSTCHECK_SIM:?set it with qsub -v POSTCHECK_SIM=<simdir>}"
+sim=${POSTCHECK_SIM%/}
+ppn=${POSTCHECK_PPN:-1}
+flags=${POSTCHECK_FLAGS:-}
+jobid=${PBS_JOBID%%.*}
+
+# PBS runs a spooled copy of this script, so its own directory is no guide.
+if [[ -z ${POSTCHECK_SH:-} ]]; then
+    POSTCHECK_SH=$PBS_O_WORKDIR/job/post-check.sh
+    if [[ ! -x $POSTCHECK_SH ]]; then POSTCHECK_SH=$PBS_O_WORKDIR/post-check.sh; fi
+fi
+if [[ ! -x $POSTCHECK_SH ]]; then
+    echo "error: no executable post-check.sh at $POSTCHECK_SH; set POSTCHECK_SH" >&2
+    exit 1
+fi
+if [[ " $flags " == *" --daos "* ]]; then
+    echo "error: --daos is not supported here (every rank would mount across the allocation)" >&2
+    exit 1
+fi
+if [[ ! $ppn =~ ^[1-9][0-9]*$ ]]; then
+    echo "error: POSTCHECK_PPN must be a positive integer, not '$ppn'" >&2
+    exit 1
+fi
+cd -- "$sim"
+
+# The columns, from both checksum layouts: the per-rank colNNN/ directories a run
+# writes and the colNNN.crc32 files postprocessing.sh's step 6 leaves.
+shopt -s nullglob
+cols=$(for f in checksums/col[0-9][0-9][0-9]/ checksums/col[0-9][0-9][0-9].crc32; do
+           f=${f#checksums/col}; echo "${f:0:3}"
+       done | LC_ALL=C sort -u | tr '\n' ' ')
+shopt -u nullglob
+read -r -a colarr <<< "$cols"
+ncols=${#colarr[@]}
+if (( ncols == 0 )); then
+    echo "error: no checksums/colNNN in $sim" >&2
+    exit 1
+fi
+
+nnodes=$(( $(sort -u "$PBS_NODEFILE" | wc -l) ))
+nranks=$(( nnodes * ppn ))
+(( nranks <= ncols )) || nranks=$ncols     # no rank without a column
+logdir=$sim/postcheck/$jobid
+mkdir -p -- "$logdir"
+
+echo "post-check: $sim"
+echo "            $ncols column(s) over $nranks rank(s) ($nnodes node(s), up to $ppn per node)"
+echo "            $POSTCHECK_SH ${flags:+$flags }-c ..."
+echo "            rank logs in $logdir"
+echo "started:    $(date -Is)"
+
+# Each rank picks its own columns out of the list by PALS_RANKID.  $flags is unquoted
+# inside on purpose: "-j 2" must become two arguments.
+export PC_SH=$POSTCHECK_SH PC_SIM=$sim PC_FLAGS=$flags PC_COLS=$cols PC_NRANKS=$nranks PC_LOGDIR=$logdir
+t0=$SECONDS
+rc=0
+mpiexec -n "$nranks" --ppn "$ppn" --cpu-bind none --no-abort-on-failure \
+    bash -c '
+        r=${PALS_RANKID:?not under PALS}
+        mine=() i=0
+        for c in $PC_COLS; do
+            (( i % PC_NRANKS == r )) && mine+=("$c")
+            i=$((i + 1))
+        done
+        (( ${#mine[@]} )) || exit 0
+        log=$(printf "%s/rank%04d.log" "$PC_LOGDIR" "$r")
+        list=$(IFS=,; echo "${mine[*]}")
+        echo "rank $r on $(hostname): columns $list" > "$log"
+        exec "$PC_SH" $PC_FLAGS -c "$list" "$PC_SIM" >> "$log" 2>&1
+    ' || rc=$?
+echo "finished:   $(date -Is) after $(( SECONDS - t0 )) s (mpiexec rc=$rc)"
+
+# The verdict comes from the records, not from mpiexec's exit status: a rank that died
+# without a word leaves its columns with no .checked, and that is what counts.
+nok=0 nbad=0 nnone=0
+bad=() none=()
+for c in "${colarr[@]}"; do
+    if [[ -e postcheck/col$c.checked ]]; then
+        nok=$((nok + 1))
+    elif [[ -e postcheck/col$c.checkfailed ]]; then
+        nbad=$((nbad + 1)); bad+=("$c")
+    else
+        nnone=$((nnone + 1)); none+=("$c")
+    fi
+done
+echo
+echo "$nok of $ncols column(s) checked, $nbad failed, $nnone with no verdict"
+if (( nbad )); then
+    echo "failed: ${bad[*]}"
+    # The first few failures in full; the rest are in their records.
+    for c in "${bad[@]:0:3}"; do
+        echo "--- postcheck/col$c.checkfailed"
+        # gawk rather than head: with pipefail, head closing the pipe early would end
+        # this script under set -e.
+        gawk 'NR <= 40 { print "    " $0 }' "postcheck/col$c.checkfailed"
+    done
+fi
+if (( nnone )); then
+    echo "no verdict (skipped, interrupted, or the rank died -- see the rank logs): ${none[*]}"
+fi
+(( nok == ncols ))
