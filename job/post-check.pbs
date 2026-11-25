@@ -2,7 +2,7 @@
 #PBS -A Abacus
 #PBS -l filesystems=flare
 #PBS -l place=scatter
-#PBS -l select=3
+#PBS -l select=2
 #PBS -l walltime=0:30:00
 #PBS -q debug
 #PBS -N post-check
